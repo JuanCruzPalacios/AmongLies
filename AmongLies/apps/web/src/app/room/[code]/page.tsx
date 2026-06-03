@@ -227,9 +227,9 @@ export default function RoomPage() {
 
   if (isPlaying && gameState) {
     return (
-      <div className="flex flex-col min-h-dvh">
+      <div className="h-dvh flex flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 min-h-0 flex flex-col">
           <ImpostorGame
             gameState={gameState}
             sendAction={sendAction}
@@ -239,7 +239,7 @@ export default function RoomPage() {
             gameResults={gameResults}
             onBackToLobby={() => {
               resetGame();
-              getSocket().emit("room:update-settings", {});
+              getSocket().emit("game:back-to-lobby");
             }}
           />
         </main>

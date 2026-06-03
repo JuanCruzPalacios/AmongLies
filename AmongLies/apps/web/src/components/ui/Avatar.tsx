@@ -48,23 +48,26 @@ export function Avatar({ avatarId, size = "md", selected = false, onClick }: Ava
   const emoji = AVATAR_EMOJIS[avatarId] || "\u{2753}";
   const color = avatar?.color || "#8B5CF6";
 
+  const className = `
+    ${sizeMap[size]}
+    rounded-full flex items-center justify-center
+    transition-all duration-200
+    ${selected ? "ring-3 ring-primary ring-offset-2 ring-offset-bg-primary scale-110" : ""}
+    ${onClick ? "cursor-pointer hover:scale-105" : "cursor-default"}
+  `;
+  const style = { backgroundColor: `${color}22`, borderColor: color, borderWidth: 2, borderStyle: "solid" };
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={className} style={style}>
+        <span className="leading-none">{emoji}</span>
+      </button>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`
-        ${sizeMap[size]}
-        rounded-full flex items-center justify-center
-        transition-all duration-200 cursor-pointer
-        ${selected
-          ? "ring-3 ring-primary ring-offset-2 ring-offset-bg-primary scale-110"
-          : "hover:scale-105"
-        }
-        ${onClick ? "cursor-pointer" : "cursor-default"}
-      `}
-      style={{ backgroundColor: `${color}22`, borderColor: color, borderWidth: 2, borderStyle: "solid" }}
-    >
+    <div className={className} style={style}>
       <span className="leading-none">{emoji}</span>
-    </button>
+    </div>
   );
 }

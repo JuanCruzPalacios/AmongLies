@@ -12,10 +12,13 @@ export function Chat() {
   const room = useRoomStore((s) => s.room);
   const myId = usePlayerStore((s) => s.playerId);
   const [message, setMessage] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
+  // Scroll to bottom without touching the page scroll
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
   }, [room?.chat.length]);
 
   if (!room) return null;
@@ -36,48 +39,65 @@ export function Chat() {
 
   return (
     <div className="bg-bg-surface border border-border rounded-2xl flex flex-col h-80">
-      <h3 className="font-display font-bold text-sm text-text-secondary px-4 pt-4 pb-2 uppercase tracking-wider">
-        {t("lobby.chat")}
-      </h3>
-      <div className="flex-1 overflow-y-auto px-4 space-y-2 min-h-0">
-        {room.chat.length === 0 && (
-          <p className="text-text-muted text-xs text-center py-8">...</p>
-        )}
-        {room.chat.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex gap-2 items-start ${
-              msg.type === "system" ? "justify-center" : ""
-            }`}
-          >
-            {msg.type === "player" && (
-              <Avatar avatarId={msg.playerAvatarId} size="sm" />
-            )}
-            <div className="min-w-0 flex-1">
-              {msg.type === "player" && (
-                <span
-                  className={`text-xs font-semibold ${
-                    msg.playerId === myId ? "text-primary" : "text-text-secondary"
-                  }`}
-                >
-                  {msg.playerNickname}
-                </span>
-              )}
-              <p
-                className={`text-sm break-words ${
-                  msg.type === "system"
-                    ? "text-text-muted italic text-xs"
-                    : "text-text-primary"
-                }`}
-              >
-                {msg.message}
-              </p>
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
+      {/* Header */}
+      <div className="px-4 pt-3 pb-2 border-b border-border shrink-0">
+        <h3 className="font-display font-bold text-xs text-text-secondary uppercase tracking-widest">
+          {t("lobby.chat")}
+        </h3>
       </div>
-      <div className="p-3 border-t border-border flex gap-2">
+
+      {/* Messages */}
+      <div ref={listRef} className="flex-1 overflow-y-auto min-h-0 px-3 py-3 space-y-1">
+        {room.chat.length === 0 && (
+          <p className="text-text-muted text-xs text-center py-10 opacity-60">Sin mensajes aún...</p>
+        )}
+
+        {room.chat.map((msg, idx) => {
+          const isMe = msg.playerId === myId;
+          const prevMsg = room.chat[idx - 1];
+          const isSameAuthor = prevMsg?.type === "player" && prevMsg.playerId === msg.playerId;
+
+          if (msg.type === "system") {
+            return (
+              <div key={msg.id} className="flex items-center gap-2 py-1.5">
+                <div className="flex-1 h-px bg-border opacity-40" />
+                <span className="text-text-muted text-xs opacity-60 shrink-0">{msg.message}</span>
+                <div className="flex-1 h-px bg-border opacity-40" />
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={msg.id}
+              className={`flex gap-2 items-end ${isMe ? "flex-row-reverse" : ""} ${isSameAuthor ? "mt-0.5" : "mt-2"}`}
+            >
+              <div className="shrink-0 w-8 self-end">
+                {!isSameAuthor && !isMe && (
+                  <Avatar avatarId={msg.playerAvatarId} size="sm" />
+                )}
+              </div>
+              <div className={`flex flex-col max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
+                {!isSameAuthor && (
+                  <span className={`text-xs font-semibold mb-0.5 px-1 ${isMe ? "text-primary" : "text-text-secondary"}`}>
+                    {isMe ? "Vos" : msg.playerNickname}
+                  </span>
+                )}
+                <div className={`px-3 py-1.5 text-sm leading-snug break-words rounded-2xl ${
+                  isMe
+                    ? "bg-primary/25 text-text-primary rounded-br-sm"
+                    : "bg-bg-surface-light text-text-primary rounded-bl-sm"
+                }`}>
+                  {msg.message}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Input */}
+      <div className="p-3 border-t border-border shrink-0 flex items-center gap-2">
         <input
           type="text"
           value={message}
@@ -85,14 +105,15 @@ export function Chat() {
           onKeyDown={handleKeyDown}
           placeholder={t("chat.placeholder")}
           maxLength={200}
-          className="flex-1 bg-bg-surface-light border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary transition-colors"
+          className="flex-1 min-w-0 bg-bg-surface-light border border-border rounded-xl px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary transition-colors"
         />
         <button
           onClick={handleSend}
           disabled={!message.trim()}
-          className="bg-primary hover:bg-primary-light text-white px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+          aria-label="Enviar"
+          className="shrink-0 bg-primary hover:bg-primary-light text-white w-9 h-9 rounded-xl text-base font-bold disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors flex items-center justify-center"
         >
-          {t("chat.send")}
+          ↑
         </button>
       </div>
     </div>

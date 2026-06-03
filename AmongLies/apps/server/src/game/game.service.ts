@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { ImpostorSettings, ImpostorPhase, Player, GameAction } from '@amonglies/shared';
+import { getWordListsByLocale } from '@amonglies/shared';
 import { ImpostorEngine } from './engines/impostor/impostor.engine.js';
 import { RoomStore } from '../room/room.store.js';
 
@@ -37,14 +38,20 @@ export class GameService {
     if (gameId !== 'impostor') return null;
 
     const savedSettings = this.gameSettings.get(roomCode) || {};
+    const locale = (savedSettings['locale'] as 'es' | 'en' | 'pt') || 'es';
+    const savedLists = (savedSettings['selectedWordLists'] as string[]) || [];
+    const selectedWordLists = savedLists.length > 0
+      ? savedLists
+      : getWordListsByLocale(locale).map((wl) => wl.id);
+
     const settings: ImpostorSettings = {
-      rounds: (savedSettings['rounds'] as number) || 3,
+      rounds: (savedSettings['rounds'] as number) || 1,
       impostorCount: (savedSettings['impostorCount'] as number) || 1,
       turnTimeSeconds: (savedSettings['turnTimeSeconds'] as number) || 30,
       discussionTimeSeconds: (savedSettings['discussionTimeSeconds'] as number) || 120,
       votingTimeSeconds: (savedSettings['votingTimeSeconds'] as number) || 30,
       wordRevealTimeSeconds: (savedSettings['wordRevealTimeSeconds'] as number) || 10,
-      selectedWordLists: (savedSettings['selectedWordLists'] as string[]) || [],
+      selectedWordLists,
       communicationMode: (savedSettings['communicationMode'] as 'chat' | 'voice') || 'chat',
     };
 

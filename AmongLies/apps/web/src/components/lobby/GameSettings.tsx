@@ -29,8 +29,11 @@ export function GameSettings() {
       defaults["selectedWordLists"] = wordLists.map((wl) => wl.id);
       setSettings(defaults);
       setSelectedWordLists(wordLists.map((wl) => wl.id));
+      if (isAdmin) {
+        getSocket().emit("game:update-settings", defaults);
+      }
     }
-  }, [game?.id, roomLocale]);
+  }, [game?.id, roomLocale, isAdmin]);
 
   if (!room || !game) return null;
 

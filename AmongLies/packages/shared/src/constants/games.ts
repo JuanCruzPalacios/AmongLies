@@ -19,9 +19,9 @@ export const GAME_IMPOSTOR: GameDefinition = {
   settingsSchema: [
     {
       key: 'rounds',
-      label: { es: 'Rondas', en: 'Rounds', pt: 'Rodadas' },
+      label: { es: 'Partidas', en: 'Games', pt: 'Partidas' },
       type: 'number',
-      default: 3,
+      default: 1,
       min: 1,
       max: 10,
     },

@@ -6,6 +6,7 @@ export type ImpostorPhase =
   | 'discussion'
   | 'voting'
   | 'vote-results'
+  | 'partida-end'
   | 'round-end'
   | 'game-end';
 
@@ -22,16 +23,21 @@ export interface ImpostorSettings {
 
 export interface ImpostorGameState {
   phase: ImpostorPhase;
-  round: number;
-  totalRounds: number;
+  partida: number;        // outer game number (1-based)
+  totalPartidas: number;
+  roundWithinPartida: number; // inner round within current partida (1-based)
   secretWord: string;
   impostorIds: string[];
+  eliminatedPlayerIds: string[];
   turnOrder: string[];
   currentTurnIndex: number;
   wordsUsed: WordEntry[];
   votes: Record<string, string>;
+  skipDiscussionVotes: string[];
+  partidaEndSkipVotes: string[];
   results: RoundResult[];
   settings: ImpostorSettings;
+  gameWinner: 'players' | 'impostor' | null;
 }
 
 export interface WordEntry {
@@ -40,28 +46,35 @@ export interface WordEntry {
 }
 
 export interface RoundResult {
-  round: number;
+  partida: number;
+  ronda: number;
   word: string;
   impostorIds: string[];
   votedOutId: string | null;
   impostorGuessedWord: boolean;
-  winner: 'impostor' | 'players';
+  winner: 'impostor' | 'players' | 'tie';
 }
 
 export interface ImpostorPlayerView {
   phase: ImpostorPhase;
-  round: number;
-  totalRounds: number;
+  partida: number;
+  totalPartidas: number;
+  roundWithinPartida: number;
   isImpostor: boolean;
   secretWord: string | null;
   fellowImpostorIds: string[];
+  eliminatedPlayerIds: string[];
   turnOrder: string[];
   currentTurnIndex: number;
   isMyTurn: boolean;
   wordsUsed: WordEntry[];
   votes: Record<string, string>;
   hasVoted: boolean;
+  voteCount: number;
+  skipDiscussionVotes: string[];
+  partidaEndSkipVotes: string[];
   results: RoundResult[];
   settings: ImpostorSettings;
   timeRemaining: number;
+  gameWinner: 'players' | 'impostor' | null;
 }

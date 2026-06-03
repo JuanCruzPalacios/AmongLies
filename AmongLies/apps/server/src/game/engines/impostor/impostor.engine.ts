@@ -8,6 +8,8 @@ import type {
 } from '@amonglies/shared';
 import { getWordListsByIds } from '@amonglies/shared';
 
+const PARTIDA_END_SECONDS = 15;
+
 export class ImpostorEngine {
   private state: ImpostorGameState;
   private players: Player[];
@@ -26,47 +28,95 @@ export class ImpostorEngine {
     this.onStateUpdate = onStateUpdate;
     this.state = {
       phase: 'word-reveal',
-      round: 1,
-      totalRounds: settings.rounds,
+      partida: 1,
+      totalPartidas: settings.rounds,
+      roundWithinPartida: 1,
       secretWord: '',
       impostorIds: [],
+      eliminatedPlayerIds: [],
       turnOrder: [],
       currentTurnIndex: 0,
       wordsUsed: [],
       votes: {},
+      skipDiscussionVotes: [],
+      partidaEndSkipVotes: [],
       results: [],
       settings,
+      gameWinner: null,
     };
   }
 
   start(): void {
-    this.startRound();
+    this.startPartida();
+  }
+
+  getPartida(): number {
+    return this.state.partida;
+  }
+
+  getRound(): number {
+    return this.state.roundWithinPartida;
   }
 
   getStateForPlayer(playerId: string): ImpostorPlayerView {
     const isImpostor = this.state.impostorIds.includes(playerId);
-    const turnIdx = this.state.turnOrder.indexOf(playerId);
+    const phase = this.state.phase;
+
+    // Reveal impostor IDs selectively per result
+    const sanitizedResults = this.state.results.map((r): RoundResult => {
+      const impostorExpelled =
+        r.votedOutId !== null && r.impostorIds.includes(r.votedOutId);
+      const pastPartida = r.partida < this.state.partida;
+      const currentPartidaOver =
+        phase === 'game-end' ||
+        (phase === 'partida-end' && r.partida === this.state.partida);
+
+      let revealedIds: string[];
+      if (currentPartidaOver || pastPartida) {
+        // Partida finished — reveal everyone
+        revealedIds = r.impostorIds;
+      } else if (impostorExpelled) {
+        // Mid-partida, only the expelled impostor is revealed (not co-impostors)
+        revealedIds = [r.votedOutId!];
+      } else {
+        revealedIds = [];
+      }
+
+      return { ...r, impostorIds: revealedIds };
+    });
 
     return {
-      phase: this.state.phase,
-      round: this.state.round,
-      totalRounds: this.state.totalRounds,
+      phase,
+      partida: this.state.partida,
+      totalPartidas: this.state.totalPartidas,
+      roundWithinPartida: this.state.roundWithinPartida,
       isImpostor,
       secretWord: isImpostor ? null : this.state.secretWord,
       fellowImpostorIds: isImpostor
         ? this.state.impostorIds.filter((id) => id !== playerId)
         : [],
+      eliminatedPlayerIds: [...this.state.eliminatedPlayerIds],
       turnOrder: this.state.turnOrder,
       currentTurnIndex: this.state.currentTurnIndex,
-      isMyTurn: this.state.phase === 'turns' && this.state.turnOrder[this.state.currentTurnIndex] === playerId,
+      isMyTurn:
+        phase === 'turns' &&
+        this.state.turnOrder[this.state.currentTurnIndex] === playerId,
       wordsUsed: this.state.wordsUsed,
-      votes: this.state.phase === 'vote-results' || this.state.phase === 'round-end' || this.state.phase === 'game-end'
-        ? this.state.votes
-        : {},
+      votes:
+        phase === 'vote-results' ||
+        phase === 'partida-end' ||
+        phase === 'round-end' ||
+        phase === 'game-end'
+          ? this.state.votes
+          : {},
       hasVoted: playerId in this.state.votes,
-      results: this.state.results,
+      voteCount: Object.keys(this.state.votes).length,
+      skipDiscussionVotes: [...this.state.skipDiscussionVotes],
+      partidaEndSkipVotes: [...this.state.partidaEndSkipVotes],
+      results: sanitizedResults,
       settings: this.state.settings,
       timeRemaining: 0,
+      gameWinner: this.state.gameWinner,
     };
   }
 
@@ -83,6 +133,12 @@ export class ImpostorEngine {
       case 'advance':
         this.handleAdvance(playerId);
         break;
+      case 'skip-discussion':
+        this.handleSkipDiscussion(playerId);
+        break;
+      case 'skip-partida-end':
+        this.handleSkipPartidaEnd(playerId);
+        break;
     }
     return null;
   }
@@ -96,40 +152,57 @@ export class ImpostorEngine {
   }
 
   destroy(): void {
-    for (const timer of this.timers.values()) {
-      clearTimeout(timer);
-    }
+    for (const timer of this.timers.values()) clearTimeout(timer);
     this.timers.clear();
+  }
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+
+  private activePlayers(): Player[] {
+    return this.players.filter((p) => !this.state.eliminatedPlayerIds.includes(p.id));
+  }
+
+  private activeImpostors(): string[] {
+    return this.state.impostorIds.filter(
+      (id) => !this.state.eliminatedPlayerIds.includes(id),
+    );
+  }
+
+  // ─── Lifecycle ───────────────────────────────────────────────────────────
+
+  private startPartida(): void {
+    this.state.eliminatedPlayerIds = [];
+    this.state.roundWithinPartida = 1;
+    this.state.impostorIds = this.selectImpostors();
+    this.state.gameWinner = null;
+    this.startRound();
   }
 
   private startRound(): void {
     const wordLists = getWordListsByIds(this.state.settings.selectedWordLists);
     const allWords = wordLists.flatMap((wl) => wl.words);
-    if (allWords.length === 0) {
-      return;
-    }
+    if (allWords.length === 0) return;
 
     this.state.secretWord = allWords[Math.floor(Math.random() * allWords.length)];
-    this.state.impostorIds = this.selectImpostors();
-    this.state.turnOrder = this.shuffleArray(this.players.map((p) => p.id));
+    this.state.turnOrder = this.shuffleArray(this.activePlayers().map((p) => p.id));
     this.state.currentTurnIndex = 0;
     this.state.wordsUsed = [];
     this.state.votes = {};
+    this.state.skipDiscussionVotes = [];
 
     this.setPhase('word-reveal');
     this.setTimer('word-reveal', this.state.settings.wordRevealTimeSeconds * 1000, () => {
       this.setPhase('turns');
-      if (this.state.settings.communicationMode === 'chat') {
-        this.startTurnTimer();
-      }
+      if (this.state.settings.communicationMode === 'chat') this.startTurnTimer();
     });
   }
 
   private selectImpostors(): string[] {
     const count = Math.min(this.state.settings.impostorCount, this.players.length - 1);
-    const shuffled = this.shuffleArray([...this.players.map((p) => p.id)]);
-    return shuffled.slice(0, count);
+    return this.shuffleArray(this.players.map((p) => p.id)).slice(0, count);
   }
+
+  // ─── Actions ─────────────────────────────────────────────────────────────
 
   private handleSubmitWord(playerId: string, word: string): string | null {
     if (this.state.phase !== 'turns') return null;
@@ -139,12 +212,12 @@ export class ImpostorEngine {
     const trimmed = (word || '').trim();
     if (!trimmed) return null;
 
-    const alreadyUsed = this.state.wordsUsed.some(
+    if (this.state.wordsUsed.some(
       (w) => w.word.toLowerCase() === trimmed.toLowerCase(),
-    );
-    if (alreadyUsed) return 'word_already_used';
+    )) return 'word_already_used';
 
-    if (trimmed.toLowerCase() === this.state.secretWord.toLowerCase()) {
+    const isImpostor = this.state.impostorIds.includes(playerId);
+    if (!isImpostor && trimmed.toLowerCase() === this.state.secretWord.toLowerCase()) {
       return 'word_is_secret';
     }
 
@@ -158,7 +231,6 @@ export class ImpostorEngine {
     if (this.state.phase !== 'turns') return;
     if (this.state.settings.communicationMode !== 'voice') return;
     if (this.state.turnOrder[this.state.currentTurnIndex] !== playerId) return;
-
     this.state.wordsUsed.push({ playerId, word: '(verbal)' });
     this.advanceTurn();
   }
@@ -166,17 +238,63 @@ export class ImpostorEngine {
   private handleAdvance(_playerId: string): void {
     if (this.state.phase !== 'turns') return;
     if (this.state.settings.communicationMode !== 'voice') return;
-
-    const currentPlayer = this.state.turnOrder[this.state.currentTurnIndex];
-    if (!this.state.wordsUsed.some((w) => w.playerId === currentPlayer)) {
-      this.state.wordsUsed.push({ playerId: currentPlayer, word: '(skipped)' });
+    const current = this.state.turnOrder[this.state.currentTurnIndex];
+    if (!this.state.wordsUsed.some((w) => w.playerId === current)) {
+      this.state.wordsUsed.push({ playerId: current, word: '(skipped)' });
     }
     this.advanceTurn();
   }
 
+  private handleSkipDiscussion(playerId: string): void {
+    if (this.state.phase !== 'discussion') return;
+    if (this.state.skipDiscussionVotes.includes(playerId)) return;
+    if (this.state.eliminatedPlayerIds.includes(playerId)) return;
+
+    this.state.skipDiscussionVotes.push(playerId);
+
+    if (this.state.skipDiscussionVotes.length >= this.activePlayers().length) {
+      this.clearTimer('discussion');
+      this.setPhase('voting');
+      this.startVotingTimer();
+    } else {
+      this.onStateUpdate();
+    }
+  }
+
+  private handleSkipPartidaEnd(playerId: string): void {
+    if (this.state.phase !== 'partida-end') return;
+    if (this.state.partidaEndSkipVotes.includes(playerId)) return;
+
+    this.state.partidaEndSkipVotes.push(playerId);
+
+    if (this.state.partidaEndSkipVotes.length >= this.players.length) {
+      this.clearTimer('partida-end');
+      this.advanceToNextPartida();
+    } else {
+      this.onStateUpdate();
+    }
+  }
+
+  private handleVote(playerId: string, targetId: string): void {
+    if (this.state.phase !== 'voting') return;
+    if (playerId === targetId) return;
+    if (playerId in this.state.votes) return;
+    if (this.state.eliminatedPlayerIds.includes(playerId)) return;
+    if (this.state.eliminatedPlayerIds.includes(targetId)) return;
+
+    this.state.votes[playerId] = targetId;
+    this.onStateUpdate();
+
+    if (Object.keys(this.state.votes).length >= this.activePlayers().length) {
+      this.clearTimer('voting');
+      this.resolveVotes();
+    }
+  }
+
+  // ─── Turn flow ───────────────────────────────────────────────────────────
+
   private advanceTurn(): void {
     this.state.currentTurnIndex++;
-
     if (this.state.currentTurnIndex >= this.state.turnOrder.length) {
       this.setPhase('discussion');
       if (this.state.settings.discussionTimeSeconds > 0) {
@@ -190,27 +308,8 @@ export class ImpostorEngine {
       }
       return;
     }
-
     this.onStateUpdate();
-    if (this.state.settings.communicationMode === 'chat') {
-      this.startTurnTimer();
-    }
-  }
-
-  private handleVote(playerId: string, targetId: string): void {
-    if (this.state.phase !== 'voting') return;
-    if (playerId === targetId) return;
-    if (playerId in this.state.votes) return;
-
-    this.state.votes[playerId] = targetId;
-    this.onStateUpdate();
-
-    const totalPlayers = this.players.length;
-    const totalVotes = Object.keys(this.state.votes).length;
-    if (totalVotes >= totalPlayers) {
-      this.clearTimer('voting');
-      this.resolveVotes();
-    }
+    if (this.state.settings.communicationMode === 'chat') this.startTurnTimer();
   }
 
   private resolveVotes(): void {
@@ -224,45 +323,73 @@ export class ImpostorEngine {
     let tie = false;
 
     for (const [pid, count] of voteCounts) {
-      if (count > maxVotes) {
-        maxVotes = count;
-        votedOutId = pid;
-        tie = false;
-      } else if (count === maxVotes) {
-        tie = true;
-      }
+      if (count > maxVotes) { maxVotes = count; votedOutId = pid; tie = false; }
+      else if (count === maxVotes) { tie = true; }
     }
-
     if (tie) votedOutId = null;
 
-    const impostorCaught = votedOutId !== null && this.state.impostorIds.includes(votedOutId);
+    if (votedOutId !== null && !this.state.eliminatedPlayerIds.includes(votedOutId)) {
+      this.state.eliminatedPlayerIds.push(votedOutId);
+    }
 
-    const result: RoundResult = {
-      round: this.state.round,
+    const remainingImpostors = this.activeImpostors();
+    const remainingPlayers = this.activePlayers();
+    const remainingInnocents = remainingPlayers.length - remainingImpostors.length;
+
+    const roundWinner: 'players' | 'impostor' | 'tie' =
+      votedOutId === null ? 'tie'
+      : this.state.impostorIds.includes(votedOutId) ? 'players'
+      : 'impostor';
+
+    this.state.results.push({
+      partida: this.state.partida,
+      ronda: this.state.roundWithinPartida,
       word: this.state.secretWord,
       impostorIds: [...this.state.impostorIds],
       votedOutId,
       impostorGuessedWord: false,
-      winner: impostorCaught ? 'players' : 'impostor',
-    };
+      winner: roundWinner,
+    });
 
-    this.state.results.push(result);
+    const impostorsEliminated = remainingImpostors.length === 0;
+    const impostorsWin = remainingImpostors.length > 0 && remainingImpostors.length >= remainingInnocents;
+    const partidaOver = impostorsEliminated || impostorsWin;
+    const gameOver = partidaOver && this.state.partida >= this.state.totalPartidas;
+
+    if (partidaOver) {
+      this.state.gameWinner = impostorsEliminated ? 'players' : 'impostor';
+    }
+
     this.setPhase('vote-results');
 
-    this.setTimer('vote-results', 8000, () => {
-      if (this.state.round >= this.state.totalRounds) {
+    this.setTimer('vote-results', 9000, () => {
+      if (gameOver) {
         this.setPhase('game-end');
+      } else if (partidaOver) {
+        // Show partida summary before next partida
+        this.state.partidaEndSkipVotes = [];
+        this.setPhase('partida-end');
+        this.setTimer('partida-end', PARTIDA_END_SECONDS * 1000, () => {
+          this.advanceToNextPartida();
+        });
       } else {
-        this.state.round++;
+        this.state.roundWithinPartida++;
         this.startRound();
       }
     });
   }
 
+  private advanceToNextPartida(): void {
+    this.state.partida++;
+    this.startPartida();
+  }
+
+  // ─── Timers ──────────────────────────────────────────────────────────────
+
   private startTurnTimer(): void {
     this.setTimer('turn', this.state.settings.turnTimeSeconds * 1000, () => {
-      const currentPlayer = this.state.turnOrder[this.state.currentTurnIndex];
-      this.state.wordsUsed.push({ playerId: currentPlayer, word: '(timeout)' });
+      const current = this.state.turnOrder[this.state.currentTurnIndex];
+      this.state.wordsUsed.push({ playerId: current, word: '(timeout)' });
       this.advanceTurn();
     });
   }
@@ -286,10 +413,7 @@ export class ImpostorEngine {
 
   private clearTimer(name: string): void {
     const timer = this.timers.get(name);
-    if (timer) {
-      clearTimeout(timer);
-      this.timers.delete(name);
-    }
+    if (timer) { clearTimeout(timer); this.timers.delete(name); }
   }
 
   private shuffleArray<T>(arr: T[]): T[] {
