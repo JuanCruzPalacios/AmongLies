@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import type { ImpostorPlayerView, Room, GameAction } from "@amonglies/shared";
 import { WordReveal } from "./phases/WordReveal";
 import { TurnsChat } from "./phases/TurnsChat";
@@ -14,6 +14,7 @@ import { Avatar } from "@/components/ui";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useRoomStore } from "@/stores/roomStore";
 import { getSocket } from "@/lib/socket";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   gameState: ImpostorPlayerView;
@@ -29,15 +30,39 @@ export function ImpostorGame({ gameState, sendAction, room, myId, gameEnded, gam
   const { t } = useTranslation();
   const chatMessages = useRoomStore((s) => s.room?.chat ?? []);
   const listRef = useRef<HTMLDivElement>(null);
+  const mobileListRef = useRef<HTMLDivElement>(null);
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const lastSeenRef = useRef(chatMessages.length);
 
   const isEliminated = gameState.eliminatedPlayerIds?.includes(myId) ?? false;
   const hideChat = gameState.phase === "game-end";
 
+  // Desktop scroll
   useEffect(() => {
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
   }, [chatMessages.length]);
+
+  // Mobile scroll when drawer is open
+  useEffect(() => {
+    if (mobileChatOpen && mobileListRef.current) {
+      mobileListRef.current.scrollTop = mobileListRef.current.scrollHeight;
+    }
+  }, [chatMessages.length, mobileChatOpen]);
+
+  // Unread counter
+  useEffect(() => {
+    if (mobileChatOpen) {
+      lastSeenRef.current = chatMessages.length;
+      setUnreadCount(0);
+    } else {
+      const newMessages = chatMessages.slice(lastSeenRef.current).filter(m => m.type === "player");
+      if (newMessages.length > 0) setUnreadCount(prev => prev + newMessages.length);
+      lastSeenRef.current = chatMessages.length;
+    }
+  }, [chatMessages.length, mobileChatOpen]);
 
   const phaseContent = (() => {
     switch (gameState.phase) {
@@ -64,11 +89,11 @@ export function ImpostorGame({ gameState, sendAction, room, myId, gameEnded, gam
   })();
 
   return (
-    <div className="flex-1 flex overflow-hidden h-full">
+    <div className="flex-1 flex overflow-hidden h-full relative">
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-y-auto px-4 py-4 min-w-0">
-        {/* Header bar: partida/ronda info + impostor badge */}
-        <div className="flex items-center justify-between mb-4 max-w-2xl mx-auto w-full">
+        {/* Header bar */}
+        <div className="flex items-center justify-between mb-2 max-w-2xl mx-auto w-full">
           <span className="text-text-muted text-sm font-display">
             {t("game.impostor.partida_label", {
               partida: gameState.partida,
@@ -82,23 +107,22 @@ export function ImpostorGame({ gameState, sendAction, room, myId, gameEnded, gam
             </span>
           )}
         </div>
+
+        {/* Eliminated strip — mobile only */}
+        <EliminatedStrip gameState={gameState} room={room} className="lg:hidden mb-3 max-w-2xl mx-auto w-full" />
+
         <div className="w-full max-w-2xl mx-auto">
           {phaseContent}
         </div>
       </div>
 
-      {/* Side chat panel */}
+      {/* ── Desktop side panel ─────────────────────────────────────────── */}
       {!hideChat && (
         <div className="hidden lg:flex w-68 xl:w-72 flex-col border-l border-border shrink-0" style={{ background: "var(--color-bg-surface)" }}>
-
-          {/* Header */}
           <div className="px-4 py-3 border-b border-border shrink-0">
-            <h3 className="font-display font-bold text-xs text-text-secondary uppercase tracking-widest">
-              Chat
-            </h3>
+            <h3 className="font-display font-bold text-xs text-text-secondary uppercase tracking-widest">Chat</h3>
           </div>
 
-          {/* Eliminated banner inside chat */}
           {isEliminated && (
             <div className="mx-3 mt-3 mb-1 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2 flex items-center gap-2 shrink-0">
               <span className="text-lg">👻</span>
@@ -109,53 +133,10 @@ export function ImpostorGame({ gameState, sendAction, room, myId, gameEnded, gam
             </div>
           )}
 
-          {/* Messages */}
-          <div ref={listRef} className="flex-1 overflow-y-auto min-h-0 py-3 px-3 space-y-1">
-            {chatMessages.length === 0 && (
-              <p className="text-text-muted text-xs text-center py-10 opacity-60">Sin mensajes aún</p>
-            )}
-            {chatMessages.map((msg, idx) => {
-              const isMe = msg.playerId === myId;
-              const prevMsg = chatMessages[idx - 1];
-              const isSameAuthor = prevMsg?.type === "player" && prevMsg.playerId === msg.playerId;
+          <EliminatedStrip gameState={gameState} room={room} className="mx-3 mt-2 shrink-0" />
 
-              if (msg.type === "system") {
-                return (
-                  <div key={msg.id} className="flex items-center gap-2 py-2">
-                    <div className="flex-1 h-px bg-border opacity-50" />
-                    <span className="text-text-muted text-xs font-mono opacity-70 shrink-0">{msg.message}</span>
-                    <div className="flex-1 h-px bg-border opacity-50" />
-                  </div>
-                );
-              }
+          <ChatMessages messages={chatMessages as ChatMsg[]} myId={myId} listRef={listRef} />
 
-              return (
-                <div key={msg.id} className={`flex gap-2 items-end ${isMe ? "flex-row-reverse" : ""} ${isSameAuthor ? "mt-0.5" : "mt-2"}`}>
-                  <div className="shrink-0 w-7 self-end">
-                    {!isSameAuthor && !isMe && (
-                      <Avatar avatarId={msg.playerAvatarId} size="sm" />
-                    )}
-                  </div>
-                  <div className={`flex flex-col max-w-[78%] ${isMe ? "items-end" : "items-start"}`}>
-                    {!isSameAuthor && (
-                      <span className={`text-xs font-semibold mb-0.5 px-1 ${isMe ? "text-primary" : "text-text-secondary"}`}>
-                        {isMe ? "Vos" : msg.playerNickname}
-                      </span>
-                    )}
-                    <div className={`px-3 py-1.5 rounded-2xl text-sm leading-snug break-words ${
-                      isMe
-                        ? "bg-primary/20 text-text-primary rounded-br-sm"
-                        : "bg-bg-surface-light text-text-primary rounded-bl-sm"
-                    }`}>
-                      {msg.message}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Input */}
           {isEliminated ? (
             <div className="p-3 border-t border-border shrink-0">
               <div className="w-full py-2.5 px-3 rounded-xl bg-bg-surface-light text-text-muted text-xs text-center border border-border">
@@ -167,9 +148,187 @@ export function ImpostorGame({ gameState, sendAction, room, myId, gameEnded, gam
           )}
         </div>
       )}
+
+      {/* ── Mobile chat drawer ─────────────────────────────────────────── */}
+      {!hideChat && (
+        <>
+          {/* Floating button */}
+          <button
+            onClick={() => setMobileChatOpen(true)}
+            className="lg:hidden fixed bottom-5 right-5 z-40 w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center text-white text-2xl active:scale-95 transition-transform"
+            aria-label="Abrir chat"
+          >
+            💬
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-danger text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Drawer */}
+          <AnimatePresence>
+            {mobileChatOpen && (
+              <>
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setMobileChatOpen(false)}
+                  className="lg:hidden fixed inset-0 bg-black/50 z-40"
+                />
+
+                {/* Sheet */}
+                <motion.div
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "100%" }}
+                  transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                  className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-3xl overflow-hidden"
+                  style={{ height: "75dvh", background: "var(--color-bg-surface)" }}
+                >
+                  {/* Handle + header */}
+                  <div className="shrink-0 px-4 pt-3 pb-2 border-b border-border flex items-center justify-between">
+                    <div className="w-10 h-1 bg-border rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2" />
+                    <h3 className="font-display font-bold text-sm text-text-secondary uppercase tracking-widest">Chat</h3>
+                    <button
+                      onClick={() => setMobileChatOpen(false)}
+                      className="text-text-muted text-xl leading-none p-1"
+                      aria-label="Cerrar"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  {isEliminated && (
+                    <div className="mx-3 mt-2 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2 flex items-center gap-2 shrink-0">
+                      <span>👻</span>
+                      <p className="text-danger text-xs font-semibold">
+                        Fuiste eliminado — solo podés leer.
+                      </p>
+                    </div>
+                  )}
+
+                  <ChatMessages messages={chatMessages as ChatMsg[]} myId={myId} listRef={mobileListRef} />
+
+                  {isEliminated ? (
+                    <div className="p-3 border-t border-border shrink-0">
+                      <div className="w-full py-2.5 px-3 rounded-xl bg-bg-surface-light text-text-muted text-xs text-center border border-border">
+                        No podés chatear
+                      </div>
+                    </div>
+                  ) : (
+                    <SideChatInput onSend={(msg) => getSocket().emit("chat:send", { message: msg })} t={t} />
+                  )}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </>
+      )}
     </div>
   );
 }
+
+// ── Shared chat messages list ───────────────────────────────────────────────
+
+type ChatMsg = { id: string; type: string; message: string; playerId: string; playerNickname: string; playerAvatarId: string };
+
+function ChatMessages({
+  messages,
+  myId,
+  listRef,
+}: {
+  messages: ChatMsg[];
+  myId: string;
+  listRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const chatMessages = messages;
+
+  return (
+    <div ref={listRef} className="flex-1 overflow-y-auto min-h-0 py-3 px-3 space-y-1">
+      {chatMessages.length === 0 && (
+        <p className="text-text-muted text-xs text-center py-10 opacity-60">Sin mensajes aún</p>
+      )}
+      {chatMessages.map((msg, idx) => {
+        const isMe = msg.playerId === myId;
+        const prevMsg = chatMessages[idx - 1];
+        const isSameAuthor = prevMsg?.type === "player" && prevMsg.playerId === msg.playerId;
+
+        if (msg.type === "system") {
+          return (
+            <div key={msg.id} className="flex items-center gap-2 py-2">
+              <div className="flex-1 h-px bg-border opacity-50" />
+              <span className="text-text-muted text-xs font-mono opacity-70 shrink-0">{msg.message}</span>
+              <div className="flex-1 h-px bg-border opacity-50" />
+            </div>
+          );
+        }
+
+        return (
+          <div key={msg.id} className={`flex gap-2 items-end ${isMe ? "flex-row-reverse" : ""} ${isSameAuthor ? "mt-0.5" : "mt-2"}`}>
+            <div className="shrink-0 w-7 self-end">
+              {!isSameAuthor && !isMe && (
+                <Avatar avatarId={msg.playerAvatarId} size="sm" />
+              )}
+            </div>
+            <div className={`flex flex-col max-w-[78%] ${isMe ? "items-end" : "items-start"}`}>
+              {!isSameAuthor && (
+                <span className={`text-xs font-semibold mb-0.5 px-1 ${isMe ? "text-primary" : "text-text-secondary"}`}>
+                  {isMe ? "Vos" : msg.playerNickname}
+                </span>
+              )}
+              <div className={`px-3 py-1.5 rounded-2xl text-sm leading-snug break-words ${
+                isMe
+                  ? "bg-primary/20 text-text-primary rounded-br-sm"
+                  : "bg-bg-surface-light text-text-primary rounded-bl-sm"
+              }`}>
+                {msg.message}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Eliminated strip ────────────────────────────────────────────────────────
+
+function EliminatedStrip({
+  gameState,
+  room,
+  className = "",
+}: {
+  gameState: ImpostorPlayerView;
+  room: Room;
+  className?: string;
+}) {
+  const eliminated = (gameState.eliminatedPlayerIds ?? [])
+    .map((id) => room.players.find((p) => p.id === id))
+    .filter(Boolean);
+
+  if (eliminated.length === 0) return null;
+
+  return (
+    <div className={className}>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-text-muted text-xs opacity-60 shrink-0">👻</span>
+        {eliminated.map((p) => (
+          <div key={p!.id} className="flex items-center gap-1 opacity-50" title={`${p!.nickname} — eliminado`}>
+            <Avatar avatarId={p!.avatarId} size="sm" />
+            <span className="text-xs text-text-muted line-through leading-none hidden sm:inline lg:hidden xl:inline">
+              {p!.nickname}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Side chat input ─────────────────────────────────────────────────────────
 
 function SideChatInput({ onSend, t }: { onSend: (msg: string) => void; t: (k: string) => string }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -200,7 +359,7 @@ function SideChatInput({ onSend, t }: { onSend: (msg: string) => void; t: (k: st
       />
       <button
         onClick={handleSend}
-        className="shrink-0 bg-primary hover:bg-primary-light text-white px-3 py-2 rounded-xl text-sm font-medium cursor-pointer transition-colors"
+        className="shrink-0 bg-primary hover:bg-primary-light text-white w-9 h-9 rounded-xl text-base font-bold cursor-pointer transition-colors flex items-center justify-center"
         aria-label="Enviar"
       >
         ↑
