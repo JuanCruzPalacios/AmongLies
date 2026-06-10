@@ -96,13 +96,34 @@
 # ------------------------------------------------------------
 # VARIABLES DE ENTORNO NECESARIAS
 # ------------------------------------------------------------
+# Cada app incluye un .env.example con los valores de referencia.
+# Copiarlos antes de levantar el proyecto:
+#   cp apps/web/.env.example    apps/web/.env.local
+#   cp apps/server/.env.example apps/server/.env
 
 # Frontend (apps/web/.env.local):
+#
 #   NEXT_PUBLIC_SERVER_URL=http://localhost:3001
 #     URL completa del servidor WebSocket/NestJS.
-#     En producción, usar la URL pública del servicio backend.
+#     En producción: URL pública del servicio backend (Railway, Render, etc.).
 
 # Backend (apps/server/.env):
+#
 #   PORT=3001
 #     Puerto en el que escucha el servidor NestJS.
 #     En Railway/Render este valor es provisto automáticamente por la plataforma.
+#
+#   CLIENT_URL=http://localhost:3000
+#     URL del frontend. Usada para configurar la política CORS del servidor.
+#     Sin este valor configurado correctamente, el frontend es bloqueado por CORS
+#     al intentar conectarse desde un origen diferente (producción).
+#     En producción: URL pública del servicio frontend.
+
+# ------------------------------------------------------------
+# NOTAS DE DESARROLLO LOCAL
+# ------------------------------------------------------------
+# - No hace falta compilar packages/shared manualmente.
+#   El comando `npm run dev:all` usa Turbo, que compila shared
+#   automáticamente antes de levantar las apps (ver turbo.json).
+# - Sí es necesario si se quiere correr npm run dev:web o
+#   npm run dev:server por separado sin pasar por Turbo.

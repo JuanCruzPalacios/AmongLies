@@ -87,10 +87,9 @@ Ver [requirements.txt](./requirements.txt) para el listado completo de dependenc
 # 1. Instalar dependencias desde la raíz del monorepo
 npm install
 
-# 2. Compilar el paquete compartido
-cd packages/shared && npm run build && cd ../..
+# 2. Crear los archivos de variables de entorno (ver sección siguiente)
 
-# 3. Levantar todo en paralelo (frontend + backend + watcher del shared)
+# 3. Levantar todo en paralelo (Turbo compila el paquete shared automáticamente)
 npm run dev:all
 ```
 
@@ -104,16 +103,31 @@ npm run dev:web     # solo Next.js
 npm run dev:server  # solo NestJS
 ```
 
+> **Nota:** `npm run dev:all` es el único comando necesario. Turbo se encarga de compilar `packages/shared` antes de levantar las apps gracias a la dependencia declarada en `turbo.json`. No hace falta compilar shared manualmente.
+
 ### Variables de entorno
+
+Cada app tiene un archivo `.env.example` con los valores de referencia. Copiarlo y completarlo:
+
+```bash
+cp apps/web/.env.example    apps/web/.env.local
+cp apps/server/.env.example apps/server/.env
+```
 
 **Frontend** (`apps/web/.env.local`):
 ```
+# URL completa del servidor backend
 NEXT_PUBLIC_SERVER_URL=http://localhost:3001
 ```
 
 **Backend** (`apps/server/.env`):
 ```
+# Puerto en el que escucha NestJS
 PORT=3001
+
+# URL del frontend — usada para la política CORS
+# Sin este valor el frontend no puede conectarse al backend desde otro origen
+CLIENT_URL=http://localhost:3000
 ```
 
 ---
