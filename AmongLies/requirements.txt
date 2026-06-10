@@ -1,0 +1,108 @@
+# ============================================================
+# AmongLies — Requisitos del proyecto
+# ============================================================
+# Este archivo lista las dependencias de producción y desarrollo
+# del monorepo. Para instalarlas todas: npm install (desde la raíz)
+# ============================================================
+
+
+# ------------------------------------------------------------
+# REQUISITOS DEL SISTEMA
+# ------------------------------------------------------------
+# Node.js   >= 20.x  (https://nodejs.org)
+# npm       >= 10.x  (incluido con Node.js 20+)
+# Turbo     ^2.5.0   (gestor de monorepo, se instala como devDependency)
+
+
+# ------------------------------------------------------------
+# RAÍZ DEL MONOREPO
+# ------------------------------------------------------------
+# turbo@^2.5.0              — Orquestador de tareas del monorepo (build, dev, lint en paralelo)
+# typescript@^5.7.0         — Compilador TypeScript compartido
+
+
+# ------------------------------------------------------------
+# FRONTEND — apps/web  (Next.js)
+# ------------------------------------------------------------
+
+# Producción:
+# next@16.2.6               — Framework React con App Router, SSR y output standalone
+# react@19.2.4              — Librería de UI
+# react-dom@19.2.4          — Renderer de React para el navegador
+# framer-motion@^12.39.0    — Animaciones declarativas (transiciones de fase, drawers)
+# socket.io-client@^4.8.3   — Cliente WebSocket para comunicación en tiempo real con el servidor
+# zustand@^5.0.13           — Manejo de estado global (playerStore, roomStore)
+# next-intl@^4.12.0         — Internacionalización (i18n) para Next.js
+# @amonglies/shared@*       — Tipos TypeScript compartidos (paquete interno del monorepo)
+
+# Desarrollo:
+# tailwindcss@^4            — Framework CSS utilitario (con CSS custom properties)
+# @tailwindcss/postcss@^4   — Plugin PostCSS para Tailwind v4
+# typescript@^5             — Tipos y compilación
+# @types/node@^20           — Tipos de Node.js para el entorno de build
+# @types/react@^19          — Tipos de React
+# @types/react-dom@^19      — Tipos de ReactDOM
+# eslint@^9                 — Linter de código
+# eslint-config-next@16.2.6 — Configuración de ESLint recomendada por Next.js
+
+
+# ------------------------------------------------------------
+# BACKEND — apps/server  (NestJS)
+# ------------------------------------------------------------
+
+# Producción:
+# @nestjs/common@^11.0.1          — Core de NestJS (decoradores, inyección de dependencias)
+# @nestjs/core@^11.0.1            — Runtime principal de NestJS
+# @nestjs/platform-express@^11.0.1 — Adaptador HTTP Express para NestJS
+# @nestjs/platform-socket.io@^11.1.21 — Adaptador Socket.io para NestJS
+# @nestjs/websockets@^11.1.21     — Módulo WebSocket de NestJS (gateways)
+# socket.io@^4.8.3                — Servidor WebSocket en tiempo real
+# class-transformer@^0.5.1        — Serialización/deserialización de DTOs
+# class-validator@^0.15.1         — Validación de datos entrantes
+# reflect-metadata@^0.2.2         — Soporte para decoradores TypeScript (requerido por NestJS)
+# rxjs@^7.8.1                     — Programación reactiva (requerido por NestJS internamente)
+# uuid@^14.0.0                    — Generación de IDs únicos para salas y mensajes
+# @amonglies/shared@*             — Tipos TypeScript compartidos (paquete interno del monorepo)
+
+# Desarrollo:
+# @nestjs/cli@^11.0.0             — CLI para generar módulos y compilar el proyecto
+# @nestjs/schematics@^11.0.0      — Generadores de código para NestJS CLI
+# @nestjs/testing@^11.0.1         — Utilidades de testing para NestJS
+# typescript@^5.7.3               — Compilador TypeScript
+# ts-node@^10.9.2                 — Ejecutor de TypeScript para desarrollo
+# ts-jest@^29.2.5                 — Transformador Jest para TypeScript
+# tsconfig-paths@^4.2.0           — Resolución de path aliases de TypeScript en runtime
+# jest@^30.0.0                    — Framework de testing
+# prettier@^3.4.2                 — Formateador de código
+# eslint@^9.18.0                  — Linter de código
+# typescript-eslint@^8.20.0       — Reglas ESLint para TypeScript
+
+
+# ------------------------------------------------------------
+# PAQUETE COMPARTIDO — packages/shared
+# ------------------------------------------------------------
+
+# Este paquete no tiene dependencias de producción.
+# Solo se compila con TypeScript y expone tipos para web y server.
+
+# Desarrollo:
+# typescript@^5.7.0         — Compilador TypeScript
+
+# IMPORTANTE: este paquete debe compilarse antes de levantar las apps.
+# Comando: cd packages/shared && npm run build
+# O desde la raíz: npx turbo build --filter=@amonglies/shared
+
+
+# ------------------------------------------------------------
+# VARIABLES DE ENTORNO NECESARIAS
+# ------------------------------------------------------------
+
+# Frontend (apps/web/.env.local):
+#   NEXT_PUBLIC_SERVER_URL=http://localhost:3001
+#     URL completa del servidor WebSocket/NestJS.
+#     En producción, usar la URL pública del servicio backend.
+
+# Backend (apps/server/.env):
+#   PORT=3001
+#     Puerto en el que escucha el servidor NestJS.
+#     En Railway/Render este valor es provisto automáticamente por la plataforma.
