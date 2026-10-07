@@ -4,7 +4,7 @@ interface TimerEntry {
   remaining: number;
   /** Momento en que vence, mientras corre. */
   dueAt: number;
-  handle: ReturnType<typeof setTimeout> | null;
+  handle: ReturnType<typeof setTimeout> | undefined;
 }
 
 /** Timers con nombre que se pueden pausar y reanudar conservando el tiempo restante. */
@@ -18,15 +18,14 @@ export class PausableTimers {
       callback,
       remaining: ms,
       dueAt: 0,
-      handle: null,
+      handle: undefined,
     };
     this.timers.set(name, entry);
     if (!this.paused) this.schedule(name, entry);
   }
 
   clear(name: string): void {
-    const entry = this.timers.get(name);
-    if (entry?.handle) clearTimeout(entry.handle);
+    clearTimeout(this.timers.get(name)?.handle);
     this.timers.delete(name);
   }
 
@@ -39,8 +38,9 @@ export class PausableTimers {
     this.paused = true;
     const now = Date.now();
     for (const entry of this.timers.values()) {
-      if (entry.handle) clearTimeout(entry.handle);
-      entry.handle = null;
+      // Mientras corren, todos los timers tienen handle.
+      clearTimeout(entry.handle);
+      entry.handle = undefined;
       entry.remaining = Math.max(0, entry.dueAt - now);
     }
   }

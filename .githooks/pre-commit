@@ -11,6 +11,6 @@ echo "-> Linter y formato..."
 npm run lint --silent -- --output-logs=errors-only
 
 echo "-> Tests unitarios..."
-npm test --silent --workspace @amonglies/server
+npm run test:cov --silent --workspace @amonglies/server -- --coverageReporters=text-summary
 
 echo "OK - todo en orden."
