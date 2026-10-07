@@ -1,81 +1,54 @@
 import { Injectable } from '@nestjs/common';
-import type { ImpostorSettings, ImpostorPhase, Player, GameAction } from '@amonglies/shared';
-import { getWordListsByLocale } from '@amonglies/shared';
-import { ImpostorEngine } from './engines/impostor/impostor.engine.js';
+import type { GameAction, Room } from '@amonglies/shared';
+import type { ActionContext, EngineCallbacks, GameEngine } from './engine.js';
+import { getGameRegistration } from './game.registry.js';
 import { RoomStore } from '../room/room.store.js';
-
-interface ActiveGame {
-  gameId: string;
-  roomCode: string;
-  engine: ImpostorEngine;
-}
 
 @Injectable()
 export class GameService {
-  private activeGames = new Map<string, ActiveGame>();
-  private gameSettings = new Map<string, Record<string, unknown>>();
+  private activeGames = new Map<string, GameEngine>();
 
   constructor(private readonly roomStore: RoomStore) {}
 
-  setGameSettings(roomCode: string, settings: Record<string, unknown>): void {
-    this.gameSettings.set(roomCode, {
-      ...(this.gameSettings.get(roomCode) || {}),
-      ...settings,
-    });
-  }
+  /** Arranca el juego elegido en la sala. Devuelve un código de error o null. */
+  startGame(room: Room, callbacks: EngineCallbacks): string | null {
+    if (!room.selectedGameId) return 'no_game_selected';
+    const registration = getGameRegistration(room.selectedGameId);
 
-  getGameSettings(roomCode: string): Record<string, unknown> {
-    return this.gameSettings.get(roomCode) || {};
-  }
+    const error = registration.validateStart(room.players, room.gameSettings);
+    if (error) return error;
 
-  startGame(
-    roomCode: string,
-    gameId: string,
-    players: Player[],
-    onPhaseChange: (phase: ImpostorPhase) => void,
-    onStateUpdate: () => void,
-  ): ImpostorEngine | null {
-    if (gameId !== 'impostor') return null;
-
-    const savedSettings = this.gameSettings.get(roomCode) || {};
-    const locale = (savedSettings['locale'] as 'es' | 'en') || 'es';
-    const savedLists = (savedSettings['selectedWordLists'] as string[]) || [];
-    const selectedWordLists = savedLists.length > 0
-      ? savedLists
-      : getWordListsByLocale(locale).map((wl) => wl.id);
-
-    const settings: ImpostorSettings = {
-      rounds: (savedSettings['rounds'] as number) || 1,
-      impostorCount: (savedSettings['impostorCount'] as number) || 1,
-      turnTimeSeconds: (savedSettings['turnTimeSeconds'] as number) || 30,
-      discussionTimeSeconds: (savedSettings['discussionTimeSeconds'] as number) || 120,
-      votingTimeSeconds: (savedSettings['votingTimeSeconds'] as number) || 30,
-      wordRevealTimeSeconds: (savedSettings['wordRevealTimeSeconds'] as number) || 10,
-      selectedWordLists,
-      communicationMode: (savedSettings['communicationMode'] as 'chat' | 'voice') || 'chat',
-    };
-
-    const engine = new ImpostorEngine(players, settings, onPhaseChange, onStateUpdate);
-    this.activeGames.set(roomCode, { gameId, roomCode, engine });
-    this.roomStore.setState(roomCode, 'playing');
+    this.endGame(room.code);
+    const engine = registration.create(
+      [...room.players],
+      room.gameSettings,
+      callbacks,
+    );
+    this.activeGames.set(room.code, engine);
+    this.roomStore.setState(room.code, 'playing');
     engine.start();
-    return engine;
+    return null;
   }
 
-  getEngine(roomCode: string): ImpostorEngine | undefined {
-    return this.activeGames.get(roomCode)?.engine;
+  getEngine(roomCode: string): GameEngine | undefined {
+    return this.activeGames.get(roomCode);
   }
 
-  handleAction(roomCode: string, playerId: string, action: GameAction): string | null {
-    const game = this.activeGames.get(roomCode);
-    if (!game) return null;
-    return game.engine.handleAction(playerId, action);
+  handleAction(
+    roomCode: string,
+    playerId: string,
+    action: GameAction,
+    ctx: ActionContext,
+  ): string | null {
+    const engine = this.activeGames.get(roomCode);
+    if (!engine) return null;
+    return engine.handleAction(playerId, action, ctx);
   }
 
   endGame(roomCode: string): void {
-    const game = this.activeGames.get(roomCode);
-    if (!game) return;
-    game.engine.destroy();
+    const engine = this.activeGames.get(roomCode);
+    if (!engine) return;
+    engine.destroy();
     this.activeGames.delete(roomCode);
     this.roomStore.setState(roomCode, 'lobby');
   }

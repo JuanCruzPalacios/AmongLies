@@ -19,7 +19,6 @@ export function VoteResults({ gameState, room }: Props) {
   const [stage, setStage] = useState(0);
 
   useEffect(() => {
-    setStage(0);
     const t1 = setTimeout(() => setStage(1), 2500);
     const t2 = setTimeout(() => setStage(2), 5500);
     return () => { clearTimeout(t1); clearTimeout(t2); };

@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSocket, connectSocket, disconnectSocket } from "@/lib/socket";
 import { useRoomStore } from "@/stores/roomStore";
-import { usePlayerStore } from "@/stores/playerStore";
 
 export function useSocket() {
   const router = useRouter();
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(
+    () => typeof window !== "undefined" && getSocket().connected
+  );
   const { addPlayer, removePlayer, setRoom, addChatMessage, updatePlayerConnection } = useRoomStore();
 
   useEffect(() => {
@@ -55,10 +56,6 @@ export function useSocket() {
       updatePlayerConnection(playerId, true);
     });
 
-    if (socket.connected) {
-      setIsConnected(true);
-    }
-
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
@@ -70,7 +67,7 @@ export function useSocket() {
       socket.off("player:disconnected");
       socket.off("player:reconnected");
     };
-  }, [addPlayer, removePlayer, setRoom, addChatMessage, updatePlayerConnection]);
+  }, [router, addPlayer, removePlayer, setRoom, addChatMessage, updatePlayerConnection]);
 
   return { isConnected, connect: connectSocket, disconnect: disconnectSocket };
 }

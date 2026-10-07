@@ -21,19 +21,24 @@ interface Props {
   sendAction: (action: GameAction) => void;
   room: Room;
   myId: string;
-  gameEnded: boolean;
-  gameResults: unknown;
   onBackToLobby: () => void;
 }
 
-export function ImpostorGame({ gameState, sendAction, room, myId, gameEnded, gameResults, onBackToLobby }: Props) {
+export function ImpostorGame({ gameState, sendAction, room, myId, onBackToLobby }: Props) {
   const { t } = useTranslation();
   const chatMessages = useRoomStore((s) => s.room?.chat ?? []);
   const listRef = useRef<HTMLDivElement>(null);
   const mobileListRef = useRef<HTMLDivElement>(null);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const lastSeenRef = useRef(chatMessages.length);
+  // Mensajes de jugadores ya vistos en el drawer mobile (para el contador de no leídos)
+  const playerMessageCount = chatMessages.filter((m) => m.type === "player").length;
+  const [seenCount, setSeenCount] = useState(playerMessageCount);
+  const unreadCount = mobileChatOpen ? 0 : Math.max(0, playerMessageCount - seenCount);
+
+  function closeMobileChat() {
+    setMobileChatOpen(false);
+    setSeenCount(playerMessageCount);
+  }
 
   const isEliminated = gameState.eliminatedPlayerIds?.includes(myId) ?? false;
   const hideChat = gameState.phase === "game-end";
@@ -52,18 +57,6 @@ export function ImpostorGame({ gameState, sendAction, room, myId, gameEnded, gam
     }
   }, [chatMessages.length, mobileChatOpen]);
 
-  // Unread counter
-  useEffect(() => {
-    if (mobileChatOpen) {
-      lastSeenRef.current = chatMessages.length;
-      setUnreadCount(0);
-    } else {
-      const newMessages = chatMessages.slice(lastSeenRef.current).filter(m => m.type === "player");
-      if (newMessages.length > 0) setUnreadCount(prev => prev + newMessages.length);
-      lastSeenRef.current = chatMessages.length;
-    }
-  }, [chatMessages.length, mobileChatOpen]);
-
   const phaseContent = (() => {
     switch (gameState.phase) {
       case "word-reveal":
@@ -77,12 +70,11 @@ export function ImpostorGame({ gameState, sendAction, room, myId, gameEnded, gam
       case "voting":
         return <Voting gameState={gameState} sendAction={sendAction} room={room} myId={myId} />;
       case "vote-results":
-      case "round-end":
         return <VoteResults gameState={gameState} room={room} />;
       case "partida-end":
         return <PartidaEnd gameState={gameState} room={room} sendAction={sendAction} myId={myId} />;
       case "game-end":
-        return <GameEnd gameState={gameState} room={room} results={gameResults} onBackToLobby={onBackToLobby} />;
+        return <GameEnd gameState={gameState} room={room} onBackToLobby={onBackToLobby} />;
       default:
         return <p className="text-text-muted text-center">Cargando...</p>;
     }
@@ -175,7 +167,7 @@ export function ImpostorGame({ gameState, sendAction, room, myId, gameEnded, gam
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  onClick={() => setMobileChatOpen(false)}
+                  onClick={closeMobileChat}
                   className="lg:hidden fixed inset-0 bg-black/50 z-40"
                 />
 
@@ -193,7 +185,7 @@ export function ImpostorGame({ gameState, sendAction, room, myId, gameEnded, gam
                     <div className="w-10 h-1 bg-border rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2" />
                     <h3 className="font-display font-bold text-sm text-text-secondary uppercase tracking-widest">Chat</h3>
                     <button
-                      onClick={() => setMobileChatOpen(false)}
+                      onClick={closeMobileChat}
                       className="text-text-muted text-xl leading-none p-1"
                       aria-label="Cerrar"
                     >

@@ -19,6 +19,7 @@ export interface ClientEvents {
   'game:select': (data: { gameId: string }) => void;
   'game:update-settings': (data: Record<string, unknown>) => void;
   'game:start': () => void;
+  'game:back-to-lobby': () => void;
   'game:action': (data: GameAction) => void;
 }
 
@@ -36,8 +37,7 @@ export interface ServerEvents {
 
   'game:state-update': (data: ImpostorPlayerView) => void;
   'game:phase-change': (data: { phase: string }) => void;
-  'game:ended': (data: { results: unknown }) => void;
-  'game:error': (data: { message: string }) => void;
+  'game:error': (data: { message: string; code?: string }) => void;
 
   'player:reconnected': (data: { playerId: string }) => void;
   'player:disconnected': (data: { playerId: string }) => void;

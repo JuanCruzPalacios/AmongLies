@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import type { Room } from "@amonglies/shared";
 import { AVATARS, MIN_NICKNAME_LENGTH, MAX_NICKNAME_LENGTH, ROOM_CODE_LENGTH } from "@amonglies/shared";
 import { Header } from "@/components/layout/Header";
 import { Button, Input, Avatar } from "@/components/ui";
@@ -54,7 +55,7 @@ export default function Home() {
       setError(t("landing.error.timeout"));
     }, 10000);
 
-    function onCreated({ room, playerId }: { room: Parameters<typeof setRoom>[0]; playerId: string }) {
+    function onCreated({ room, playerId }: { room: Room; playerId: string }) {
       clearTimeout(timeout);
       socket.off("room:error", onRoomError);
       usePlayerStore.getState().setPlayerId(playerId);
@@ -63,10 +64,10 @@ export default function Home() {
       router.push(`/room/${room.code}`);
     }
 
-    function onRoomError({ message }: { message: string }) {
+    function onRoomError({ message, code }: { message: string; code: string }) {
       clearTimeout(timeout);
       socket.off("room:created", onCreated);
-      setError(message);
+      setError(t(`error.${code}`, undefined, message));
       setConnecting(false);
     }
 
@@ -93,7 +94,7 @@ export default function Home() {
       setError(t("landing.error.timeout"));
     }, 10000);
 
-    function onJoined({ room, playerId }: { room: Parameters<typeof setRoom>[0]; playerId: string }) {
+    function onJoined({ room, playerId }: { room: Room; playerId: string }) {
       clearTimeout(timeout);
       socket.off("room:error", onRoomError);
       usePlayerStore.getState().setPlayerId(playerId);
@@ -102,10 +103,10 @@ export default function Home() {
       router.push(`/room/${room.code}`);
     }
 
-    function onRoomError({ message }: { message: string }) {
+    function onRoomError({ message, code }: { message: string; code: string }) {
       clearTimeout(timeout);
       socket.off("room:joined", onJoined);
-      setError(message);
+      setError(t(`error.${code}`, undefined, message));
       setConnecting(false);
     }
 

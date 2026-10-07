@@ -49,7 +49,7 @@ export function GameSelector() {
                   <p className="text-text-secondary text-sm">{game.description[locale]}</p>
                   <div className="flex gap-2 mt-1">
                     <span className="text-xs text-text-muted">
-                      {game.minPlayers}+ players
+                      {t("lobby.players_min", { min: game.minPlayers })}
                     </span>
                     <span className="text-xs text-text-muted">
                       {game.supportedModes.join(" / ")}

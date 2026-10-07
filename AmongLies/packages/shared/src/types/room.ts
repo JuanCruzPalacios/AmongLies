@@ -1,6 +1,7 @@
 import type { Locale } from './common';
 import type { Player } from './player';
 import type { ChatMessage } from './chat';
+import type { GameId, GameSettingsValues } from './game';
 
 export type RoomState = 'lobby' | 'playing' | 'finished';
 
@@ -17,7 +18,9 @@ export interface Room {
   players: Player[];
   state: RoomState;
   settings: RoomSettings;
-  selectedGameId: string | null;
+  selectedGameId: GameId | null;
+  /** Ajustes del juego elegido, validados por el servidor. */
+  gameSettings: GameSettingsValues;
   chat: ChatMessage[];
   createdAt: number;
 }
@@ -27,5 +30,5 @@ export interface RoomPublicView {
   playerCount: number;
   maxPlayers: number;
   state: RoomState;
-  selectedGameId: string | null;
+  selectedGameId: GameId | null;
 }

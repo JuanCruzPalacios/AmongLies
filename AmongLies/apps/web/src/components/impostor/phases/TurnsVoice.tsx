@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import type { ImpostorPlayerView, Room, GameAction } from "@amonglies/shared";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar, Button } from "@/components/ui";
-import { usePlayerStore } from "@/stores/playerStore";
 
 interface Props {
   gameState: ImpostorPlayerView;

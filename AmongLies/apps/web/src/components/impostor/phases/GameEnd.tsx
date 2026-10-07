@@ -8,32 +8,22 @@ import { Button } from "@/components/ui";
 interface Props {
   gameState: ImpostorPlayerView;
   room: Room;
-  results: unknown;
   onBackToLobby: () => void;
 }
 
-export function GameEnd({ gameState, room, results, onBackToLobby }: Props) {
+export function GameEnd({ gameState, room, onBackToLobby }: Props) {
   const { t } = useTranslation();
 
-  const allResults = (results as RoundResult[]) || gameState.results;
-  const winner = gameState.gameWinner;
-
-  // Group results by partida
-  const byPartida = new Map<number, RoundResult[]>();
-  for (const r of allResults) {
-    const key = r.partida;
-    if (!byPartida.has(key)) byPartida.set(key, []);
-    byPartida.get(key)!.push(r);
-  }
-
-  // Per-partida winners (players win if impostor eliminated, impostor wins otherwise)
-  const partidaResults = [...byPartida.entries()].map(([partida, rounds]) => {
-    const playersWon = rounds.some((r) => r.winner === "players");
-    return { partida, rounds, playersWon };
-  });
+  // Cada partida terminada con su ganador (calculado en el servidor) y sus rondas
+  const partidaResults = gameState.partidaResults.map((p) => ({
+    partida: p.partida,
+    playersWon: p.winner === "players",
+    rounds: gameState.results.filter((r: RoundResult) => r.partida === p.partida),
+  }));
 
   const playersPartidas = partidaResults.filter((p) => p.playersWon).length;
-  const impostorPartidas = partidaResults.filter((p) => !p.playersWon).length;
+  const impostorPartidas = partidaResults.length - playersPartidas;
+  const winner = playersPartidas >= impostorPartidas ? "players" : "impostor";
 
   return (
     <motion.div
@@ -78,7 +68,7 @@ export function GameEnd({ gameState, room, results, onBackToLobby }: Props) {
       {/* Historial por partida */}
       <div className="space-y-3">
         {partidaResults.map(({ partida, rounds, playersWon }) => {
-          const impostorIds = rounds[0]?.impostorIds ?? [];
+          const impostorIds = gameState.partidaResults.find((p) => p.partida === partida)?.impostorIds ?? [];
           const impostorNames = impostorIds
             .map((id) => room.players.find((p) => p.id === id)?.nickname)
             .filter(Boolean)

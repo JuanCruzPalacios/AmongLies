@@ -8,7 +8,8 @@ export function useTranslation() {
   const locale = usePlayerStore((s) => s.locale);
 
   const translate = useCallback(
-    (key: string, params?: Record<string, string | number>) => t(key, locale, params),
+    (key: string, params?: Record<string, string | number>, fallback?: string) =>
+      t(key, locale, params, fallback),
     [locale]
   );
 

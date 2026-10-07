@@ -29,7 +29,11 @@ describe('resolveVotes', () => {
   it('un empate por debajo del máximo no impide la expulsión', () => {
     // vale: 3 votos; ana y lucas: 1 cada uno (empatados, pero no son el máximo)
     const result = resolveVotes({
-      a: 'vale', b: 'vale', c: 'vale', d: 'ana', e: 'lucas',
+      a: 'vale',
+      b: 'vale',
+      c: 'vale',
+      d: 'ana',
+      e: 'lucas',
     });
     expect(result.votedOutId).toBe('vale');
   });

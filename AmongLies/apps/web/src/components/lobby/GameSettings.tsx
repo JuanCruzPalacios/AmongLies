@@ -1,48 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ALL_GAMES, getWordListsByLocale } from "@amonglies/shared";
-import type { Locale } from "@amonglies/shared";
+import { getGameDefinition, getWordListsByLocale } from "@amonglies/shared";
 import { useRoomStore } from "@/stores/roomStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getSocket } from "@/lib/socket";
 
+/** Muestra los ajustes guardados en la sala. Sólo el admin puede cambiarlos (el servidor los valida). */
 export function GameSettings() {
   const { t, locale } = useTranslation();
   const room = useRoomStore((s) => s.room);
   const myId = usePlayerStore((s) => s.playerId);
-  const [settings, setSettings] = useState<Record<string, unknown>>({});
-  const [selectedWordLists, setSelectedWordLists] = useState<string[]>([]);
 
-  const isAdmin = room?.adminId === myId;
-  const game = ALL_GAMES.find((g) => g.id === room?.selectedGameId);
-  const roomLocale = (room?.settings.locale || locale) as Locale;
-  const wordLists = getWordListsByLocale(roomLocale);
-
-  useEffect(() => {
-    if (game) {
-      const defaults: Record<string, unknown> = {};
-      for (const schema of game.settingsSchema) {
-        defaults[schema.key] = schema.default;
-      }
-      defaults["selectedWordLists"] = wordLists.map((wl) => wl.id);
-      setSettings(defaults);
-      setSelectedWordLists(wordLists.map((wl) => wl.id));
-      if (isAdmin) {
-        getSocket().emit("game:update-settings", defaults);
-      }
-    }
-  }, [game?.id, roomLocale, isAdmin]);
-
+  const game = room?.selectedGameId ? getGameDefinition(room.selectedGameId) : undefined;
   if (!room || !game) return null;
 
+  const isAdmin = room.adminId === myId;
+  const settings = room.gameSettings;
+  const wordLists = getWordListsByLocale(room.settings.locale);
+  const selectedWordLists = (settings.selectedWordLists as string[] | undefined) ?? [];
+
   function updateSetting(key: string, value: unknown) {
-    const next = { ...settings, [key]: value };
-    setSettings(next);
-    if (isAdmin) {
-      getSocket().emit("game:update-settings", { [key]: value });
-    }
+    if (isAdmin) getSocket().emit("game:update-settings", { [key]: value });
   }
 
   function toggleWordList(listId: string) {
@@ -50,10 +29,7 @@ export function GameSettings() {
       ? selectedWordLists.filter((id) => id !== listId)
       : [...selectedWordLists, listId];
     if (next.length === 0) return;
-    setSelectedWordLists(next);
-    if (isAdmin) {
-      getSocket().emit("game:update-settings", { selectedWordLists: next });
-    }
+    updateSetting("selectedWordLists", next);
   }
 
   return (
@@ -63,47 +39,50 @@ export function GameSettings() {
           {t("lobby.game_settings")}
         </h3>
         <div className="space-y-4">
-          {game.settingsSchema.map((schema) => (
-            <div key={schema.key}>
-              <label className="text-sm text-text-secondary block mb-1">
-                {schema.label[locale]}
-              </label>
-              {schema.type === "number" && (
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min={schema.min}
-                    max={schema.max}
-                    value={(settings[schema.key] as number) ?? schema.default}
-                    onChange={(e) => updateSetting(schema.key, Number(e.target.value))}
-                    disabled={!isAdmin}
-                    className="flex-1 accent-primary"
-                  />
-                  <span className="text-sm font-mono text-primary w-8 text-right">
-                    {(settings[schema.key] as number) ?? schema.default}
-                  </span>
-                </div>
-              )}
-              {schema.type === "select" && (
-                <div className="flex gap-2 flex-wrap">
-                  {schema.options?.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => updateSetting(schema.key, opt.value)}
+          {game.settingsSchema.map((schema) => {
+            const value = settings[schema.key] ?? schema.default;
+            return (
+              <div key={schema.key}>
+                <label className="text-sm text-text-secondary block mb-1">
+                  {schema.label[locale]}
+                </label>
+                {schema.type === "number" && (
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={schema.min}
+                      max={schema.max}
+                      value={value as number}
+                      onChange={(e) => updateSetting(schema.key, Number(e.target.value))}
                       disabled={!isAdmin}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                        settings[schema.key] === opt.value
-                          ? "bg-primary text-white"
-                          : "bg-bg-surface-light text-text-secondary hover:text-text-primary border border-border"
-                      } disabled:cursor-not-allowed`}
-                    >
-                      {opt.label[locale]}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                      className="flex-1 accent-primary"
+                    />
+                    <span className="text-sm font-mono text-primary min-w-8 text-right">
+                      {value === 0 && schema.zeroLabel ? schema.zeroLabel[locale] : (value as number)}
+                    </span>
+                  </div>
+                )}
+                {schema.type === "select" && (
+                  <div className="flex gap-2 flex-wrap">
+                    {schema.options?.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => updateSetting(schema.key, opt.value)}
+                        disabled={!isAdmin}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                          value === opt.value
+                            ? "bg-primary text-white"
+                            : "bg-bg-surface-light text-text-secondary hover:text-text-primary border border-border"
+                        } disabled:cursor-not-allowed`}
+                      >
+                        {opt.label[locale]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -126,7 +105,7 @@ export function GameSettings() {
                 } disabled:cursor-not-allowed`}
               >
                 <span className="block">{wl.category[locale]}</span>
-                <span className="text-xs text-text-muted">{wl.words.length} words</span>
+                <span className="text-xs text-text-muted">{t("lobby.words", { n: wl.words.length })}</span>
               </button>
             );
           })}

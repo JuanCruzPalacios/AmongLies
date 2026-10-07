@@ -1,4 +1,6 @@
 import type {
+  GameAction,
+  GameSettingsValues,
   ImpostorGameState,
   ImpostorSettings,
   ImpostorPhase,
@@ -6,30 +8,36 @@ import type {
   RoundResult,
   Player,
 } from '@amonglies/shared';
-import { getWordListsByIds } from '@amonglies/shared';
+import { MAX_CHAT_MESSAGE_LENGTH, getWordListsByIds } from '@amonglies/shared';
+import type {
+  ActionContext,
+  EngineCallbacks,
+  GameEngine,
+  GameRegistration,
+} from '../../engine.js';
+import { resolveVotes } from '../core/votes.js';
+import { getPartidaEndReason, maxImpostorsFor } from '../core/rules.js';
 
 const PARTIDA_END_SECONDS = 15;
+const VOTE_RESULTS_SECONDS = 9;
 
-export class ImpostorEngine {
+export class ImpostorEngine implements GameEngine {
   private state: ImpostorGameState;
   private players: Player[];
   private timers = new Map<string, ReturnType<typeof setTimeout>>();
-  private onPhaseChange: (phase: ImpostorPhase) => void;
-  private onStateUpdate: () => void;
+  private callbacks: EngineCallbacks;
 
   constructor(
     players: Player[],
     settings: ImpostorSettings,
-    onPhaseChange: (phase: ImpostorPhase) => void,
-    onStateUpdate: () => void,
+    callbacks: EngineCallbacks,
   ) {
     this.players = players;
-    this.onPhaseChange = onPhaseChange;
-    this.onStateUpdate = onStateUpdate;
+    this.callbacks = callbacks;
     this.state = {
       phase: 'word-reveal',
       partida: 1,
-      totalPartidas: settings.rounds,
+      totalPartidas: settings.partidas,
       roundWithinPartida: 1,
       secretWord: '',
       impostorIds: [],
@@ -41,6 +49,7 @@ export class ImpostorEngine {
       skipDiscussionVotes: [],
       partidaEndSkipVotes: [],
       results: [],
+      partidaResults: [],
       settings,
       gameWinner: null,
     };
@@ -48,14 +57,6 @@ export class ImpostorEngine {
 
   start(): void {
     this.startPartida();
-  }
-
-  getPartida(): number {
-    return this.state.partida;
-  }
-
-  getRound(): number {
-    return this.state.roundWithinPartida;
   }
 
   getStateForPlayer(playerId: string): ImpostorPlayerView {
@@ -105,7 +106,6 @@ export class ImpostorEngine {
       votes:
         phase === 'vote-results' ||
         phase === 'partida-end' ||
-        phase === 'round-end' ||
         phase === 'game-end'
           ? this.state.votes
           : {},
@@ -114,24 +114,29 @@ export class ImpostorEngine {
       skipDiscussionVotes: [...this.state.skipDiscussionVotes],
       partidaEndSkipVotes: [...this.state.partidaEndSkipVotes],
       results: sanitizedResults,
+      partidaResults: this.state.partidaResults,
       settings: this.state.settings,
-      timeRemaining: 0,
       gameWinner: this.state.gameWinner,
     };
   }
 
-  handleAction(playerId: string, action: { type: string; payload?: unknown }): string | null {
+  handleAction(
+    playerId: string,
+    action: GameAction,
+    ctx: ActionContext,
+  ): string | null {
     switch (action.type) {
       case 'submit-word':
-        return this.handleSubmitWord(playerId, action.payload as string);
+        return this.handleSubmitWord(playerId, action.payload);
       case 'ready':
         this.handleReady(playerId);
         break;
       case 'vote':
-        this.handleVote(playerId, action.payload as string);
+        this.handleVote(playerId, action.payload);
         break;
       case 'advance':
-        this.handleAdvance(playerId);
+        if (!ctx.isAdmin) return 'not_admin';
+        this.handleAdvance();
         break;
       case 'skip-discussion':
         this.handleSkipDiscussion(playerId);
@@ -143,12 +148,11 @@ export class ImpostorEngine {
     return null;
   }
 
-  getPhase(): ImpostorPhase {
-    return this.state.phase;
-  }
-
-  getResults(): RoundResult[] {
-    return this.state.results;
+  canChat(playerId: string): boolean {
+    return (
+      this.state.phase === 'game-end' ||
+      !this.state.eliminatedPlayerIds.includes(playerId)
+    );
   }
 
   destroy(): void {
@@ -159,7 +163,9 @@ export class ImpostorEngine {
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
   private activePlayers(): Player[] {
-    return this.players.filter((p) => !this.state.eliminatedPlayerIds.includes(p.id));
+    return this.players.filter(
+      (p) => !this.state.eliminatedPlayerIds.includes(p.id),
+    );
   }
 
   private activeImpostors(): string[] {
@@ -181,43 +187,65 @@ export class ImpostorEngine {
   private startRound(): void {
     const wordLists = getWordListsByIds(this.state.settings.selectedWordLists);
     const allWords = wordLists.flatMap((wl) => wl.words);
-    if (allWords.length === 0) return;
 
-    this.state.secretWord = allWords[Math.floor(Math.random() * allWords.length)];
-    this.state.turnOrder = this.shuffleArray(this.activePlayers().map((p) => p.id));
+    this.state.secretWord =
+      allWords[Math.floor(Math.random() * allWords.length)];
+    this.state.turnOrder = this.shuffleArray(
+      this.activePlayers().map((p) => p.id),
+    );
     this.state.currentTurnIndex = 0;
     this.state.wordsUsed = [];
     this.state.votes = {};
     this.state.skipDiscussionVotes = [];
 
-    this.setPhase('word-reveal');
-    this.setTimer('word-reveal', this.state.settings.wordRevealTimeSeconds * 1000, () => {
-      this.setPhase('turns');
-      if (this.state.settings.communicationMode === 'chat') this.startTurnTimer();
+    this.callbacks.onRoundStart({
+      partida: this.state.partida,
+      ronda: this.state.roundWithinPartida,
     });
+    this.setPhase('word-reveal');
+    this.setTimer(
+      'word-reveal',
+      this.state.settings.wordRevealTimeSeconds * 1000,
+      () => {
+        this.setPhase('turns');
+        if (this.state.settings.communicationMode === 'chat')
+          this.startTurnTimer();
+      },
+    );
   }
 
   private selectImpostors(): string[] {
-    const count = Math.min(this.state.settings.impostorCount, this.players.length - 1);
+    const count = Math.min(
+      this.state.settings.impostorCount,
+      maxImpostorsFor(this.players.length),
+    );
     return this.shuffleArray(this.players.map((p) => p.id)).slice(0, count);
   }
 
   // ─── Actions ─────────────────────────────────────────────────────────────
 
-  private handleSubmitWord(playerId: string, word: string): string | null {
+  private handleSubmitWord(playerId: string, word: unknown): string | null {
     if (this.state.phase !== 'turns') return null;
-    if (this.state.turnOrder[this.state.currentTurnIndex] !== playerId) return null;
+    if (this.state.turnOrder[this.state.currentTurnIndex] !== playerId)
+      return null;
     if (this.state.settings.communicationMode !== 'chat') return null;
+    if (typeof word !== 'string') return null;
 
-    const trimmed = (word || '').trim();
+    const trimmed = word.trim().slice(0, MAX_CHAT_MESSAGE_LENGTH);
     if (!trimmed) return null;
 
-    if (this.state.wordsUsed.some(
-      (w) => w.word.toLowerCase() === trimmed.toLowerCase(),
-    )) return 'word_already_used';
+    if (
+      this.state.wordsUsed.some(
+        (w) => w.word.toLowerCase() === trimmed.toLowerCase(),
+      )
+    )
+      return 'word_already_used';
 
     const isImpostor = this.state.impostorIds.includes(playerId);
-    if (!isImpostor && trimmed.toLowerCase() === this.state.secretWord.toLowerCase()) {
+    if (
+      !isImpostor &&
+      trimmed.toLowerCase() === this.state.secretWord.toLowerCase()
+    ) {
       return 'word_is_secret';
     }
 
@@ -235,7 +263,8 @@ export class ImpostorEngine {
     this.advanceTurn();
   }
 
-  private handleAdvance(_playerId: string): void {
+  /** El admin saltea al jugador que está hablando (modo voz). */
+  private handleAdvance(): void {
     if (this.state.phase !== 'turns') return;
     if (this.state.settings.communicationMode !== 'voice') return;
     const current = this.state.turnOrder[this.state.currentTurnIndex];
@@ -248,22 +277,22 @@ export class ImpostorEngine {
   private handleSkipDiscussion(playerId: string): void {
     if (this.state.phase !== 'discussion') return;
     if (this.state.skipDiscussionVotes.includes(playerId)) return;
-    if (this.state.eliminatedPlayerIds.includes(playerId)) return;
+    if (!this.activePlayers().some((p) => p.id === playerId)) return;
 
     this.state.skipDiscussionVotes.push(playerId);
 
     if (this.state.skipDiscussionVotes.length >= this.activePlayers().length) {
       this.clearTimer('discussion');
-      this.setPhase('voting');
-      this.startVotingTimer();
+      this.startVoting();
     } else {
-      this.onStateUpdate();
+      this.callbacks.onStateUpdate();
     }
   }
 
   private handleSkipPartidaEnd(playerId: string): void {
     if (this.state.phase !== 'partida-end') return;
     if (this.state.partidaEndSkipVotes.includes(playerId)) return;
+    if (!this.players.some((p) => p.id === playerId)) return;
 
     this.state.partidaEndSkipVotes.push(playerId);
 
@@ -271,23 +300,24 @@ export class ImpostorEngine {
       this.clearTimer('partida-end');
       this.advanceToNextPartida();
     } else {
-      this.onStateUpdate();
+      this.callbacks.onStateUpdate();
     }
   }
 
-  private handleVote(playerId: string, targetId: string): void {
+  private handleVote(playerId: string, targetId: unknown): void {
     if (this.state.phase !== 'voting') return;
-    if (playerId === targetId) return;
+    if (typeof targetId !== 'string' || playerId === targetId) return;
     if (playerId in this.state.votes) return;
-    if (this.state.eliminatedPlayerIds.includes(playerId)) return;
-    if (this.state.eliminatedPlayerIds.includes(targetId)) return;
+    const active = this.activePlayers();
+    if (!active.some((p) => p.id === playerId)) return;
+    if (!active.some((p) => p.id === targetId)) return;
 
     this.state.votes[playerId] = targetId;
-    this.onStateUpdate();
+    this.callbacks.onStateUpdate();
 
-    if (Object.keys(this.state.votes).length >= this.activePlayers().length) {
+    if (Object.keys(this.state.votes).length >= active.length) {
       this.clearTimer('voting');
-      this.resolveVotes();
+      this.finishVoting();
     }
   }
 
@@ -298,48 +328,36 @@ export class ImpostorEngine {
     if (this.state.currentTurnIndex >= this.state.turnOrder.length) {
       this.setPhase('discussion');
       if (this.state.settings.discussionTimeSeconds > 0) {
-        this.setTimer('discussion', this.state.settings.discussionTimeSeconds * 1000, () => {
-          this.setPhase('voting');
-          this.startVotingTimer();
-        });
+        this.setTimer(
+          'discussion',
+          this.state.settings.discussionTimeSeconds * 1000,
+          () => {
+            this.startVoting();
+          },
+        );
       } else {
-        this.setPhase('voting');
-        this.startVotingTimer();
+        this.startVoting();
       }
       return;
     }
-    this.onStateUpdate();
+    this.callbacks.onStateUpdate();
     if (this.state.settings.communicationMode === 'chat') this.startTurnTimer();
   }
 
-  private resolveVotes(): void {
-    const voteCounts = new Map<string, number>();
-    for (const targetId of Object.values(this.state.votes)) {
-      voteCounts.set(targetId, (voteCounts.get(targetId) || 0) + 1);
-    }
+  private finishVoting(): void {
+    const { votedOutId } = resolveVotes(this.state.votes);
 
-    let maxVotes = 0;
-    let votedOutId: string | null = null;
-    let tie = false;
-
-    for (const [pid, count] of voteCounts) {
-      if (count > maxVotes) { maxVotes = count; votedOutId = pid; tie = false; }
-      else if (count === maxVotes) { tie = true; }
-    }
-    if (tie) votedOutId = null;
-
-    if (votedOutId !== null && !this.state.eliminatedPlayerIds.includes(votedOutId)) {
+    if (votedOutId !== null) {
       this.state.eliminatedPlayerIds.push(votedOutId);
     }
 
-    const remainingImpostors = this.activeImpostors();
-    const remainingPlayers = this.activePlayers();
-    const remainingInnocents = remainingPlayers.length - remainingImpostors.length;
-
-    const roundWinner: 'players' | 'impostor' | 'tie' =
-      votedOutId === null ? 'tie'
-      : this.state.impostorIds.includes(votedOutId) ? 'players'
-      : 'impostor';
+    const remainingImpostors = this.activeImpostors().length;
+    const endReason = getPartidaEndReason({
+      activeImpostors: remainingImpostors,
+      activeInnocents: this.activePlayers().length - remainingImpostors,
+      round: this.state.roundWithinPartida,
+      maxRounds: this.state.settings.maxRoundsPerPartida,
+    });
 
     this.state.results.push({
       partida: this.state.partida,
@@ -347,25 +365,35 @@ export class ImpostorEngine {
       word: this.state.secretWord,
       impostorIds: [...this.state.impostorIds],
       votedOutId,
-      impostorGuessedWord: false,
-      winner: roundWinner,
+      winner:
+        votedOutId === null
+          ? 'tie'
+          : this.state.impostorIds.includes(votedOutId)
+            ? 'players'
+            : 'impostor',
     });
 
-    const impostorsEliminated = remainingImpostors.length === 0;
-    const impostorsWin = remainingImpostors.length > 0 && remainingImpostors.length >= remainingInnocents;
-    const partidaOver = impostorsEliminated || impostorsWin;
-    const gameOver = partidaOver && this.state.partida >= this.state.totalPartidas;
-
-    if (partidaOver) {
-      this.state.gameWinner = impostorsEliminated ? 'players' : 'impostor';
+    if (endReason) {
+      const winner =
+        endReason === 'impostors-eliminated' ? 'players' : 'impostor';
+      this.state.gameWinner = winner;
+      this.state.partidaResults.push({
+        partida: this.state.partida,
+        winner,
+        reason: endReason,
+        impostorIds: [...this.state.impostorIds],
+      });
     }
+    const gameOver =
+      endReason !== null && this.state.partida >= this.state.totalPartidas;
 
     this.setPhase('vote-results');
 
-    this.setTimer('vote-results', 9000, () => {
+    this.setTimer('vote-results', VOTE_RESULTS_SECONDS * 1000, () => {
       if (gameOver) {
         this.setPhase('game-end');
-      } else if (partidaOver) {
+        this.callbacks.onGameEnd();
+      } else if (endReason) {
         // Show partida summary before next partida
         this.state.partidaEndSkipVotes = [];
         this.setPhase('partida-end');
@@ -394,16 +422,21 @@ export class ImpostorEngine {
     });
   }
 
-  private startVotingTimer(): void {
-    this.setTimer('voting', this.state.settings.votingTimeSeconds * 1000, () => {
-      this.resolveVotes();
-    });
+  private startVoting(): void {
+    this.setPhase('voting');
+    this.setTimer(
+      'voting',
+      this.state.settings.votingTimeSeconds * 1000,
+      () => {
+        this.finishVoting();
+      },
+    );
   }
 
   private setPhase(phase: ImpostorPhase): void {
     this.state.phase = phase;
-    this.onPhaseChange(phase);
-    this.onStateUpdate();
+    this.callbacks.onPhaseChange(phase);
+    this.callbacks.onStateUpdate();
   }
 
   private setTimer(name: string, ms: number, callback: () => void): void {
@@ -413,7 +446,10 @@ export class ImpostorEngine {
 
   private clearTimer(name: string): void {
     const timer = this.timers.get(name);
-    if (timer) { clearTimeout(timer); this.timers.delete(name); }
+    if (timer) {
+      clearTimeout(timer);
+      this.timers.delete(name);
+    }
   }
 
   private shuffleArray<T>(arr: T[]): T[] {
@@ -425,3 +461,28 @@ export class ImpostorEngine {
     return shuffled;
   }
 }
+
+export const IMPOSTOR_REGISTRATION: GameRegistration = {
+  validateStart(
+    players: Player[],
+    settings: GameSettingsValues,
+  ): string | null {
+    const lists = getWordListsByIds(
+      (settings.selectedWordLists as string[]) ?? [],
+    );
+    if (!lists.some((list) => list.words.length > 0))
+      return 'no_word_lists_selected';
+    if ((settings.impostorCount as number) > maxImpostorsFor(players.length)) {
+      return 'too_many_impostors';
+    }
+    return null;
+  },
+  create(players, settings, callbacks) {
+    // Los ajustes ya vienen validados por sanitizeGameSettings.
+    return new ImpostorEngine(
+      players,
+      settings as unknown as ImpostorSettings,
+      callbacks,
+    );
+  },
+};

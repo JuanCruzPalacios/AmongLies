@@ -11,4 +11,4 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`AmongLies server running on port ${port}`);
 }
-bootstrap();
+void bootstrap();

@@ -8,8 +8,10 @@ import {
 import { Server, Socket } from 'socket.io';
 import { v4 as uuid } from 'uuid';
 import type { ChatMessage } from '@amonglies/shared';
+import { MAX_CHAT_MESSAGE_LENGTH } from '@amonglies/shared';
 import { RoomStore } from '../room/room.store.js';
 import { PlayerService } from '../player/player.service.js';
+import { GameService } from '../game/game.service.js';
 
 @WebSocketGateway()
 export class ChatGateway {
@@ -19,12 +21,13 @@ export class ChatGateway {
   constructor(
     private readonly roomStore: RoomStore,
     private readonly playerService: PlayerService,
+    private readonly gameService: GameService,
   ) {}
 
   @SubscribeMessage('chat:send')
   handleSendMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { message: string },
+    @MessageBody() data: { message?: unknown },
   ) {
     const session = this.playerService.getSession(client.id);
     if (!session?.roomCode) return;
@@ -35,7 +38,13 @@ export class ChatGateway {
     const player = room.players.find((p) => p.id === session.playerId);
     if (!player) return;
 
-    const trimmed = data.message.trim().slice(0, 200);
+    // Los eliminados no pueden chatear mientras dura la partida.
+    const engine = this.gameService.getEngine(session.roomCode);
+    if (room.state === 'playing' && engine && !engine.canChat(player.id))
+      return;
+
+    if (typeof data?.message !== 'string') return;
+    const trimmed = data.message.trim().slice(0, MAX_CHAT_MESSAGE_LENGTH);
     if (!trimmed) return;
 
     const message: ChatMessage = {

@@ -18,7 +18,6 @@ export function PartidaEnd({ gameState, room, sendAction, myId }: Props) {
   const [timeLeft, setTimeLeft] = useState(PARTIDA_END_SECONDS);
 
   useEffect(() => {
-    setTimeLeft(PARTIDA_END_SECONDS);
     const interval = setInterval(() => {
       setTimeLeft((prev) => Math.max(0, prev - 1));
     }, 1000);

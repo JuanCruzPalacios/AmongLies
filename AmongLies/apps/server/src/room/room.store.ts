@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
-import type { Room, Player, Locale, ChatMessage, RoomSettings } from '@amonglies/shared';
+import type { Room, Player, ChatMessage } from '@amonglies/shared';
+import { DEFAULT_ROOM_SETTINGS, ROOM_CODE_LENGTH } from '@amonglies/shared';
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const CODE_LENGTH = 6;
 const ROOM_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const ROOM_MAX_INACTIVE_MS = 60 * 60 * 1000;
 
@@ -18,14 +18,15 @@ export class RoomStore {
   private generateCode(): string {
     let code: string;
     do {
-      code = Array.from({ length: CODE_LENGTH }, () =>
-        CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)],
+      code = Array.from(
+        { length: ROOM_CODE_LENGTH },
+        () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)],
       ).join('');
     } while (this.rooms.has(code));
     return code;
   }
 
-  createRoom(admin: Player, settings?: Partial<RoomSettings>): Room {
+  createRoom(admin: Player): Room {
     const code = this.generateCode();
     const room: Room = {
       id: uuid(),
@@ -33,12 +34,9 @@ export class RoomStore {
       adminId: admin.id,
       players: [admin],
       state: 'lobby',
-      settings: {
-        maxPlayers: settings?.maxPlayers ?? 0,
-        isPrivate: settings?.isPrivate ?? false,
-        locale: settings?.locale ?? admin.locale,
-      },
+      settings: { ...DEFAULT_ROOM_SETTINGS, locale: admin.locale },
       selectedGameId: null,
+      gameSettings: {},
       chat: [],
       createdAt: Date.now(),
     };
@@ -53,14 +51,20 @@ export class RoomStore {
   addPlayer(code: string, player: Player): Room | undefined {
     const room = this.rooms.get(code);
     if (!room) return undefined;
-    if (room.settings.maxPlayers > 0 && room.players.length >= room.settings.maxPlayers) {
+    if (
+      room.settings.maxPlayers > 0 &&
+      room.players.length >= room.settings.maxPlayers
+    ) {
       return undefined;
     }
     room.players.push(player);
     return room;
   }
 
-  removePlayer(code: string, playerId: string): { room: Room; newAdminId?: string } | undefined {
+  removePlayer(
+    code: string,
+    playerId: string,
+  ): { room: Room; newAdminId?: string } | undefined {
     const room = this.rooms.get(code);
     if (!room) return undefined;
 
@@ -82,20 +86,6 @@ export class RoomStore {
     return { room, newAdminId };
   }
 
-  updateSettings(code: string, settings: Partial<RoomSettings>): Room | undefined {
-    const room = this.rooms.get(code);
-    if (!room) return undefined;
-    room.settings = { ...room.settings, ...settings };
-    return room;
-  }
-
-  setGameId(code: string, gameId: string | null): Room | undefined {
-    const room = this.rooms.get(code);
-    if (!room) return undefined;
-    room.selectedGameId = gameId;
-    return room;
-  }
-
   setState(code: string, state: Room['state']): Room | undefined {
     const room = this.rooms.get(code);
     if (!room) return undefined;
@@ -112,7 +102,11 @@ export class RoomStore {
     }
   }
 
-  updatePlayerConnection(code: string, playerId: string, isConnected: boolean): void {
+  updatePlayerConnection(
+    code: string,
+    playerId: string,
+    isConnected: boolean,
+  ): void {
     const room = this.rooms.get(code);
     if (!room) return;
     const player = room.players.find((p) => p.id === playerId);

@@ -6,45 +6,20 @@ import type { ImpostorPlayerView, GameAction } from "@amonglies/shared";
 
 export function useGame() {
   const [gameState, setGameState] = useState<ImpostorPlayerView | null>(null);
-  const [gameEnded, setGameEnded] = useState(false);
-  const [gameResults, setGameResults] = useState<unknown>(null);
 
   useEffect(() => {
     const socket = getSocket();
-
-    socket.on("game:state-update", (state) => {
-      setGameState(state);
-      setGameEnded(false);
-    });
-
-    socket.on("game:phase-change", ({ phase }) => {
-      if (phase === "game-end") {
-        setGameEnded(true);
-      }
-    });
-
-    socket.on("game:ended", ({ results }) => {
-      setGameResults(results);
-      setGameEnded(true);
-    });
-
+    socket.on("game:state-update", setGameState);
     return () => {
-      socket.off("game:state-update");
-      socket.off("game:phase-change");
-      socket.off("game:ended");
+      socket.off("game:state-update", setGameState);
     };
   }, []);
 
   const sendAction = useCallback((action: GameAction) => {
-    const socket = getSocket();
-    socket.emit("game:action", action);
+    getSocket().emit("game:action", action);
   }, []);
 
-  const resetGame = useCallback(() => {
-    setGameState(null);
-    setGameEnded(false);
-    setGameResults(null);
-  }, []);
+  const resetGame = useCallback(() => setGameState(null), []);
 
-  return { gameState, gameEnded, gameResults, sendAction, resetGame };
+  return { gameState, sendAction, resetGame };
 }

@@ -8,6 +8,8 @@ interface PlayerState {
   avatarId: string;
   locale: Locale;
   playerId: string | null;
+  /** true después de leer localStorage (evita parpadeos en el primer render). */
+  hydrated: boolean;
   setNickname: (nickname: string) => void;
   setAvatarId: (avatarId: string) => void;
   setLocale: (locale: Locale) => void;
@@ -21,6 +23,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   avatarId: "fox",
   locale: "es",
   playerId: null,
+  hydrated: false,
 
   setNickname: (nickname) => {
     set({ nickname });
@@ -49,14 +52,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
           nickname: data.nickname || "",
           avatarId: data.avatarId || "fox",
           locale: isLocale(data.locale) ? data.locale : "es",
+          hydrated: true,
         });
       } else {
         const browserLang = navigator.language.slice(0, 2);
         const locale: Locale = isLocale(browserLang) ? browserLang : "en";
-        set({ locale });
+        set({ locale, hydrated: true });
       }
     } catch {
-      // ignore
+      set({ hydrated: true });
     }
   },
 

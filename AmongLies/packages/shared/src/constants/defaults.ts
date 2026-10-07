@@ -1,19 +1,9 @@
-import type { ImpostorSettings } from '../types/impostor';
 import type { RoomSettings } from '../types/room';
 
 export const DEFAULT_ROOM_SETTINGS: RoomSettings = {
   maxPlayers: 0,
-  isPrivate: false,
+  isPrivate: true,
   locale: 'es',
-};
-
-export const DEFAULT_IMPOSTOR_SETTINGS: Omit<ImpostorSettings, 'selectedWordLists' | 'communicationMode'> = {
-  rounds: 3,
-  impostorCount: 1,
-  turnTimeSeconds: 30,
-  discussionTimeSeconds: 120,
-  votingTimeSeconds: 30,
-  wordRevealTimeSeconds: 10,
 };
 
 export const ROOM_CODE_LENGTH = 6;

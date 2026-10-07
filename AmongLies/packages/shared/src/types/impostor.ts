@@ -7,11 +7,12 @@ export type ImpostorPhase =
   | 'voting'
   | 'vote-results'
   | 'partida-end'
-  | 'round-end'
   | 'game-end';
 
 export interface ImpostorSettings {
-  rounds: number;
+  partidas: number;
+  /** 0 = sin límite: la partida sigue hasta que gane un bando. */
+  maxRoundsPerPartida: number;
   impostorCount: number;
   turnTimeSeconds: number;
   discussionTimeSeconds: number;
@@ -36,8 +37,18 @@ export interface ImpostorGameState {
   skipDiscussionVotes: string[];
   partidaEndSkipVotes: string[];
   results: RoundResult[];
+  partidaResults: PartidaResult[];
   settings: ImpostorSettings;
   gameWinner: 'players' | 'impostor' | null;
+}
+
+export type PartidaEndReason = 'impostors-eliminated' | 'parity' | 'max-rounds';
+
+export interface PartidaResult {
+  partida: number;
+  winner: 'players' | 'impostor';
+  reason: PartidaEndReason;
+  impostorIds: string[];
 }
 
 export interface WordEntry {
@@ -51,7 +62,6 @@ export interface RoundResult {
   word: string;
   impostorIds: string[];
   votedOutId: string | null;
-  impostorGuessedWord: boolean;
   winner: 'impostor' | 'players' | 'tie';
 }
 
@@ -74,7 +84,7 @@ export interface ImpostorPlayerView {
   skipDiscussionVotes: string[];
   partidaEndSkipVotes: string[];
   results: RoundResult[];
+  partidaResults: PartidaResult[];
   settings: ImpostorSettings;
-  timeRemaining: number;
   gameWinner: 'players' | 'impostor' | null;
 }

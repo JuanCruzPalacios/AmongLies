@@ -16,12 +16,21 @@ export const GAME_IMPOSTOR: GameDefinition = {
   availableLocales: ['es', 'en'],
   settingsSchema: [
     {
-      key: 'rounds',
+      key: 'partidas',
       label: { es: 'Partidas', en: 'Games' },
       type: 'number',
-      default: 1,
+      default: 3,
       min: 1,
       max: 10,
+    },
+    {
+      key: 'maxRoundsPerPartida',
+      label: { es: 'Tope de rondas por partida', en: 'Round limit per game' },
+      type: 'number',
+      default: 0,
+      min: 0,
+      max: 20,
+      zeroLabel: { es: 'Sin límite', en: 'No limit' },
     },
     {
       key: 'impostorCount',
@@ -77,3 +86,7 @@ export const GAME_IMPOSTOR: GameDefinition = {
 };
 
 export const ALL_GAMES: GameDefinition[] = [GAME_IMPOSTOR];
+
+export function getGameDefinition(id: string): GameDefinition | undefined {
+  return ALL_GAMES.find((game) => game.id === id);
+}

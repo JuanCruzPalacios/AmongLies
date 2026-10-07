@@ -7,8 +7,10 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { v4 as uuid } from 'uuid';
-import type { GameAction } from '@amonglies/shared';
+import type { ChatMessage, GameAction, Room } from '@amonglies/shared';
+import { getGameDefinition } from '@amonglies/shared';
 import { GameService } from './game.service.js';
+import { getDefaultGameSettings, sanitizeGameSettings } from './settings.js';
 import { RoomStore } from '../room/room.store.js';
 import { PlayerService } from '../player/player.service.js';
 
@@ -28,120 +30,104 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { gameId: string },
   ) {
-    const session = this.playerService.getSession(client.id);
-    if (!session?.roomCode) return;
+    const room = this.getAdminRoom(client);
+    if (!room || room.state !== 'lobby') return;
 
-    const room = this.roomStore.getRoom(session.roomCode);
-    if (!room || room.adminId !== session.playerId) return;
+    const definition = getGameDefinition(data?.gameId);
+    if (!definition) return;
 
-    const updated = this.roomStore.setGameId(session.roomCode, data.gameId);
-    if (updated) {
-      this.server.to(session.roomCode).emit('room:updated', { room: updated });
-    }
+    room.selectedGameId = definition.id;
+    room.gameSettings = getDefaultGameSettings(
+      definition,
+      room.settings.locale,
+    );
+    this.server.to(room.code).emit('room:updated', { room });
   }
 
   @SubscribeMessage('game:update-settings')
   handleUpdateSettings(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: Record<string, unknown>,
+    @MessageBody() data: unknown,
   ) {
-    const session = this.playerService.getSession(client.id);
-    if (!session?.roomCode) return;
+    const room = this.getAdminRoom(client);
+    if (!room || room.state !== 'lobby' || !room.selectedGameId) return;
 
-    const room = this.roomStore.getRoom(session.roomCode);
-    if (!room || room.adminId !== session.playerId) return;
-
-    this.gameService.setGameSettings(session.roomCode, data);
-
-    this.server.to(session.roomCode).emit('room:updated', { room });
+    const definition = getGameDefinition(room.selectedGameId)!;
+    room.gameSettings = sanitizeGameSettings(
+      definition,
+      data,
+      room.gameSettings,
+      room.settings.locale,
+    );
+    this.server.to(room.code).emit('room:updated', { room });
   }
 
   @SubscribeMessage('game:start')
   handleStartGame(@ConnectedSocket() client: Socket) {
-    const session = this.playerService.getSession(client.id);
-    if (!session?.roomCode) return;
-
-    const room = this.roomStore.getRoom(session.roomCode);
-    if (!room || room.adminId !== session.playerId) return;
-    if (!room.selectedGameId) {
-      client.emit('game:error', { message: 'No game selected' });
-      return;
-    }
+    const room = this.getAdminRoom(client);
+    if (!room) return;
     if (room.state !== 'lobby') {
-      client.emit('game:error', { message: 'Game already in progress' });
+      client.emit('game:error', {
+        message: 'Game already in progress',
+        code: 'game_in_progress',
+      });
+      return;
+    }
+    const definition = room.selectedGameId
+      ? getGameDefinition(room.selectedGameId)
+      : undefined;
+    if (!definition) {
+      client.emit('game:error', {
+        message: 'No game selected',
+        code: 'no_game_selected',
+      });
+      return;
+    }
+    if (room.players.length < definition.minPlayers) {
+      client.emit('game:error', {
+        message: `Need at least ${definition.minPlayers} players`,
+        code: 'not_enough_players',
+      });
       return;
     }
 
-    const minPlayers = 4;
-    if (room.players.length < minPlayers) {
-      client.emit('game:error', { message: `Need at least ${minPlayers} players` });
-      return;
-    }
-
-    const roomCode = session.roomCode;
-
-    const engine = this.gameService.startGame(
-      roomCode,
-      room.selectedGameId,
-      room.players,
-      (phase) => {
-        this.server.to(roomCode).emit('game:phase-change', { phase });
-        if (phase === 'word-reveal') {
-          const eng = this.gameService.getEngine(roomCode);
-          const partida = eng?.getPartida() ?? 1;
-          const ronda = eng?.getRound() ?? 1;
-          const sep = {
-            id: uuid(),
-            type: 'system' as const,
-            message: `── Partida ${partida} · Ronda ${ronda} ──`,
-            timestamp: Date.now(),
-            playerId: '',
-            playerNickname: '',
-            playerAvatarId: '',
-          };
-          this.roomStore.addChatMessage(roomCode, sep);
-          this.server.to(roomCode).emit('room:chat', sep);
-        }
-        if (phase === 'game-end') {
-          const eng = this.gameService.getEngine(roomCode);
-          if (eng) {
-            this.server.to(roomCode).emit('game:ended', { results: eng.getResults() });
-          }
-          // Set room back to lobby so new players can join via link immediately
-          const updatedRoom = this.roomStore.setState(roomCode, 'lobby');
-          if (updatedRoom) {
-            this.server.to(roomCode).emit('room:updated', { room: updatedRoom });
-          }
-        }
+    const roomCode = room.code;
+    const error = this.gameService.startGame(room, {
+      onStateUpdate: () => this.broadcastGameState(roomCode),
+      onPhaseChange: (phase) =>
+        this.server.to(roomCode).emit('game:phase-change', { phase }),
+      onRoundStart: ({ partida, ronda }) => {
+        this.sendSystemMessage(
+          roomCode,
+          `── Partida ${partida} · Ronda ${ronda} ──`,
+        );
       },
-      () => {
-        this.broadcastGameState(roomCode);
+      onGameEnd: () => {
+        // La sala vuelve al lobby para que puedan entrar jugadores nuevos por link,
+        // mientras los demás siguen viendo la pantalla final.
+        const updatedRoom = this.roomStore.setState(roomCode, 'lobby');
+        if (updatedRoom)
+          this.server.to(roomCode).emit('room:updated', { room: updatedRoom });
       },
-    );
+    });
 
-    if (!engine) {
-      client.emit('game:error', { message: 'Failed to start game' });
+    if (error) {
+      client.emit('game:error', { message: error, code: error });
       return;
     }
 
-    const updatedRoom = this.roomStore.getRoom(roomCode);
-    if (updatedRoom) {
-      this.server.to(roomCode).emit('room:updated', { room: updatedRoom });
-    }
+    this.server.to(roomCode).emit('room:updated', { room });
     this.broadcastGameState(roomCode);
   }
 
+  /** Sólo el admin puede cortar la partida y volver al lobby. */
   @SubscribeMessage('game:back-to-lobby')
   handleBackToLobby(@ConnectedSocket() client: Socket) {
-    const session = this.playerService.getSession(client.id);
-    if (!session?.roomCode) return;
+    const room = this.getAdminRoom(client);
+    if (!room) return;
 
-    this.gameService.endGame(session.roomCode);
-
-    const room = this.roomStore.getRoom(session.roomCode);
-    if (room) {
-      this.server.to(session.roomCode).emit('room:updated', { room });
-    }
+    this.gameService.endGame(room.code);
+    this.server.to(room.code).emit('room:updated', { room });
   }
 
   @SubscribeMessage('game:action')
@@ -151,19 +137,49 @@ export class GameGateway {
   ) {
     const session = this.playerService.getSession(client.id);
     if (!session?.roomCode) return;
+    if (typeof data?.type !== 'string') return;
 
-    const error = this.gameService.handleAction(session.roomCode, session.playerId, data);
+    const room = this.roomStore.getRoom(session.roomCode);
+    if (!room) return;
+
+    const error = this.gameService.handleAction(
+      session.roomCode,
+      session.playerId,
+      data,
+      {
+        isAdmin: room.adminId === session.playerId,
+      },
+    );
     if (error) {
-      client.emit('game:error', { message: error });
+      client.emit('game:error', { message: error, code: error });
     }
+  }
+
+  private getAdminRoom(client: Socket): Room | undefined {
+    const session = this.playerService.getSession(client.id);
+    if (!session?.roomCode) return undefined;
+    const room = this.roomStore.getRoom(session.roomCode);
+    if (!room || room.adminId !== session.playerId) return undefined;
+    return room;
+  }
+
+  private sendSystemMessage(roomCode: string, text: string): void {
+    const message: ChatMessage = {
+      id: uuid(),
+      type: 'system',
+      message: text,
+      timestamp: Date.now(),
+      playerId: '',
+      playerNickname: '',
+      playerAvatarId: '',
+    };
+    this.roomStore.addChatMessage(roomCode, message);
+    this.server.to(roomCode).emit('chat:message', message);
   }
 
   private broadcastGameState(roomCode: string): void {
     const engine = this.gameService.getEngine(roomCode);
     if (!engine) return;
-
-    const room = this.roomStore.getRoom(roomCode);
-    if (!room) return;
 
     const sockets = this.server.sockets.adapter.rooms.get(roomCode);
     if (!sockets) return;
@@ -172,11 +188,11 @@ export class GameGateway {
       const session = this.playerService.getSession(socketId);
       if (!session) continue;
 
-      const playerView = engine.getStateForPlayer(session.playerId);
       const socket = this.server.sockets.sockets.get(socketId);
-      if (socket) {
-        socket.emit('game:state-update', playerView);
-      }
+      socket?.emit(
+        'game:state-update',
+        engine.getStateForPlayer(session.playerId),
+      );
     }
   }
 }

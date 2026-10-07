@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { AVATARS, MIN_NICKNAME_LENGTH, MAX_NICKNAME_LENGTH } from "@amonglies/shared";
+import type { Room } from "@amonglies/shared";
+import { AVATARS, MIN_NICKNAME_LENGTH, MAX_NICKNAME_LENGTH, getGameDefinition } from "@amonglies/shared";
 import { useRoomStore } from "@/stores/roomStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useSocket } from "@/hooks/useSocket";
@@ -26,19 +27,17 @@ export default function RoomPage() {
 
   const room = useRoomStore((s) => s.room);
   const { setRoom, setConnecting, setError, isConnecting, error } = useRoomStore();
-  const { nickname, avatarId, playerId: myId, locale, setNickname, setAvatarId, loadFromStorage } = usePlayerStore();
+  const { nickname, avatarId, playerId: myId, locale, hydrated: mounted, setNickname, setAvatarId, loadFromStorage } = usePlayerStore();
   const { isConnected } = useSocket();
-  const { gameState, gameEnded, gameResults, sendAction, resetGame } = useGame();
+  const { gameState, sendAction, resetGame } = useGame();
 
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const [gameError, setGameError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
   const [nicknameError, setNicknameError] = useState("");
 
   useEffect(() => {
     loadFromStorage();
-    setMounted(true);
   }, [loadFromStorage]);
 
   useEffect(() => {
@@ -48,8 +47,8 @@ export default function RoomPage() {
       word_already_used: t("game.impostor.error.word_used"),
       word_is_secret: t("game.impostor.error.word_secret"),
     };
-    const handler = ({ message }: { message: string }) => {
-      setGameError(errorKeys[message] ?? message);
+    const handler = ({ message, code }: { message: string; code?: string }) => {
+      setGameError(errorKeys[message] ?? t(`error.${code}`, undefined, message));
       setTimeout(() => setGameError(null), 4000);
     };
     socket.on("game:error", handler);
@@ -78,7 +77,7 @@ export default function RoomPage() {
       setError(t("landing.error.timeout"));
     }, 10000);
 
-    function onJoined({ room, playerId }: { room: Parameters<typeof setRoom>[0]; playerId: string }) {
+    function onJoined({ room, playerId }: { room: Room; playerId: string }) {
       clearTimeout(timeout);
       socket.off("room:error", onRoomError);
       usePlayerStore.getState().setPlayerId(playerId);
@@ -86,10 +85,10 @@ export default function RoomPage() {
       setConnecting(false);
     }
 
-    function onRoomError({ message }: { message: string }) {
+    function onRoomError({ message, code }: { message: string; code: string }) {
       clearTimeout(timeout);
       socket.off("room:joined", onJoined);
-      setError(message);
+      setError(t(`error.${code}`, undefined, message));
       setConnecting(false);
     }
 
@@ -222,10 +221,11 @@ export default function RoomPage() {
 
   const isAdmin = room.adminId === myId;
   const isPlaying = room.state === "playing";
-  const minPlayers = 4;
+  const minPlayers = (room.selectedGameId && getGameDefinition(room.selectedGameId)?.minPlayers) || 4;
   const canStart = isAdmin && room.selectedGameId && room.players.length >= minPlayers;
 
-  if (isPlaying && gameState) {
+  // La pantalla final se sigue mostrando aunque la sala ya haya vuelto al lobby.
+  if (gameState && (isPlaying || gameState.phase === "game-end")) {
     return (
       <div className="h-dvh flex flex-col overflow-hidden">
         <Header />
@@ -235,11 +235,9 @@ export default function RoomPage() {
             sendAction={sendAction}
             room={room}
             myId={myId!}
-            gameEnded={gameEnded}
-            gameResults={gameResults}
             onBackToLobby={() => {
               resetGame();
-              getSocket().emit("game:back-to-lobby");
+              if (isAdmin) getSocket().emit("game:back-to-lobby");
             }}
           />
         </main>

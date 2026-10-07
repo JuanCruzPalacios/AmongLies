@@ -1,7 +1,9 @@
 import type { Locale, CommunicationMode } from './common';
 
+export type GameId = 'impostor';
+
 export interface GameDefinition {
-  id: string;
+  id: GameId;
   name: Record<Locale, string>;
   description: Record<Locale, string>;
   minPlayers: number;
@@ -18,8 +20,12 @@ export interface GameSettingSchema {
   default: unknown;
   min?: number;
   max?: number;
+  /** Texto a mostrar cuando el valor numérico es 0 (p. ej. "Sin límite"). */
+  zeroLabel?: Record<Locale, string>;
   options?: { value: string; label: Record<Locale, string> }[];
 }
+
+export type GameSettingsValues = Record<string, unknown>;
 
 export interface GameAction {
   type: string;

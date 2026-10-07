@@ -2,6 +2,16 @@ import type { Locale } from "@amonglies/shared";
 
 const translations: Record<Locale, Record<string, string>> = {
   es: {
+    "error.ROOM_NOT_FOUND": "Sala no encontrada. Verificá el código e intentá de nuevo.",
+    "error.GAME_IN_PROGRESS": "La partida ya empezó. Esperá a que termine para entrar.",
+    "error.ROOM_FULL": "La sala está llena.",
+    "error.INVALID_IDENTITY": "Revisá tu apodo y tu avatar.",
+    "error.not_enough_players": "No hay suficientes jugadores para empezar.",
+    "error.too_many_impostors": "Hay demasiados impostores para la cantidad de jugadores.",
+    "error.no_game_selected": "Elegí un juego antes de empezar.",
+    "error.not_admin": "Sólo el anfitrión puede hacer eso.",
+    "lobby.players_min": "{min}+ jugadores",
+    "lobby.words": "{n} palabras",
     "landing.subtitle": "Juga, menti, descubri.",
     "landing.description": "Minijuegos sociales online con amigos. Crea una sala, invita a tus amigos y juguen juntos.",
     "landing.nickname": "Tu apodo",
@@ -69,6 +79,16 @@ const translations: Record<Locale, Record<string, string>> = {
     "game.voice.next": "Siguiente",
   },
   en: {
+    "error.ROOM_NOT_FOUND": "Room not found. Check the code and try again.",
+    "error.GAME_IN_PROGRESS": "The game already started. Wait for it to end to join.",
+    "error.ROOM_FULL": "The room is full.",
+    "error.INVALID_IDENTITY": "Check your nickname and avatar.",
+    "error.not_enough_players": "Not enough players to start.",
+    "error.too_many_impostors": "Too many impostors for the number of players.",
+    "error.no_game_selected": "Pick a game before starting.",
+    "error.not_admin": "Only the host can do that.",
+    "lobby.players_min": "{min}+ players",
+    "lobby.words": "{n} words",
     "landing.subtitle": "Play, Lie, Discover.",
     "landing.description": "Online social mini-games with friends. Create a room, invite your friends and play together.",
     "landing.nickname": "Your nickname",
@@ -137,8 +157,13 @@ const translations: Record<Locale, Record<string, string>> = {
   },
 };
 
-export function t(key: string, locale: Locale, params?: Record<string, string | number>): string {
-  let text = translations[locale]?.[key] || translations.en[key] || key;
+export function t(
+  key: string,
+  locale: Locale,
+  params?: Record<string, string | number>,
+  fallback?: string,
+): string {
+  let text = translations[locale]?.[key] || translations.en[key] || fallback || key;
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       text = text.replace(`{${k}}`, String(v));
