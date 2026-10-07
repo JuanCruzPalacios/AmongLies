@@ -168,11 +168,17 @@ El proyecto está configurado para deployarse en **Railway** (recomendado) o **R
 
 ### Railway
 
-Usar el archivo `railway.json` incluido en la raíz. Define los dos servicios automáticamente.
+Un proyecto con dos servicios conectados al repo de GitHub (rama `main`), cada uno con
+**Root Directory** `/AmongLies` y su archivo de configuración:
 
-Variables de entorno a configurar en Railway:
-- Servicio `web`: `NEXT_PUBLIC_SERVER_URL=https://<url-del-server-en-railway>`
-- Servicio `server`: `PORT=3001` (Railway lo provee automáticamente como `$PORT`)
+| Servicio | Config file | Variables |
+|---|---|---|
+| `server` | `/AmongLies/railway.server.json` | `CLIENT_URL` (URL del web), `SUPABASE_URL`, `SUPABASE_SECRET_KEY` |
+| `web` | `/AmongLies/railway.web.json` | `NEXT_PUBLIC_SERVER_URL` (URL del server), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `HOSTNAME=0.0.0.0` |
+
+`PORT` lo pone Railway. Las variables `NEXT_PUBLIC_*` se fijan en el build: si cambian, hay
+que volver a deployar el web. Cada servicio sólo se redeploya cuando cambian sus archivos
+(`watchPatterns`).
 
 ### Render
 
@@ -183,8 +189,8 @@ Crear dos servicios web en Render (dejar Root Directory en **blanco**):
 - Start: `node AmongLies/apps/server/dist/main`
 
 **Frontend:**
-- Build: `cd AmongLies && npm install && npx turbo run build --filter=@amonglies/web... && cp -r apps/web/public apps/web/.next/standalone/public && cp -r apps/web/.next/static apps/web/.next/standalone/.next/static`
-- Start: `node AmongLies/apps/web/.next/standalone/server.js`
+- Build: `cd AmongLies && npm install && npx turbo run build --filter=@amonglies/web... && cp -r apps/web/public apps/web/.next/standalone/apps/web/public && cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static`
+- Start: `node AmongLies/apps/web/.next/standalone/apps/web/server.js`
 
 ---
 
