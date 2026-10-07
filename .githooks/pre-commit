@@ -1,0 +1,16 @@
+#!/bin/sh
+# Hook pre-commit de AmongLies. Se activa solo con `npm install` (script "prepare").
+# Para saltearlo en una emergencia: git commit --no-verify (el CI igual lo corre).
+set -e
+cd AmongLies
+
+echo "-> Buscando secretos..."
+sh scripts/check-secrets.sh --staged
+
+echo "-> Linter y formato..."
+npm run lint --silent
+
+echo "-> Tests unitarios..."
+npm test --silent --workspace @amonglies/server
+
+echo "OK - todo en orden."

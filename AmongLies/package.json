@@ -11,7 +11,10 @@
     "lint": "turbo lint",
     "dev:web": "turbo dev --filter=@amonglies/web",
     "dev:server": "turbo dev --filter=@amonglies/server",
-    "dev:all": "turbo dev --parallel"
+    "dev:all": "turbo dev --parallel",
+    "test": "npm test --workspace @amonglies/server",
+    "check-secrets": "sh scripts/check-secrets.sh",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "devDependencies": {
     "turbo": "^2.5.0",
