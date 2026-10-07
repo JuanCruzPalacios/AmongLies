@@ -2,6 +2,16 @@ import type { Locale } from "@amonglies/shared";
 
 const translations: Record<Locale, Record<string, string>> = {
   es: {
+    "session.replaced": "Abriste AmongLies en otra pestaña o dispositivo. Seguí desde ahí.",
+    "game.paused.title": "Partida en pausa",
+    "game.paused.waiting": "Se desconectó un jugador. Esperamos a que vuelva.",
+    "game.paused.continue_without": "Seguir sin esperar",
+    "game.paused.decider": "{player} puede decidir seguir sin esperar.",
+    "lobby.you": "(vos)",
+    "lobby.disconnected": "· desconectado",
+    "connection.lost": "Se cortó la conexión. Reconectando...",
+    "error.players_disconnected": "Hay jugadores desconectados. Esperá a que vuelvan.",
+    "error.game_paused": "La partida está en pausa.",
     "error.ROOM_NOT_FOUND": "Sala no encontrada. Verificá el código e intentá de nuevo.",
     "error.GAME_IN_PROGRESS": "La partida ya empezó. Esperá a que termine para entrar.",
     "error.ROOM_FULL": "La sala está llena.",
@@ -79,6 +89,16 @@ const translations: Record<Locale, Record<string, string>> = {
     "game.voice.next": "Siguiente",
   },
   en: {
+    "session.replaced": "You opened AmongLies in another tab or device. Continue there.",
+    "game.paused.title": "Game paused",
+    "game.paused.waiting": "A player disconnected. Waiting for them to come back.",
+    "game.paused.continue_without": "Continue without waiting",
+    "game.paused.decider": "{player} can decide to continue without waiting.",
+    "lobby.you": "(you)",
+    "lobby.disconnected": "· disconnected",
+    "connection.lost": "Connection lost. Reconnecting...",
+    "error.players_disconnected": "Some players are disconnected. Wait for them to come back.",
+    "error.game_paused": "The game is paused.",
     "error.ROOM_NOT_FOUND": "Room not found. Check the code and try again.",
     "error.GAME_IN_PROGRESS": "The game already started. Wait for it to end to join.",
     "error.ROOM_FULL": "The room is full.",

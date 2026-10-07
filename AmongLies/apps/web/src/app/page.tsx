@@ -10,7 +10,7 @@ import { Button, Input, Avatar } from "@/components/ui";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useRoomStore } from "@/stores/roomStore";
 import { useTranslation } from "@/hooks/useTranslation";
-import { connectSocket } from "@/lib/socket";
+import { connectSocket, whenSessionReady } from "@/lib/socket";
 
 export default function Home() {
   const router = useRouter();
@@ -34,13 +34,6 @@ export default function Home() {
     return true;
   }
 
-  function emitWhenReady(socket: ReturnType<typeof connectSocket>, emit: () => void) {
-    if (socket.connected) {
-      emit();
-    } else {
-      socket.once("connect", emit);
-    }
-  }
 
   function handleCreateRoom() {
     if (!validateNickname()) return;
@@ -74,7 +67,7 @@ export default function Home() {
     socket.once("room:created", onCreated);
     socket.once("room:error", onRoomError);
 
-    emitWhenReady(socket, () => socket.emit("room:create", { nickname, avatarId, locale }));
+    whenSessionReady(() => socket.emit("room:create", { nickname, avatarId, locale }));
   }
 
   function handleJoinRoom() {
@@ -113,7 +106,7 @@ export default function Home() {
     socket.once("room:joined", onJoined);
     socket.once("room:error", onRoomError);
 
-    emitWhenReady(socket, () => socket.emit("room:join", { code: joinCode.toUpperCase(), nickname, avatarId, locale }));
+    whenSessionReady(() => socket.emit("room:join", { code: joinCode.toUpperCase(), nickname, avatarId, locale }));
   }
 
   return (

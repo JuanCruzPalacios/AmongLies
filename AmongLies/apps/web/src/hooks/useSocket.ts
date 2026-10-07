@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSocket, connectSocket, disconnectSocket } from "@/lib/socket";
+import { getSocket, connectSocket, disconnectSocket, type SessionReady } from "@/lib/socket";
+import { t } from "@/lib/i18n";
 import { useRoomStore } from "@/stores/roomStore";
+import { usePlayerStore } from "@/stores/playerStore";
 
 export function useSocket() {
   const router = useRouter();
   const [isConnected, setIsConnected] = useState(
     () => typeof window !== "undefined" && getSocket().connected
   );
-  const { addPlayer, removePlayer, setRoom, addChatMessage, updatePlayerConnection } = useRoomStore();
+  const { addPlayer, removePlayer, setRoom, setError, addChatMessage, updatePlayerConnection } = useRoomStore();
 
   useEffect(() => {
     const socket = getSocket();
@@ -38,6 +40,23 @@ export function useSocket() {
       setRoom(room);
     });
 
+    // Reconexión automática (p. ej. se cortó el wifi): el servidor nos devuelve a la sala.
+    function onSessionReady(data: SessionReady) {
+      if (data.restored && data.room && data.playerId) {
+        usePlayerStore.getState().setPlayerId(data.playerId);
+        setRoom(data.room);
+      }
+    }
+
+    function onSessionReplaced() {
+      setRoom(null);
+      setError(t("session.replaced", usePlayerStore.getState().locale));
+      router.push("/");
+    }
+
+    socket.on("session:ready", onSessionReady);
+    socket.on("session:replaced", onSessionReplaced);
+
     socket.on("room:kicked", () => {
       setRoom(null);
       disconnectSocket();
@@ -62,12 +81,14 @@ export function useSocket() {
       socket.off("room:player-joined");
       socket.off("room:player-left");
       socket.off("room:updated");
+      socket.off("session:ready", onSessionReady);
+      socket.off("session:replaced", onSessionReplaced);
       socket.off("room:kicked");
       socket.off("chat:message");
       socket.off("player:disconnected");
       socket.off("player:reconnected");
     };
-  }, [router, addPlayer, removePlayer, setRoom, addChatMessage, updatePlayerConnection]);
+  }, [router, addPlayer, removePlayer, setRoom, setError, addChatMessage, updatePlayerConnection]);
 
   return { isConnected, connect: connectSocket, disconnect: disconnectSocket };
 }

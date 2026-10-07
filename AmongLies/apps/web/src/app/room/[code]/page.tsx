@@ -17,7 +17,7 @@ import { GameSelector } from "@/components/lobby/GameSelector";
 import { GameSettings } from "@/components/lobby/GameSettings";
 import { ImpostorGame } from "@/components/impostor/ImpostorGame";
 import { Button, Input, Avatar } from "@/components/ui";
-import { getSocket, connectSocket } from "@/lib/socket";
+import { getSocket, connectSocket, whenSessionReady } from "@/lib/socket";
 
 export default function RoomPage() {
   const router = useRouter();
@@ -36,9 +36,24 @@ export default function RoomPage() {
   const [gameError, setGameError] = useState<string | null>(null);
   const [nicknameError, setNicknameError] = useState("");
 
+  // null = todavía preguntándole al servidor si este jugador ya estaba en la sala
+  const [restoreChecked, setRestoreChecked] = useState(() => useRoomStore.getState().room !== null);
+
   useEffect(() => {
     loadFromStorage();
   }, [loadFromStorage]);
+
+  // Al abrir o recargar la página: si el servidor nos reconoce, volvemos a nuestro lugar.
+  useEffect(() => {
+    if (useRoomStore.getState().room) return;
+    whenSessionReady((data) => {
+      if (data.restored && data.room?.code === roomCode && data.playerId) {
+        usePlayerStore.getState().setPlayerId(data.playerId);
+        setRoom(data.room);
+      }
+      setRestoreChecked(true);
+    });
+  }, [roomCode, setRoom]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -95,9 +110,7 @@ export default function RoomPage() {
     socket.once("room:joined", onJoined);
     socket.once("room:error", onRoomError);
 
-    const emit = () => socket.emit("room:join", { code: roomCode, nickname, avatarId, locale });
-    if (socket.connected) emit();
-    else socket.once("connect", emit);
+    whenSessionReady(() => socket.emit("room:join", { code: roomCode, nickname, avatarId, locale }));
   }
 
   function handleCopyLink() {
@@ -124,7 +137,7 @@ export default function RoomPage() {
     router.push("/");
   }
 
-  if (!mounted) {
+  if (!mounted || (!room && !restoreChecked)) {
     return (
       <div className="flex flex-col min-h-dvh">
         <Header />
@@ -229,6 +242,11 @@ export default function RoomPage() {
     return (
       <div className="h-dvh flex flex-col overflow-hidden">
         <Header />
+        {!isConnected && (
+          <div className="mx-4 mb-2 bg-danger/10 border border-danger/30 rounded-xl px-4 py-2 text-danger text-xs text-center">
+            {t("connection.lost")}
+          </div>
+        )}
         <main className="flex-1 min-h-0 flex flex-col">
           <ImpostorGame
             gameState={gameState}
@@ -248,6 +266,11 @@ export default function RoomPage() {
   return (
     <div className="flex flex-col min-h-dvh">
       <Header />
+        {!isConnected && (
+          <div className="mx-4 mb-2 bg-danger/10 border border-danger/30 rounded-xl px-4 py-2 text-danger text-xs text-center">
+            {t("connection.lost")}
+          </div>
+        )}
       <main className="flex-1 px-4 pb-8 max-w-6xl mx-auto w-full">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -327,11 +350,7 @@ export default function RoomPage() {
               )}
             </div>
 
-            {!isConnected && (
-              <div className="bg-danger/10 border border-danger/30 rounded-xl px-4 py-3 text-danger text-xs text-center">
-                Desconectado del servidor...
-              </div>
-            )}
+
           </div>
         </div>
       </main>

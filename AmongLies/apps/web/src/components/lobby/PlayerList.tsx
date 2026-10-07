@@ -40,7 +40,10 @@ export function PlayerList() {
             <span className="flex-1 font-medium truncate text-sm">
               {player.nickname}
               {player.id === myId && (
-                <span className="text-text-muted text-xs ml-1">(tu)</span>
+                <span className="text-text-muted text-xs ml-1">{t("lobby.you")}</span>
+              )}
+              {!player.isConnected && (
+                <span className="text-warning text-xs ml-1">{t("lobby.disconnected")}</span>
               )}
             </span>
             {player.isAdmin && (

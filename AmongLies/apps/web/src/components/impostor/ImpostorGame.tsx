@@ -11,6 +11,7 @@ import { VoteResults } from "./phases/VoteResults";
 import { GameEnd } from "./phases/GameEnd";
 import { PartidaEnd } from "./phases/PartidaEnd";
 import { Avatar } from "@/components/ui";
+import { PauseOverlay } from "@/components/game/PauseOverlay";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useRoomStore } from "@/stores/roomStore";
 import { getSocket } from "@/lib/socket";
@@ -82,6 +83,8 @@ export function ImpostorGame({ gameState, sendAction, room, myId, onBackToLobby 
 
   return (
     <div className="flex-1 flex overflow-hidden h-full relative">
+      {gameState.paused && <PauseOverlay room={room} myId={myId} />}
+
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-y-auto px-4 py-4 min-w-0">
         {/* Header bar */}
