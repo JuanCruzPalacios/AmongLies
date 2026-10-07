@@ -19,7 +19,8 @@ export function getSocket(): TypedSocket {
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
-      transports: ["websocket", "polling"],
+      // Sin `transports`: arranca por HTTP y sube a WebSocket si la red lo permite.
+      // Así funciona también en redes (colegios, empresas) que bloquean WebSockets.
       // Se evalúa en cada (re)conexión: así el servidor reconoce al mismo jugador.
       auth: (cb) => {
         const auth: SocketAuth = { sessionToken: getSessionToken() };

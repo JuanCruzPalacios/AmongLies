@@ -8,6 +8,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { GATEWAY_OPTIONS } from '../gateway.options.js';
 import { v4 as uuid } from 'uuid';
 import type { GuestIdentity, Player, SocketAuth } from '@amonglies/shared';
 import {
@@ -23,12 +24,7 @@ import { AuthService } from '../auth/auth.service.js';
 
 const SESSION_TOKEN_PATTERN = /^[A-Za-z0-9-]{16,64}$/;
 
-@WebSocketGateway({
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    credentials: true,
-  },
-})
+@WebSocketGateway(GATEWAY_OPTIONS)
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;

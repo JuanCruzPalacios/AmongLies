@@ -6,6 +6,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { GATEWAY_OPTIONS } from '../gateway.options.js';
 import { v4 as uuid } from 'uuid';
 import type { ChatMessage, GameAction, Room } from '@amonglies/shared';
 import { getGameDefinition } from '@amonglies/shared';
@@ -15,7 +16,7 @@ import { getDecider } from '@amonglies/shared';
 import { RoomStore } from '../room/room.store.js';
 import { PlayerService } from '../player/player.service.js';
 
-@WebSocketGateway()
+@WebSocketGateway(GATEWAY_OPTIONS)
 export class GameGateway {
   @WebSocketServer()
   server!: Server;
