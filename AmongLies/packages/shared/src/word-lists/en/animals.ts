@@ -2,7 +2,8 @@ import type { WordList } from '../types';
 
 export const ANIMALS: WordList = {
   id: 'en-animals',
-  category: { es: 'Animales', en: 'Animals', pt: 'Animais' },
+  locale: 'en',
+  category: { es: 'Animales', en: 'Animals' },
   words: [
     'Dog', 'Cat', 'Horse', 'Cow', 'Pig', 'Sheep', 'Chicken', 'Duck',
     'Rabbit', 'Hamster', 'Turtle', 'Snake', 'Eagle', 'Dolphin', 'Whale',

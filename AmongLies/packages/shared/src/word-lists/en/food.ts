@@ -2,7 +2,8 @@ import type { WordList } from '../types';
 
 export const FOOD: WordList = {
   id: 'en-food',
-  category: { es: 'Comida y Bebidas', en: 'Food & Drinks', pt: 'Comida e Bebidas' },
+  locale: 'en',
+  category: { es: 'Comida y Bebidas', en: 'Food & Drinks' },
   words: [
     'Pizza', 'Hamburger', 'Sushi', 'Tacos', 'Pasta', 'Salad', 'Soup',
     'Rice', 'Bread', 'Cheese', 'Ham', 'Chicken', 'Steak', 'Fish', 'Egg',

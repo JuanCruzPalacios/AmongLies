@@ -38,7 +38,7 @@ export class GameService {
     if (gameId !== 'impostor') return null;
 
     const savedSettings = this.gameSettings.get(roomCode) || {};
-    const locale = (savedSettings['locale'] as 'es' | 'en' | 'pt') || 'es';
+    const locale = (savedSettings['locale'] as 'es' | 'en') || 'es';
     const savedLists = (savedSettings['selectedWordLists'] as string[]) || [];
     const selectedWordLists = savedLists.length > 0
       ? savedLists

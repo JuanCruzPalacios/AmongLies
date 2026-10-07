@@ -2,7 +2,8 @@ import type { WordList } from '../types';
 
 export const PROFESIONES: WordList = {
   id: 'es-profesiones',
-  category: { es: 'Profesiones', en: 'Professions', pt: 'Profissoes' },
+  locale: 'es',
+  category: { es: 'Profesiones', en: 'Professions' },
   words: [
     'Medico', 'Abogado', 'Ingeniero', 'Profesor', 'Chef', 'Bombero',
     'Policia', 'Astronauta', 'Piloto', 'Arquitecto', 'Dentista', 'Enfermero',

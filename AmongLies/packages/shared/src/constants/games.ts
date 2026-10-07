@@ -5,21 +5,19 @@ export const GAME_IMPOSTOR: GameDefinition = {
   name: {
     es: 'El Impostor',
     en: 'The Impostor',
-    pt: 'O Impostor',
   },
   description: {
     es: 'Descubre quien no conoce la palabra secreta. El impostor debe pasar desapercibido.',
     en: 'Find out who doesn\'t know the secret word. The impostor must blend in.',
-    pt: 'Descubra quem nao conhece a palavra secreta. O impostor deve passar despercebido.',
   },
   minPlayers: 4,
   maxPlayers: null,
   supportedModes: ['chat', 'voice'],
-  availableLocales: ['es', 'en', 'pt'],
+  availableLocales: ['es', 'en'],
   settingsSchema: [
     {
       key: 'rounds',
-      label: { es: 'Partidas', en: 'Games', pt: 'Partidas' },
+      label: { es: 'Partidas', en: 'Games' },
       type: 'number',
       default: 1,
       min: 1,
@@ -27,7 +25,7 @@ export const GAME_IMPOSTOR: GameDefinition = {
     },
     {
       key: 'impostorCount',
-      label: { es: 'Cantidad de impostores', en: 'Number of impostors', pt: 'Quantidade de impostores' },
+      label: { es: 'Cantidad de impostores', en: 'Number of impostors' },
       type: 'number',
       default: 1,
       min: 1,
@@ -35,7 +33,7 @@ export const GAME_IMPOSTOR: GameDefinition = {
     },
     {
       key: 'turnTimeSeconds',
-      label: { es: 'Tiempo por turno (seg)', en: 'Time per turn (sec)', pt: 'Tempo por turno (seg)' },
+      label: { es: 'Tiempo por turno (seg)', en: 'Time per turn (sec)' },
       type: 'number',
       default: 30,
       min: 10,
@@ -43,7 +41,7 @@ export const GAME_IMPOSTOR: GameDefinition = {
     },
     {
       key: 'discussionTimeSeconds',
-      label: { es: 'Tiempo de discusion (seg)', en: 'Discussion time (sec)', pt: 'Tempo de discussao (seg)' },
+      label: { es: 'Tiempo de discusion (seg)', en: 'Discussion time (sec)' },
       type: 'number',
       default: 120,
       min: 0,
@@ -51,7 +49,7 @@ export const GAME_IMPOSTOR: GameDefinition = {
     },
     {
       key: 'votingTimeSeconds',
-      label: { es: 'Tiempo de votacion (seg)', en: 'Voting time (sec)', pt: 'Tempo de votacao (seg)' },
+      label: { es: 'Tiempo de votacion (seg)', en: 'Voting time (sec)' },
       type: 'number',
       default: 30,
       min: 10,
@@ -59,7 +57,7 @@ export const GAME_IMPOSTOR: GameDefinition = {
     },
     {
       key: 'wordRevealTimeSeconds',
-      label: { es: 'Tiempo para ver la palabra (seg)', en: 'Word reveal time (sec)', pt: 'Tempo para ver a palavra (seg)' },
+      label: { es: 'Tiempo para ver la palabra (seg)', en: 'Word reveal time (sec)' },
       type: 'number',
       default: 10,
       min: 5,
@@ -67,12 +65,12 @@ export const GAME_IMPOSTOR: GameDefinition = {
     },
     {
       key: 'communicationMode',
-      label: { es: 'Modo de comunicacion', en: 'Communication mode', pt: 'Modo de comunicacao' },
+      label: { es: 'Modo de comunicacion', en: 'Communication mode' },
       type: 'select',
       default: 'chat',
       options: [
-        { value: 'chat', label: { es: 'Chat (texto)', en: 'Chat (text)', pt: 'Chat (texto)' } },
-        { value: 'voice', label: { es: 'Verbal (voz)', en: 'Verbal (voice)', pt: 'Verbal (voz)' } },
+        { value: 'chat', label: { es: 'Chat (texto)', en: 'Chat (text)' } },
+        { value: 'voice', label: { es: 'Verbal (voz)', en: 'Verbal (voice)' } },
       ],
     },
   ],

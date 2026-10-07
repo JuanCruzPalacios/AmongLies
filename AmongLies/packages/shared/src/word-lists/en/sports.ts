@@ -2,7 +2,8 @@ import type { WordList } from '../types';
 
 export const SPORTS: WordList = {
   id: 'en-sports',
-  category: { es: 'Deportes', en: 'Sports', pt: 'Esportes' },
+  locale: 'en',
+  category: { es: 'Deportes', en: 'Sports' },
   words: [
     'Soccer', 'Basketball', 'Tennis', 'Swimming', 'Track and Field', 'Boxing',
     'Golf', 'Baseball', 'Volleyball', 'Rugby', 'Hockey', 'Cycling',

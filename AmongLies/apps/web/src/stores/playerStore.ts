@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { Locale } from "@amonglies/shared";
+import { isLocale, type Locale } from "@amonglies/shared";
 
 interface PlayerState {
   nickname: string;
@@ -48,11 +48,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         set({
           nickname: data.nickname || "",
           avatarId: data.avatarId || "fox",
-          locale: data.locale || "es",
+          locale: isLocale(data.locale) ? data.locale : "es",
         });
       } else {
         const browserLang = navigator.language.slice(0, 2);
-        const locale = (["es", "en", "pt"].includes(browserLang) ? browserLang : "en") as Locale;
+        const locale: Locale = isLocale(browserLang) ? browserLang : "en";
         set({ locale });
       }
     } catch {

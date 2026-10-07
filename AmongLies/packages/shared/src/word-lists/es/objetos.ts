@@ -2,7 +2,8 @@ import type { WordList } from '../types';
 
 export const OBJETOS: WordList = {
   id: 'es-objetos',
-  category: { es: 'Objetos Cotidianos', en: 'Everyday Objects', pt: 'Objetos do Dia a Dia' },
+  locale: 'es',
+  category: { es: 'Objetos Cotidianos', en: 'Everyday Objects' },
   words: [
     'Telefono', 'Computadora', 'Television', 'Control remoto', 'Reloj',
     'Lampara', 'Silla', 'Mesa', 'Cama', 'Almohada', 'Espejo', 'Ventana',

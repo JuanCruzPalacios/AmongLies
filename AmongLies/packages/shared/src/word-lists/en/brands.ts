@@ -2,7 +2,8 @@ import type { WordList } from '../types';
 
 export const BRANDS: WordList = {
   id: 'en-brands',
-  category: { es: 'Marcas Famosas', en: 'Famous Brands', pt: 'Marcas Famosas' },
+  locale: 'en',
+  category: { es: 'Marcas Famosas', en: 'Famous Brands' },
   words: [
     'Apple', 'Google', 'Nike', 'Adidas', 'Coca-Cola', 'Pepsi', 'McDonald\'s',
     'Burger King', 'Netflix', 'Spotify', 'Amazon', 'Samsung', 'Sony',

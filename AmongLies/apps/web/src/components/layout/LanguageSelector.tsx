@@ -6,7 +6,6 @@ import type { Locale } from "@amonglies/shared";
 const LANGUAGES: { code: Locale; label: string; flag: string }[] = [
   { code: "es", label: "Español", flag: "🇪🇸" },
   { code: "en", label: "English", flag: "🇬🇧" },
-  { code: "pt", label: "Português", flag: "🇧🇷" },
 ];
 
 export function LanguageSelector() {
