@@ -59,13 +59,12 @@ export function whenSessionReady(cb: (data: SessionReady) => void): void {
 }
 
 /**
- * Cambió la sesión de Supabase (login o logout). Si el socket ya estaba
- * conectado, se reconecta para que el servidor lo identifique con la cuenta.
+ * Token de la sesión de Supabase. Si cambió el usuario (login o logout) y el
+ * socket estaba conectado, se reconecta para que el servidor lo reconozca.
  */
-export function setAccessToken(token: string | null): void {
-  if (token === accessToken) return;
+export function setAccessToken(token: string | null, userChanged: boolean): void {
   accessToken = token;
-  if (socket?.connected) {
+  if (userChanged && socket?.connected) {
     socket.disconnect();
     socket.connect();
   }

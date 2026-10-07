@@ -140,7 +140,7 @@ export default function RoomPage() {
   if (!mounted || (!room && !restoreChecked)) {
     return (
       <div className="flex flex-col min-h-dvh">
-        <Header />
+        <Header showAccount={false} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-4xl animate-pulse">🎭</div>
         </div>
@@ -151,7 +151,7 @@ export default function RoomPage() {
   if (!room) {
     return (
       <div className="flex flex-col min-h-dvh">
-        <Header />
+        <Header showAccount={false} />
         <main className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -241,7 +241,7 @@ export default function RoomPage() {
   if (gameState && (isPlaying || gameState.phase === "game-end")) {
     return (
       <div className="h-dvh flex flex-col overflow-hidden">
-        <Header />
+        <Header showAccount={false} />
         {!isConnected && (
           <div className="mx-4 mb-2 bg-danger/10 border border-danger/30 rounded-xl px-4 py-2 text-danger text-xs text-center">
             {t("connection.lost")}
@@ -265,7 +265,7 @@ export default function RoomPage() {
 
   return (
     <div className="flex flex-col min-h-dvh">
-      <Header />
+      <Header showAccount={false} />
         {!isConnected && (
           <div className="mx-4 mb-2 bg-danger/10 border border-danger/30 rounded-xl px-4 py-2 text-danger text-xs text-center">
             {t("connection.lost")}

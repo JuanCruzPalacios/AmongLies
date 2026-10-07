@@ -42,7 +42,7 @@ Casos que cubre la suite (origen entre paréntesis):
 
 ## 2. Suite de tests
 
-87 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
+115 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
 (nada de `toBeDefined()`), incluyen el camino de error y los bordes.
 
 | Archivo | Qué prueba | Bordes destacados |
@@ -51,7 +51,10 @@ Casos que cubre la suite (origen entre paréntesis):
 | `core/rules.spec.ts` | Condición de fin de partida y máximo de impostores | paridad exacta 1 vs 1, una ronda antes del tope, tope 0 = sin límite, eliminar al último impostor justo en la ronda tope, 0 a 7 jugadores |
 | `game/settings.spec.ts` | Validación de ajustes contra el schema | mínimo/máximo exactos y ±1, decimales, `'3'`, `null`, `NaN`, `Infinity`, claves extra, payload que no es objeto, listas de otro idioma, ids repetidos |
 | `room/room.validation.spec.ts` | Apodo, avatar, idioma y ajustes de sala | apodo de 1, 2, 16 y 17 caracteres, sólo espacios, acentos y emojis, avatar inexistente, idioma `pt` |
-| `impostor/impostor.engine.spec.ts` | El motor completo con timers simulados (`jest.useFakeTimers`) | el impostor nunca recibe la palabra, votos ocultos durante la votación, empate → nueva ronda, tope de rondas, votos a uno mismo, a jugadores inexistentes o dobles, pistas que no son texto, eliminados sin voto ni chat, `advance` sólo del admin |
+| `core/timers.spec.ts` | Timers pausables | pausar a los 600 de 1000 ms → faltan exactamente 400; timer creado durante la pausa; pausar dos veces |
+| `auth/token-verifier.spec.ts` | Verificación del JWT de Supabase (claves ES256 generadas en el test) | firmado con otra clave, otro issuer, otra audience, vencido, modificado después de firmar, texto que no es JWT |
+| `room/decider.spec.ts` | Quién decide si se sigue sin un desconectado | admin desconectado, el más antiguo también desconectado, nadie conectado |
+| `impostor/impostor.engine.spec.ts` | El motor completo con timers simulados (`jest.useFakeTimers`), incluida la pausa y la salida de jugadores a mitad de partida | el impostor nunca recibe la palabra, votos ocultos durante la votación, empate → nueva ronda, tope de rondas, votos a uno mismo, a jugadores inexistentes o dobles, pistas que no son texto, eliminados sin voto ni chat, `advance` sólo del admin |
 
 Como los impostores se eligen al azar, la suite se corrió 5 veces seguidas para confirmar
 que no hay tests que pasen "por casualidad".
@@ -145,5 +148,7 @@ Todos estaban en el MVP; ninguno rompía la compilación del servidor.
 | 14 | El lobby mandaba los ajustes por defecto cada vez que el admin abría la pantalla | review manual | el lobby muestra lo que guarda el servidor |
 | 15 | 2 vulnerabilidades críticas y 22 altas en dependencias | `npm audit` en el CI | Next 16.3.6 + `npm audit fix` |
 
-Pendiente (Fase 1): al desconectarse, un jugador se elimina de la sala al instante y no
-puede reconectarse.
+| 16 | Al desconectarse, el jugador salía de la sala al instante y no podía volver (la constante de gracia existía pero no se usaba) | review manual | identidad estable + reconexión con pausa (Fase 1) |
+| 17 | Los `<label>` de los formularios no estaban asociados a su `<input>` (lectores de pantalla y clic en la etiqueta) | el test de login en el navegador no encontraba los campos por su etiqueta | `useId` + `htmlFor` en `Input` |
+| 18 | Tests de salida de jugadores que fallaban 1 de cada 3 veces: si el jugador sacado era el único impostor, la partida terminaba y el test pasaba por otra rama | correr la suite varias veces seguidas | 2 impostores entre 6 jugadores: el caso es el mismo saque a quien saque (25/25 corridas en verde) |
+| 19 | `jose` v6 sólo viene como ESM y el servidor compila a CommonJS: en Node 20 fallaría al arrancar | Jest no podía cargarlo | `jose` v5 (misma API, con build CommonJS) |

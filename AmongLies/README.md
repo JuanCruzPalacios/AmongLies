@@ -119,6 +119,10 @@ cp apps/server/.env.example apps/server/.env
 ```
 # URL completa del servidor backend
 NEXT_PUBLIC_SERVER_URL=http://localhost:3001
+
+# Supabase (públicas: la seguridad la dan las políticas RLS)
+NEXT_PUBLIC_SUPABASE_URL=https://pyamkqingktpeexkgryb.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
 **Backend** (`apps/server/.env`):
@@ -129,6 +133,10 @@ PORT=3001
 # URL del frontend — usada para la política CORS
 # Sin este valor el frontend no puede conectarse al backend desde otro origen
 CLIENT_URL=http://localhost:3000
+
+# Supabase: la URL es pública; la clave secreta nunca se commitea
+SUPABASE_URL=https://pyamkqingktpeexkgryb.supabase.co
+SUPABASE_SECRET_KEY=
 ```
 
 ---

@@ -17,7 +17,7 @@ tomó: no hace falta volver a preguntarlas.
 | Fase | Estado |
 |---|---|
 | 0 — Base: bugs, `GameEngine` + registry, validación, tests, guardrails | ✅ hecha |
-| 1 — Identidad y conexión (cuentas, invitado con token, reconexión con pausa) | 🟡 en curso |
+| 1 — Identidad y conexión (cuentas, invitado con token, reconexión con pausa) | ✅ hecha |
 | 2 — Reglas configurables y puntaje | pendiente |
 | 3 — Juego Tiempo | pendiente |
 | 4 — Juego Dibujo | pendiente |
@@ -75,32 +75,36 @@ impostor expulsado 0. Todo en una config compartida y ajustable.
     crea el perfil al registrarse con `raw_user_meta_data` (`username`, `avatar_id`, `locale`).
     Advisors en 0. Probada con un usuario de prueba dentro de una transacción revertida.
 
-## Fase 1 — plan detallado
-1. ✅ Tabla `profiles` con RLS y trigger.
-2. **Identidad estable:** el cliente guarda un token de sesión de invitado aleatorio en
-   `sessionStorage` (cada pestaña es un jugador distinto y sobrevive a recargar) y lo manda
-   en el handshake del socket (`auth: { sessionToken, accessToken? }`). El servidor mapea
-   identidad → `playerId` (uuid generado por el servidor, público). **El token nunca se difunde.**
-   Con cuenta, la identidad es el `user.id` del JWT; una segunda pestaña reemplaza a la primera.
-3. **Verificación del JWT** en el handshake con `jose` (`createRemoteJWKSet`, issuer
-   `<SUPABASE_URL>/auth/v1`, audience `authenticated`). Tests con claves ES256 locales.
-4. **Reconexión:** al desconectarse, `isConnected = false` + `player:disconnected` y período
-   de gracia (`RECONNECT_GRACE_PERIOD_MS`, 30 s). En el lobby, si no vuelve, se lo saca.
-   Durante la partida, **el motor se pausa** (los timers se congelan con su tiempo restante)
-   hasta que vuelva o hasta que quien decide (el admin, o el conectado más antiguo si el admin
-   no está) elija **"Continuar sin él"** → el motor lo saca de la partida.
-   Al reconectar: volver a la sala, recibir el estado y `player:reconnected`.
-5. **Cuentas con email y contraseña** (Supabase Auth, Google más adelante): registro (email,
-   contraseña, username, avatar), login, recuperar contraseña, "revisá tu correo" y nueva
-   contraseña. El invitado sigue existiendo. Variables del web: `NEXT_PUBLIC_SUPABASE_URL` y
-   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-6. Tests del motor (pausa y salida de jugador) y prueba en el navegador recargando la página a mitad de partida.
+## Fase 1 — qué quedó hecho
+- **Base:** tabla `profiles` (username 3–16, avatar, idioma) con RLS y trigger de alta.
+  Migraciones en `supabase/migrations/`.
+- **Identidad:** el cliente manda en el handshake `{ sessionToken, accessToken? }`.
+  El token de invitado vive en `sessionStorage` (cada pestaña es un jugador y sobrevive a
+  recargar) y nunca se difunde; el `playerId` público lo genera el servidor. Con cuenta, la
+  identidad es el `user.id` del JWT, verificado con el JWKS público (`jose` v5, que trae build
+  CommonJS) y una segunda pestaña reemplaza a la primera (`session:replaced`).
+- **Reconexión:** `session:ready` restaura la sala y el estado al volver. Al desconectarse,
+  `player:disconnected` y la partida se pausa (`PausableTimers`). En el lobby, si no vuelve en
+  30 s, sale. En partida se espera hasta que vuelva o hasta que quien decide (`getDecider`:
+  admin, o el conectado más antiguo) toque "Seguir sin esperar" (`game:continue-without`).
+- **Cuentas:** `/login`, `/registro` (con el apodo y avatar del invitado), `/recuperar` y
+  `/nueva-contrasena`. Header con la cuenta (oculto dentro de las salas).
+- **Probado:** 115 tests unitarios; reconexión contra el servidor real (15 checks); recarga a
+  mitad de partida y "Seguir sin esperar" en el navegador (8); login real contra Supabase
+  con un usuario de prueba creado y borrado con la clave secreta (10 + 2).
+
+### Nota para probar en el contenedor de Claude Code
+La red del contenedor sale por un proxy. Para que el **servidor** llegue al JWKS de Supabase
+hay que levantarlo con `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt`, y
+Chromium con `--proxy-server=https=<host:puerto de HTTPS_PROXY>`. En Railway no hace falta.
 
 ## Pendientes de Juan (no los puede hacer Claude)
 - [ ] Habilitar `pyamkqingktpeexkgryb.supabase.co` en *Network access → Allowed domains* del
   environment de Claude Code (dejando "Allow package managers") y cargar `SUPABASE_SECRET_KEY`
   como variable de entorno. Aplica a sesiones nuevas.
-- [ ] Cargar `SUPABASE_SECRET_KEY` en Railway (servicio `server`).
+- [ ] En Railway, servicio `server`: `SUPABASE_URL` y `SUPABASE_SECRET_KEY`. Servicio `web`:
+  `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (si faltan, el web usa los
+  valores públicos del proyecto por defecto).
 - [ ] **Rotar la clave secreta** (quedó en el historial del chat): *Project Settings → API Keys*.
 - [ ] En Supabase, *Authentication → URL Configuration*: Site URL de producción y redirect
   URLs (`http://localhost:3000/**` y la URL de producción), para los mails de confirmación y de recuperación.

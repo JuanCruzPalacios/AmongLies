@@ -9,6 +9,7 @@ import { Header } from "@/components/layout/Header";
 import { Button, Input, Avatar } from "@/components/ui";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useRoomStore } from "@/stores/roomStore";
+import { useAuthStore } from "@/stores/authStore";
 import { useTranslation } from "@/hooks/useTranslation";
 import { connectSocket, whenSessionReady } from "@/lib/socket";
 
@@ -17,6 +18,7 @@ export default function Home() {
   const { t } = useTranslation();
   const { nickname, avatarId, locale, setNickname, setAvatarId, loadFromStorage } = usePlayerStore();
   const { setRoom, setConnecting, setError, isConnecting, error } = useRoomStore();
+  const updateProfile = useAuthStore((s) => s.updateProfile);
   const [joinCode, setJoinCode] = useState("");
   const [showJoin, setShowJoin] = useState(false);
   const [nicknameError, setNicknameError] = useState("");
@@ -160,7 +162,10 @@ export default function Home() {
                   avatarId={avatar.id}
                   size="sm"
                   selected={avatarId === avatar.id}
-                  onClick={() => setAvatarId(avatar.id)}
+                  onClick={() => {
+                    setAvatarId(avatar.id);
+                    void updateProfile({ avatar_id: avatar.id });
+                  }}
                 />
               ))}
             </div>
