@@ -33,6 +33,12 @@ export interface GameEngine {
   getStateForPlayer(playerId: string): GameView;
   /** Los eliminados no pueden chatear durante la partida. */
   canChat(playerId: string): boolean;
+  hasPlayer(playerId: string): boolean;
+  /** Congela la partida mientras falta alguien. */
+  pause(): void;
+  resume(): void;
+  /** Saca a un jugador que se fue o con el que no se espera más. */
+  removePlayer(playerId: string): void;
   destroy(): void;
 }
 

@@ -13,6 +13,7 @@ function makePlayers(count: number): Player[] {
     locale: 'es',
     isAdmin: i === 0,
     isConnected: true,
+    isGuest: true,
   }));
 }
 
@@ -380,5 +381,122 @@ describe('IMPOSTOR_REGISTRATION.validateStart', () => {
         impostorCount: 2,
       }),
     ).toBeNull();
+  });
+});
+
+describe('ImpostorEngine — pausa y salida de jugadores', () => {
+  it('en pausa los timers no avanzan y las acciones se rechazan', () => {
+    const { engine, phase, view } = setup({ wordRevealTimeSeconds: 5 });
+    jest.advanceTimersByTime(3000);
+    engine.pause();
+    expect(view('p1').paused).toBe(true);
+    jest.advanceTimersByTime(60_000);
+    expect(phase()).toBe('word-reveal');
+    expect(
+      engine.handleAction('p1', { type: 'vote', payload: 'p2' }, PLAYER),
+    ).toBe('game_paused');
+
+    engine.resume();
+    expect(view('p1').paused).toBe(false);
+    jest.advanceTimersByTime(1999);
+    expect(phase()).toBe('word-reveal');
+    jest.advanceTimersByTime(1);
+    expect(phase()).toBe('turns');
+  });
+
+  it('si se va el que tiene el turno, el turno pasa al siguiente', () => {
+    const { engine, view } = setup({ impostorCount: 2 }, 6);
+    jest.advanceTimersByTime(5000);
+    // Con 2 impostores entre 6, saque a quien saque la partida sigue.
+    const [first, second] = view('p1').turnOrder;
+    const observer = view('p1').turnOrder.find((id) => id !== first)!;
+    engine.removePlayer(first);
+    expect(view(observer).turnOrder).not.toContain(first);
+    expect(view(observer).turnOrder[view(observer).currentTurnIndex]).toBe(
+      second,
+    );
+  });
+
+  it('si se va alguien que ya jugó, el turno actual no cambia', () => {
+    const { engine, view } = setup({ impostorCount: 2 }, 6);
+    jest.advanceTimersByTime(5000);
+    const [first, second] = view('p1').turnOrder;
+    engine.handleAction(
+      first,
+      { type: 'submit-word', payload: 'algo' },
+      PLAYER,
+    );
+    engine.removePlayer(first);
+    const observer = view('p1').turnOrder.find((id) => id !== first)!;
+    expect(view(observer).turnOrder[view(observer).currentTurnIndex]).toBe(
+      second,
+    );
+  });
+
+  it('si se va el último impostor, la partida termina y ganan los inocentes', () => {
+    const { engine, phase, view, impostorIds, innocentIds } = setup();
+    jest.advanceTimersByTime(5000);
+    engine.removePlayer(impostorIds[0]);
+    expect(phase()).toBe('game-end');
+    expect(view(innocentIds[0]).partidaResults[0]).toMatchObject({
+      winner: 'players',
+      reason: 'impostors-eliminated',
+    });
+  });
+
+  it('si al irse un inocente queda paridad, ganan los impostores', () => {
+    const { engine, view, innocentIds, impostorIds } = setup({}, 4);
+    jest.advanceTimersByTime(5000);
+    engine.removePlayer(innocentIds[0]); // 1 impostor vs 2 inocentes: sigue
+    expect(view(impostorIds[0]).phase).toBe('turns');
+    engine.removePlayer(innocentIds[1]); // 1 vs 1: paridad
+    expect(view(impostorIds[0]).partidaResults[0]).toMatchObject({
+      winner: 'impostor',
+      reason: 'parity',
+    });
+  });
+
+  it('en la votación se descartan sus votos y si ya votaron todos se resuelve', () => {
+    const { engine, view, playTurns, players } = setup({ impostorCount: 2 }, 6);
+    playTurns();
+    const [a, b, c, d, e] = players.map((p) => p.id); // y un sexto que no vota
+    engine.handleAction(a, { type: 'vote', payload: b }, PLAYER);
+    engine.handleAction(b, { type: 'vote', payload: e }, PLAYER);
+    engine.handleAction(c, { type: 'vote', payload: e }, PLAYER);
+    engine.handleAction(d, { type: 'vote', payload: b }, PLAYER);
+    // Se va e: se borran los votos que recibió y faltan b y c por votar de nuevo.
+    engine.removePlayer(e);
+    expect(view(a).voteCount).toBe(2);
+    expect(view(a).phase).toBe('voting');
+  });
+
+  it('se puede sacar a alguien con la partida en pausa y seguir al reanudar', () => {
+    const { engine, view } = setup({ impostorCount: 2 }, 6);
+    jest.advanceTimersByTime(5000);
+    const [first, second] = view('p1').turnOrder;
+    engine.pause();
+    engine.removePlayer(first);
+    jest.advanceTimersByTime(120_000); // pausado: nada vence
+    const observer = view('p1').turnOrder.find((id) => id !== first) ?? second;
+    expect(view(observer).turnOrder[view(observer).currentTurnIndex]).toBe(
+      second,
+    );
+    expect(engine.hasPlayer(first)).toBe(false);
+
+    // Al reanudar, el turno del segundo corre con su timer completo (30 s).
+    engine.resume();
+    jest.advanceTimersByTime(29_999);
+    expect(view(observer).currentTurnIndex).toBe(0);
+    jest.advanceTimersByTime(1);
+    expect(view(observer).wordsUsed).toEqual([
+      { playerId: second, word: '(timeout)' },
+    ]);
+  });
+
+  it('sacar a alguien que no está en la partida no cambia nada', () => {
+    const { engine, view } = setup();
+    const before = view('p1');
+    engine.removePlayer('desconocido');
+    expect(view('p1')).toEqual(before);
   });
 });

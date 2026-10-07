@@ -10,6 +10,7 @@ const ROOM_MAX_INACTIVE_MS = 60 * 60 * 1000;
 @Injectable()
 export class RoomStore {
   private rooms = new Map<string, Room>();
+  private deleteListeners: ((code: string) => void)[] = [];
 
   constructor() {
     setInterval(() => this.cleanup(), ROOM_CLEANUP_INTERVAL_MS);
@@ -44,6 +45,16 @@ export class RoomStore {
     return room;
   }
 
+  /** Para liberar lo asociado a una sala (p. ej. el motor del juego) cuando se borra. */
+  onRoomDeleted(listener: (code: string) => void): void {
+    this.deleteListeners.push(listener);
+  }
+
+  private deleteRoom(code: string): void {
+    this.rooms.delete(code);
+    for (const listener of this.deleteListeners) listener(code);
+  }
+
   getRoom(code: string): Room | undefined {
     return this.rooms.get(code);
   }
@@ -71,13 +82,15 @@ export class RoomStore {
     room.players = room.players.filter((p) => p.id !== playerId);
 
     if (room.players.length === 0) {
-      this.rooms.delete(code);
+      this.deleteRoom(code);
       return undefined;
     }
 
     let newAdminId: string | undefined;
     if (room.adminId === playerId) {
-      const newAdmin = room.players[0];
+      // El rol pasa al jugador conectado más antiguo.
+      const newAdmin =
+        room.players.find((p) => p.isConnected) ?? room.players[0];
       newAdmin.isAdmin = true;
       room.adminId = newAdmin.id;
       newAdminId = newAdmin.id;
@@ -118,7 +131,7 @@ export class RoomStore {
     for (const [code, room] of this.rooms) {
       const allDisconnected = room.players.every((p) => !p.isConnected);
       if (allDisconnected && now - room.createdAt > ROOM_MAX_INACTIVE_MS) {
-        this.rooms.delete(code);
+        this.deleteRoom(code);
       }
     }
   }

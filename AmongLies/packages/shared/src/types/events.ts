@@ -20,11 +20,18 @@ export interface ClientEvents {
   'game:update-settings': (data: Record<string, unknown>) => void;
   'game:start': () => void;
   'game:back-to-lobby': () => void;
+  /** Quien decide (admin, o el conectado más antiguo) sigue sin un jugador desconectado. */
+  'game:continue-without': (data: { playerId: string }) => void;
   'game:action': (data: GameAction) => void;
 }
 
 // Server -> Client
 export interface ServerEvents {
+  /** Se manda al conectar: si la identidad ya estaba en una sala, se la restaura. */
+  'session:ready': (data: { restored: boolean; room?: Room; playerId?: string }) => void;
+  /** La misma cuenta o pestaña se conectó desde otro lado. */
+  'session:replaced': () => void;
+
   'room:created': (data: { room: Room; playerId: string }) => void;
   'room:joined': (data: { room: Room; playerId: string }) => void;
   'room:player-joined': (data: { player: Player }) => void;

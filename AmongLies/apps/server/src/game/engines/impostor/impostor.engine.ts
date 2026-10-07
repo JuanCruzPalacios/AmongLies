@@ -17,6 +17,8 @@ import type {
 } from '../../engine.js';
 import { resolveVotes } from '../core/votes.js';
 import { getPartidaEndReason, maxImpostorsFor } from '../core/rules.js';
+import { PausableTimers } from '../core/timers.js';
+import type { PartidaEndReason } from '@amonglies/shared';
 
 const PARTIDA_END_SECONDS = 15;
 const VOTE_RESULTS_SECONDS = 9;
@@ -24,7 +26,7 @@ const VOTE_RESULTS_SECONDS = 9;
 export class ImpostorEngine implements GameEngine {
   private state: ImpostorGameState;
   private players: Player[];
-  private timers = new Map<string, ReturnType<typeof setTimeout>>();
+  private timers = new PausableTimers();
   private callbacks: EngineCallbacks;
 
   constructor(
@@ -52,6 +54,7 @@ export class ImpostorEngine implements GameEngine {
       partidaResults: [],
       settings,
       gameWinner: null,
+      paused: false,
     };
   }
 
@@ -117,6 +120,7 @@ export class ImpostorEngine implements GameEngine {
       partidaResults: this.state.partidaResults,
       settings: this.state.settings,
       gameWinner: this.state.gameWinner,
+      paused: this.state.paused,
     };
   }
 
@@ -125,6 +129,7 @@ export class ImpostorEngine implements GameEngine {
     action: GameAction,
     ctx: ActionContext,
   ): string | null {
+    if (this.state.paused) return 'game_paused';
     switch (action.type) {
       case 'submit-word':
         return this.handleSubmitWord(playerId, action.payload);
@@ -156,8 +161,99 @@ export class ImpostorEngine implements GameEngine {
   }
 
   destroy(): void {
-    for (const timer of this.timers.values()) clearTimeout(timer);
-    this.timers.clear();
+    this.timers.clearAll();
+  }
+
+  hasPlayer(playerId: string): boolean {
+    return this.players.some((p) => p.id === playerId);
+  }
+
+  /** Congela la partida (timers incluidos) mientras alguien está desconectado. */
+  pause(): void {
+    if (this.state.paused || this.state.phase === 'game-end') return;
+    this.state.paused = true;
+    this.timers.pause();
+    this.callbacks.onStateUpdate();
+  }
+
+  resume(): void {
+    if (!this.state.paused) return;
+    this.state.paused = false;
+    this.timers.resume();
+    this.callbacks.onStateUpdate();
+  }
+
+  /** Saca a un jugador de la partida (se fue, lo echaron o se sigue sin él). */
+  removePlayer(playerId: string): void {
+    if (!this.hasPlayer(playerId)) return;
+    this.players = this.players.filter((p) => p.id !== playerId);
+
+    delete this.state.votes[playerId];
+    for (const [voter, target] of Object.entries(this.state.votes)) {
+      // Quienes lo habían votado pueden volver a votar.
+      if (target === playerId) delete this.state.votes[voter];
+    }
+    this.state.skipDiscussionVotes = this.state.skipDiscussionVotes.filter(
+      (id) => id !== playerId,
+    );
+    this.state.partidaEndSkipVotes = this.state.partidaEndSkipVotes.filter(
+      (id) => id !== playerId,
+    );
+
+    const phase = this.state.phase;
+    if (phase === 'game-end') {
+      this.callbacks.onStateUpdate();
+      return;
+    }
+
+    // Si con su salida no quedan impostores, o hay paridad, la partida termina ya.
+    if (phase !== 'vote-results' && phase !== 'partida-end') {
+      const impostors = this.activeImpostors().length;
+      const reason = getPartidaEndReason({
+        activeImpostors: impostors,
+        activeInnocents: this.activePlayers().length - impostors,
+        round: this.state.roundWithinPartida,
+        maxRounds: 0,
+      });
+      if (reason) {
+        this.endPartidaEarly(reason);
+        return;
+      }
+    }
+
+    const index = this.state.turnOrder.indexOf(playerId);
+    if (index !== -1) {
+      this.state.turnOrder.splice(index, 1);
+      const wasSpeaking =
+        phase === 'turns' && index === this.state.currentTurnIndex;
+      if (index < this.state.currentTurnIndex || wasSpeaking)
+        this.state.currentTurnIndex--;
+      if (wasSpeaking) {
+        this.clearTimer('turn');
+        this.advanceTurn();
+        return;
+      }
+    }
+
+    const active = this.activePlayers().length;
+    if (phase === 'voting' && Object.keys(this.state.votes).length >= active) {
+      this.clearTimer('voting');
+      this.finishVoting();
+    } else if (
+      phase === 'discussion' &&
+      this.state.skipDiscussionVotes.length >= active
+    ) {
+      this.clearTimer('discussion');
+      this.startVoting();
+    } else if (
+      phase === 'partida-end' &&
+      this.state.partidaEndSkipVotes.length >= this.players.length
+    ) {
+      this.clearTimer('partida-end');
+      this.advanceToNextPartida();
+    } else {
+      this.callbacks.onStateUpdate();
+    }
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -170,7 +266,8 @@ export class ImpostorEngine implements GameEngine {
 
   private activeImpostors(): string[] {
     return this.state.impostorIds.filter(
-      (id) => !this.state.eliminatedPlayerIds.includes(id),
+      (id) =>
+        !this.state.eliminatedPlayerIds.includes(id) && this.hasPlayer(id),
     );
   }
 
@@ -373,38 +470,51 @@ export class ImpostorEngine implements GameEngine {
             : 'impostor',
     });
 
-    if (endReason) {
-      const winner =
-        endReason === 'impostors-eliminated' ? 'players' : 'impostor';
-      this.state.gameWinner = winner;
-      this.state.partidaResults.push({
-        partida: this.state.partida,
-        winner,
-        reason: endReason,
-        impostorIds: [...this.state.impostorIds],
-      });
-    }
-    const gameOver =
-      endReason !== null && this.state.partida >= this.state.totalPartidas;
+    if (endReason) this.recordPartidaEnd(endReason);
 
     this.setPhase('vote-results');
 
     this.setTimer('vote-results', VOTE_RESULTS_SECONDS * 1000, () => {
-      if (gameOver) {
-        this.setPhase('game-end');
-        this.callbacks.onGameEnd();
-      } else if (endReason) {
-        // Show partida summary before next partida
-        this.state.partidaEndSkipVotes = [];
-        this.setPhase('partida-end');
-        this.setTimer('partida-end', PARTIDA_END_SECONDS * 1000, () => {
-          this.advanceToNextPartida();
-        });
+      if (endReason) {
+        this.goToPartidaEnd();
       } else {
         this.state.roundWithinPartida++;
         this.startRound();
       }
     });
+  }
+
+  private recordPartidaEnd(reason: PartidaEndReason): void {
+    const winner = reason === 'impostors-eliminated' ? 'players' : 'impostor';
+    this.state.gameWinner = winner;
+    this.state.partidaResults.push({
+      partida: this.state.partida,
+      winner,
+      reason,
+      impostorIds: [...this.state.impostorIds],
+    });
+  }
+
+  /** Resumen de la partida, o fin del juego si era la última. */
+  private goToPartidaEnd(): void {
+    if (this.state.partida >= this.state.totalPartidas) {
+      this.setPhase('game-end');
+      this.callbacks.onGameEnd();
+      return;
+    }
+    this.state.partidaEndSkipVotes = [];
+    this.setPhase('partida-end');
+    this.setTimer('partida-end', PARTIDA_END_SECONDS * 1000, () => {
+      this.advanceToNextPartida();
+    });
+  }
+
+  /** La partida termina sin votación (p. ej. se fue el último impostor). */
+  private endPartidaEarly(reason: PartidaEndReason): void {
+    for (const name of ['word-reveal', 'turn', 'discussion', 'voting'])
+      this.clearTimer(name);
+    this.recordPartidaEnd(reason);
+    this.goToPartidaEnd();
   }
 
   private advanceToNextPartida(): void {
@@ -440,16 +550,11 @@ export class ImpostorEngine implements GameEngine {
   }
 
   private setTimer(name: string, ms: number, callback: () => void): void {
-    this.clearTimer(name);
-    this.timers.set(name, setTimeout(callback, ms));
+    this.timers.set(name, ms, callback);
   }
 
   private clearTimer(name: string): void {
-    const timer = this.timers.get(name);
-    if (timer) {
-      clearTimeout(timer);
-      this.timers.delete(name);
-    }
+    this.timers.clear(name);
   }
 
   private shuffleArray<T>(arr: T[]): T[] {

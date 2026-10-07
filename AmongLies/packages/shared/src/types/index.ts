@@ -5,3 +5,4 @@ export * from './chat';
 export * from './game';
 export * from './impostor';
 export * from './events';
+export * from './session';

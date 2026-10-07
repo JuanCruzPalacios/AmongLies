@@ -40,6 +40,8 @@ export interface ImpostorGameState {
   partidaResults: PartidaResult[];
   settings: ImpostorSettings;
   gameWinner: 'players' | 'impostor' | null;
+  /** La partida está congelada porque se desconectó un jugador. */
+  paused: boolean;
 }
 
 export type PartidaEndReason = 'impostors-eliminated' | 'parity' | 'max-rounds';
@@ -87,4 +89,5 @@ export interface ImpostorPlayerView {
   partidaResults: PartidaResult[];
   settings: ImpostorSettings;
   gameWinner: 'players' | 'impostor' | null;
+  paused: boolean;
 }

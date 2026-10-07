@@ -11,6 +11,7 @@ import type { ChatMessage, GameAction, Room } from '@amonglies/shared';
 import { getGameDefinition } from '@amonglies/shared';
 import { GameService } from './game.service.js';
 import { getDefaultGameSettings, sanitizeGameSettings } from './settings.js';
+import { getDecider } from '@amonglies/shared';
 import { RoomStore } from '../room/room.store.js';
 import { PlayerService } from '../player/player.service.js';
 
@@ -83,6 +84,13 @@ export class GameGateway {
       });
       return;
     }
+    if (room.players.some((p) => !p.isConnected)) {
+      client.emit('game:error', {
+        message: 'Someone is disconnected',
+        code: 'players_disconnected',
+      });
+      return;
+    }
     if (room.players.length < definition.minPlayers) {
       client.emit('game:error', {
         message: `Need at least ${definition.minPlayers} players`,
@@ -136,7 +144,7 @@ export class GameGateway {
     @MessageBody() data: GameAction,
   ) {
     const session = this.playerService.getSession(client.id);
-    if (!session?.roomCode) return;
+    if (!session?.roomCode || !session.playerId) return;
     if (typeof data?.type !== 'string') return;
 
     const room = this.roomStore.getRoom(session.roomCode);
@@ -153,6 +161,68 @@ export class GameGateway {
     if (error) {
       client.emit('game:error', { message: error, code: error });
     }
+  }
+
+  /** Quien decide, admin o conectado más antiguo, sigue la partida sin alguien desconectado. */
+  @SubscribeMessage('game:continue-without')
+  handleContinueWithout(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { playerId?: unknown },
+  ) {
+    const session = this.playerService.getSession(client.id);
+    if (!session?.roomCode) return;
+    const room = this.roomStore.getRoom(session.roomCode);
+    if (!room || room.state !== 'playing') return;
+    if (getDecider(room)?.id !== session.playerId) return;
+
+    const target = room.players.find((p) => p.id === data?.playerId);
+    if (!target || target.isConnected) return;
+    this.removePlayerFromRoom(room.code, target.id);
+  }
+
+  // ─── Conexión de jugadores (lo usa RoomGateway) ─────────────────────────
+
+  /** Si el desconectado está jugando, la partida se congela hasta que vuelva. */
+  pauseForDisconnect(roomCode: string, playerId: string): void {
+    const engine = this.gameService.getEngine(roomCode);
+    const room = this.roomStore.getRoom(roomCode);
+    if (!engine || room?.state !== 'playing' || !engine.hasPlayer(playerId))
+      return;
+    engine.pause();
+  }
+
+  /** Al reconectar alguien: reanuda si ya no falta nadie y le reenvía el estado. */
+  syncAfterReconnect(roomCode: string): void {
+    this.resumeIfNobodyMissing(roomCode);
+    this.broadcastGameState(roomCode);
+  }
+
+  /**
+   * Saca a un jugador de la sala y de la partida en curso (se fue, lo echaron,
+   * no volvió a tiempo o se decidió seguir sin él).
+   */
+  removePlayerFromRoom(roomCode: string, playerId: string): void {
+    this.gameService.getEngine(roomCode)?.removePlayer(playerId);
+    this.playerService.clearRoom(playerId);
+
+    const result = this.roomStore.removePlayer(roomCode, playerId);
+    if (!result) return; // la sala quedó vacía y se borró
+
+    this.server.to(roomCode).emit('room:player-left', {
+      playerId,
+      newAdminId: result.newAdminId,
+    });
+    this.resumeIfNobodyMissing(roomCode);
+  }
+
+  private resumeIfNobodyMissing(roomCode: string): void {
+    const engine = this.gameService.getEngine(roomCode);
+    const room = this.roomStore.getRoom(roomCode);
+    if (!engine || !room) return;
+    const someoneMissing = room.players.some(
+      (p) => !p.isConnected && engine.hasPlayer(p.id),
+    );
+    if (!someoneMissing) engine.resume();
   }
 
   private getAdminRoom(client: Socket): Room | undefined {
@@ -186,7 +256,7 @@ export class GameGateway {
 
     for (const socketId of sockets) {
       const session = this.playerService.getSession(socketId);
-      if (!session) continue;
+      if (!session?.playerId) continue;
 
       const socket = this.server.sockets.sockets.get(socketId);
       socket?.emit(

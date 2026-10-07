@@ -8,7 +8,13 @@ import { RoomStore } from '../room/room.store.js';
 export class GameService {
   private activeGames = new Map<string, GameEngine>();
 
-  constructor(private readonly roomStore: RoomStore) {}
+  constructor(private readonly roomStore: RoomStore) {
+    // Si la sala se borra (quedó vacía), se libera su motor y sus timers.
+    roomStore.onRoomDeleted((code) => {
+      this.activeGames.get(code)?.destroy();
+      this.activeGames.delete(code);
+    });
+  }
 
   /** Arranca el juego elegido en la sala. Devuelve un código de error o null. */
   startGame(room: Room, callbacks: EngineCallbacks): string | null {
