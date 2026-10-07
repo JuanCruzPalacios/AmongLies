@@ -8,7 +8,7 @@ echo "-> Buscando secretos..."
 sh scripts/check-secrets.sh --staged
 
 echo "-> Linter y formato..."
-npm run lint --silent
+npm run lint --silent -- --output-logs=errors-only
 
 echo "-> Tests unitarios..."
 npm test --silent --workspace @amonglies/server

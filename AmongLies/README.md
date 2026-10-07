@@ -28,6 +28,7 @@ El MVP incluye el juego **El Impostor**: un jugador conoce la palabra secreta de
 - **Resultados de votación**: reveal escalonado con suspenso (quién fue expulsado → ¿era impostor? → detalle completo). Gráfico de votos con barra por jugador y sección "quién votó a quién".
 - **Empate**: nadie es expulsado, la partida continúa en la siguiente ronda.
 - **Fin de partida**: la partida termina cuando todos los impostores son eliminados, o cuando quedan tantos impostores como inocentes (los impostores ganan).
+- **Tope de rondas (opcional)**: por defecto no hay límite. Si el host pone un tope y se llega a él sin que gane nadie, ganan los impostores.
 - **Fin de juego**: pantalla resumen con historial por partida y ganador general.
 - **Pantalla entre partidas**: pantalla de espera con countdown de 15 segundos (salteable por consenso) que revela quiénes eran los impostores antes de empezar la siguiente partida.
 
@@ -41,7 +42,7 @@ El MVP incluye el juego **El Impostor**: un jugador conoce la palabra secreta de
 - Jugadores eliminados con avatar tachado en la fase de votación.
 - Soporte para unirse a una sala via link directo (incluso si ya hay una partida en curso, se puede unir al lobby para la siguiente).
 - Diseño responsive con soporte mobile/desktop.
-- Internacionalización (i18n) preparada (es-AR por defecto).
+- Interfaz en español (por defecto) e inglés; las listas de palabras se filtran por el idioma de la sala.
 
 ---
 
@@ -129,6 +130,27 @@ PORT=3001
 # Sin este valor el frontend no puede conectarse al backend desde otro origen
 CLIENT_URL=http://localhost:3000
 ```
+
+---
+
+## Calidad: tests, hook pre-commit y CI
+
+```bash
+npm test                 # tests unitarios del servidor (lógica del juego)
+npm run lint             # ESLint en web y server, tsc en shared
+npm run check-secrets    # busca credenciales en los archivos versionados
+```
+
+**Hook pre-commit:** `npm install` lo activa solo (configura `git config core.hooksPath .githooks`).
+Antes de cada commit busca secretos en el diff y corre el linter y los tests; si algo falla,
+el commit se aborta. Si clonaste el repo antes de que existiera el hook, corré
+`npm install` otra vez (o `git config core.hooksPath .githooks` desde la raíz del repo).
+
+**CI:** GitHub Actions (`.github/workflows/ci.yml`) repite esos chequeos en cada push y PR,
+más el build completo, el umbral de cobertura de ramas y `npm audit`.
+
+Detalle del ciclo TDD, los casos borde, la prueba de mutación y los bugs encontrados:
+[`docs/TESTING.md`](docs/TESTING.md).
 
 ---
 
