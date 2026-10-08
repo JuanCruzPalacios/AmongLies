@@ -1,4 +1,8 @@
-import type { ImpostorSettings, Player } from '@amonglies/shared';
+import type {
+  ImpostorPlayerView,
+  ImpostorSettings,
+  Player,
+} from '@amonglies/shared';
 import type { EngineCallbacks } from '../../engine.js';
 import { ImpostorEngine, IMPOSTOR_REGISTRATION } from './impostor.engine.js';
 
@@ -49,7 +53,8 @@ function setup(settings: Partial<ImpostorSettings> = {}, playerCount = 4) {
   const engine = new ImpostorEngine(players, makeSettings(settings), callbacks);
   engine.start();
 
-  const view = (id: string) => engine.getStateForPlayer(id);
+  const view = (id: string) =>
+    engine.getStateForPlayer(id) as ImpostorPlayerView;
   const impostorIds = players
     .filter((p) => view(p.id).isImpostor)
     .map((p) => p.id);

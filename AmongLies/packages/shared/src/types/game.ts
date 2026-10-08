@@ -1,6 +1,6 @@
 import type { Locale, CommunicationMode } from './common';
 
-export type GameId = 'impostor';
+export type GameId = 'impostor' | 'time';
 
 export interface GameDefinition {
   id: GameId;
@@ -11,6 +11,9 @@ export interface GameDefinition {
   supportedModes: CommunicationMode[];
   settingsSchema: GameSettingSchema[];
   availableLocales: Locale[];
+  /** Usa listas de palabras (se eligen en el lobby). */
+  usesWordLists: boolean;
+  emoji: string;
 }
 
 export interface GameSettingSchema {

@@ -17,7 +17,11 @@ export function getDefaultGameSettings(
   for (const schema of def.settingsSchema) {
     values[schema.key] = schema.default;
   }
-  values[WORD_LISTS_KEY] = getWordListsByLocale(locale).map((list) => list.id);
+  if (def.usesWordLists) {
+    values[WORD_LISTS_KEY] = getWordListsByLocale(locale).map(
+      (list) => list.id,
+    );
+  }
   return values;
 }
 
@@ -42,7 +46,7 @@ export function sanitizeGameSettings(
     if (value !== undefined) next[schema.key] = value;
   }
 
-  if (WORD_LISTS_KEY in raw) {
+  if (def.usesWordLists && WORD_LISTS_KEY in raw) {
     const lists = sanitizeWordLists(raw[WORD_LISTS_KEY], locale);
     if (lists.length > 0) next[WORD_LISTS_KEY] = lists;
   }

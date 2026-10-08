@@ -1,12 +1,11 @@
 import type {
   GameAction,
   GameSettingsValues,
-  ImpostorPlayerView,
+  GameView,
   Player,
 } from '@amonglies/shared';
 
-/** Vista del estado que recibe cada jugador (una por juego). */
-export type GameView = ImpostorPlayerView;
+export type { GameView };
 
 export interface EngineCallbacks {
   /** El estado cambió: hay que reenviar la vista a cada jugador. */
