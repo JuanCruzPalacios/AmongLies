@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import type { ImpostorPlayerView, Room, GameAction } from "@amonglies/shared";
+import { SKIP_VOTE, type ImpostorPlayerView, type Room, type GameAction } from "@amonglies/shared";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar, Button } from "@/components/ui";
 
@@ -26,8 +26,13 @@ export function Voting({ gameState, sendAction, room, myId }: Props) {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
+  // En un re-voto por empate sólo se puede votar a los empatados.
+  const candidates = gameState.revoteCandidates;
   const votablePlayers = room.players.filter(
-    (p) => p.id !== myId && !gameState.eliminatedPlayerIds.includes(p.id)
+    (p) =>
+      p.id !== myId &&
+      !gameState.eliminatedPlayerIds.includes(p.id) &&
+      (!candidates || candidates.includes(p.id))
   );
 
   const amEliminated = gameState.eliminatedPlayerIds.includes(myId);
@@ -51,7 +56,9 @@ export function Voting({ gameState, sendAction, room, myId }: Props) {
         <h2 className="font-display text-2xl font-bold text-danger mb-1">
           {t("game.impostor.vote")}
         </h2>
-        <p className="text-text-secondary text-sm">{t("game.impostor.vote_for")}</p>
+        <p className="text-text-secondary text-sm">
+          {candidates ? t("game.vote.revote") : t("game.impostor.vote_for")}
+        </p>
         <span className={`font-mono text-lg font-bold mt-1 inline-block ${timeLeft < 10 ? "text-danger" : "text-warning"}`}>
           {timeLeft}s
         </span>
@@ -108,6 +115,19 @@ export function Voting({ gameState, sendAction, room, myId }: Props) {
               </motion.div>
             ))}
           </div>
+
+          {gameState.settings.allowSkipVote && (
+            <button
+              onClick={() => setSelected(SKIP_VOTE)}
+              className={`w-full py-3 rounded-2xl border-2 text-sm font-medium transition-all cursor-pointer ${
+                selected === SKIP_VOTE
+                  ? "border-warning bg-warning/10 text-warning"
+                  : "border-border bg-bg-surface text-text-secondary hover:border-warning/40"
+              }`}
+            >
+              ⏭ {t("game.vote.skip")}
+            </button>
+          )}
 
           <div className="flex justify-center">
             <Button variant="danger" size="lg" onClick={handleVote} disabled={!selected}>

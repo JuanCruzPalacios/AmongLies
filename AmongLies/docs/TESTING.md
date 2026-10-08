@@ -42,7 +42,7 @@ Casos que cubre la suite (origen entre paréntesis):
 
 ## 2. Suite de tests
 
-115 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
+143 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
 (nada de `toBeDefined()`), incluyen el camino de error y los bordes.
 
 | Archivo | Qué prueba | Bordes destacados |
@@ -51,6 +51,8 @@ Casos que cubre la suite (origen entre paréntesis):
 | `core/rules.spec.ts` | Condición de fin de partida y máximo de impostores | paridad exacta 1 vs 1, una ronda antes del tope, tope 0 = sin límite, eliminar al último impostor justo en la ronda tope, 0 a 7 jugadores |
 | `game/settings.spec.ts` | Validación de ajustes contra el schema | mínimo/máximo exactos y ±1, decimales, `'3'`, `null`, `NaN`, `Infinity`, claves extra, payload que no es objeto, listas de otro idioma, ids repetidos |
 | `room/room.validation.spec.ts` | Apodo, avatar, idioma y ajustes de sala | apodo de 1, 2, 16 y 17 caracteres, sólo espacios, acentos y emojis, avatar inexistente, idioma `pt` |
+| `core/votes.spec.ts` (Fase 2) | `decideVoteOutcome`: "saltear", empate con re-voto, re-voto que vuelve a empatar, empate de un jugador con "saltear", desempate al azar | azar inyectado (`random: () => 0` / `0.99`) para que sea determinístico |
+| `core/scoring.spec.ts` | Puntos por ronda y bonus de partida | impostor expulsado, impostor que vota a su cómplice, impostor eliminado en una ronda anterior, partida sin jugadores |
 | `core/timers.spec.ts` | Timers pausables | pausar a los 600 de 1000 ms → faltan exactamente 400; timer creado durante la pausa; pausar dos veces |
 | `auth/token-verifier.spec.ts` | Verificación del JWT de Supabase (claves ES256 generadas en el test) | firmado con otra clave, otro issuer, otra audience, vencido, modificado después de firmar, texto que no es JWT |
 | `room/decider.spec.ts` | Quién decide si se sigue sin un desconectado | admin desconectado, el más antiguo también desconectado, nadie conectado |

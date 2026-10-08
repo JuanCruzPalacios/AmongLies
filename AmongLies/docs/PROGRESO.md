@@ -18,7 +18,7 @@ tomó: no hace falta volver a preguntarlas.
 |---|---|
 | 0 — Base: bugs, `GameEngine` + registry, validación, tests, guardrails | ✅ hecha |
 | 1 — Identidad y conexión (cuentas, invitado con token, reconexión con pausa) | ✅ hecha |
-| 2 — Reglas configurables y puntaje | pendiente |
+| 2 — Reglas configurables y puntaje | ✅ hecha |
 | 3 — Juego Tiempo | pendiente |
 | 4 — Juego Dibujo | pendiente |
 | 5 — Social: amigos, invitaciones, notificaciones, presencia | pendiente |
@@ -97,6 +97,21 @@ impostor expulsado 0. Todo en una config compartida y ajustable.
 La red del contenedor sale por un proxy. Para que el **servidor** llegue al JWKS de Supabase
 hay que levantarlo con `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt`, y
 Chromium con `--proxy-server=https=<host:puerto de HTTPS_PROXY>`. En Railway no hace falta.
+
+## Fase 2 — qué quedó hecho
+- **Ajustes nuevos del Impostor:** pista de categoría para el impostor, voto secreto (en los
+  resultados sólo se ven los conteos), permitir votar "saltear" y empate: nadie sale / re-votar
+  una sola vez entre los empatados / al azar. ("Nadie sale" y "seguir a la próxima ronda" del
+  prompt original son lo mismo, quedó una sola opción.)
+- **Puntaje** (`SCORING` en shared): inocente que vota a un impostor +2, impostor que sobrevive
+  la ronda +2, bonus de partida +1 a cada inocente o +3 a cada impostor del equipo ganador.
+  **Los puntos se revelan al terminar cada partida**, no por ronda: mostrarlos antes delataría
+  al impostor. Ranking en el fin de partida y podio en el fin del juego.
+- **Estadísticas** por cuenta y juego en `player_stats` (lectura pública; sólo el servidor
+  escribe, vía `record_game_stats` con la clave secreta). Página `/perfil` con juegos,
+  partidas, victorias por rol, % de votos acertados y puntos.
+- **Probado:** 143 tests; partida de punta a punta con cuenta + bots (11 checks) verificando
+  la fila guardada en Supabase; las suites de las fases 0 y 1 siguen en verde.
 
 ## Deploy
 - **Producción en Render** (plan gratis, Virginia, auto-deploy desde `main`):

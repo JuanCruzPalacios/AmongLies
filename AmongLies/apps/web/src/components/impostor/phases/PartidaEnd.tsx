@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ImpostorPlayerView, Room, GameAction } from "@amonglies/shared";
+import { ScoreBoard } from "../ScoreBoard";
 import { Avatar } from "@/components/ui";
 
 const PARTIDA_END_SECONDS = 15;
@@ -129,6 +130,13 @@ export function PartidaEnd({ gameState, room, sendAction, myId }: Props) {
           </span>
         </p>
       </div>
+
+      {/* Puntos: se revelan recién al terminar la partida */}
+      <ScoreBoard
+        room={room}
+        scores={gameState.scores}
+        gained={gameState.partidaResults.find((p) => p.partida === gameState.partida)?.points}
+      />
 
       {/* Skip button */}
       <button

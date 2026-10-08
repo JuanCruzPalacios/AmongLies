@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { ImpostorPlayerView, Room } from "@amonglies/shared";
+import { SKIP_VOTE, type ImpostorPlayerView, type Room } from "@amonglies/shared";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar } from "@/components/ui";
 
@@ -45,14 +45,14 @@ export function VoteResults({ gameState, room }: Props) {
   const partidaWinner = gameState.gameWinner;
   const isPartidaOver = partidaWinner !== null;
 
-  // Compute vote tally
-  const voteTally = new Map<string, number>();
-  for (const targetId of Object.values(gameState.votes)) {
-    voteTally.set(targetId, (voteTally.get(targetId) || 0) + 1);
-  }
-  const tallyEntries = [...voteTally.entries()]
+  // Recuento (lo manda el servidor; con voto secreto es lo único que se ve)
+  const skipOption = { id: SKIP_VOTE, nickname: t("game.vote.skip"), avatarId: "ghost" };
+  const tallyEntries = Object.entries(lastResult.voteCounts ?? {})
     .sort((a, b) => b[1] - a[1])
-    .map(([playerId, count]) => ({ player: room.players.find((p) => p.id === playerId), count }))
+    .map(([playerId, count]) => ({
+      player: playerId === SKIP_VOTE ? skipOption : room.players.find((p) => p.id === playerId),
+      count,
+    }))
     .filter((e) => e.player);
 
   // ── Helper strings ──────────────────────────────────────────────────────
@@ -256,6 +256,10 @@ export function VoteResults({ gameState, room }: Props) {
                       })}
                     </div>
                   </div>
+                  {lastResult.tieBreak && (
+                    <p className="text-text-muted text-xs">{t(`game.vote.tiebreak.${lastResult.tieBreak}`)}</p>
+                  )}
+                  {Object.keys(gameState.votes).length > 0 && (
                   <div>
                     <p className="text-text-muted text-xs mb-1.5 uppercase tracking-wider">Quién votó a quién</p>
                     <div className="flex flex-wrap gap-1.5 justify-center">
@@ -264,12 +268,13 @@ export function VoteResults({ gameState, room }: Props) {
                         const voted = room.players.find((p) => p.id === votedId);
                         return (
                           <span key={voterId} className="text-xs bg-bg-surface-light rounded-lg px-2 py-1">
-                            {voter?.nickname} → {voted?.nickname}
+                            {voter?.nickname} → {votedId === SKIP_VOTE ? t("game.vote.skip") : voted?.nickname}
                           </span>
                         );
                       })}
                     </div>
                   </div>
+                  )}
                 </div>
               )}
             </motion.div>

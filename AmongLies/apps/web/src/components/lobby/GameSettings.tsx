@@ -62,6 +62,23 @@ export function GameSettings() {
                     </span>
                   </div>
                 )}
+                {schema.type === "boolean" && (
+                  <button
+                    role="switch"
+                    aria-checked={value === true}
+                    onClick={() => updateSetting(schema.key, value !== true)}
+                    disabled={!isAdmin}
+                    className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer disabled:cursor-not-allowed ${
+                      value === true ? "bg-primary" : "bg-bg-surface-light border border-border"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                        value === true ? "translate-x-5" : ""
+                      }`}
+                    />
+                  </button>
+                )}
                 {schema.type === "select" && (
                   <div className="flex gap-2 flex-wrap">
                     {schema.options?.map((opt) => (

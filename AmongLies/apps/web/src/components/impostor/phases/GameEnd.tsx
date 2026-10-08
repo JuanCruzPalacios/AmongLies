@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import type { ImpostorPlayerView, Room, RoundResult } from "@amonglies/shared";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui";
+import { ScoreBoard } from "../ScoreBoard";
 
 interface Props {
   gameState: ImpostorPlayerView;
@@ -123,6 +124,8 @@ export function GameEnd({ gameState, room, onBackToLobby }: Props) {
           );
         })}
       </div>
+
+      <ScoreBoard room={room} scores={gameState.scores} podium />
 
       <Button size="lg" className="w-full" onClick={onBackToLobby}>
         {t("game.impostor.back_to_lobby")}

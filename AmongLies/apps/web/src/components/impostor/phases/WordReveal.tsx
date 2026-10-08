@@ -51,6 +51,12 @@ export function WordReveal({ gameState, room }: Props) {
             <p className="text-text-secondary">
               {t("game.impostor.find_word")}
             </p>
+            {gameState.category && (
+              <p className="mt-3 text-sm">
+                <span className="text-text-muted">{t("game.impostor.category_hint")} </span>
+                <span className="font-bold text-accent">{gameState.category}</span>
+              </p>
+            )}
 
             {/* Co-impostors — tachados si fueron expulsados */}
             {fellowImpostors.length > 0 && (

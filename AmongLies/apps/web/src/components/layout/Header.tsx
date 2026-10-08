@@ -22,7 +22,9 @@ export function Header({ showAccount = true }: { showAccount?: boolean }) {
         {showAccount && ready && (
           user ? (
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-text-secondary hidden sm:inline">@{profile?.username ?? "…"}</span>
+              <Link href="/perfil" className="text-text-secondary hover:text-text-primary max-w-28 truncate">
+                @{profile?.username ?? "…"}
+              </Link>
               <button
                 onClick={() => void signOut()}
                 className="px-3 py-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-surface-light cursor-pointer"
