@@ -7,8 +7,10 @@ import { Avatar } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 import { useTranslation } from "@/hooks/useTranslation";
+import { ALL_GAMES } from "@amonglies/shared";
 
 interface Stats {
+  game_id: string;
   games_played: number;
   partidas_played: number;
   partidas_as_impostor: number;
@@ -21,9 +23,9 @@ interface Stats {
 }
 
 export default function ProfilePage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { ready, user, profile } = useAuthStore();
-  const [stats, setStats] = useState<Stats | null | undefined>(undefined);
+  const [stats, setStats] = useState<Stats[] | undefined>(undefined);
 
   useEffect(() => {
     if (!user) return;
@@ -31,9 +33,7 @@ export default function ProfilePage() {
       .from("player_stats")
       .select("*")
       .eq("user_id", user.id)
-      .eq("game_id", "impostor")
-      .maybeSingle()
-      .then(({ data }) => setStats((data as Stats | null) ?? null));
+      .then(({ data }) => setStats((data as Stats[] | null) ?? []));
   }, [user]);
 
   if (ready && !user) {
@@ -56,28 +56,29 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div>
-        <h3 className="font-display font-bold text-xs text-text-secondary uppercase tracking-widest mb-3 text-center">
-          {t("profile.stats")} · El Impostor
-        </h3>
-        {stats === null && <p className="text-center text-text-muted text-sm">{t("profile.no_stats")}</p>}
-        {stats && (
-          <dl className="grid grid-cols-2 gap-2">
-            <Stat label={t("profile.games_played")} value={stats.games_played} />
-            <Stat label={t("profile.partidas_played")} value={stats.partidas_played} />
-            <Stat
-              label={t("profile.wins_impostor")}
-              value={`${stats.partidas_won_as_impostor}/${stats.partidas_as_impostor}`}
-            />
-            <Stat
-              label={t("profile.wins_innocent")}
-              value={`${stats.partidas_won_as_innocent}/${stats.partidas_as_innocent}`}
-            />
-            <Stat label={t("profile.vote_accuracy")} value={percent(stats.correct_votes, stats.innocent_votes)} />
-            <Stat label={t("profile.total_points")} value={stats.total_points} />
-          </dl>
-        )}
-      </div>
+      {stats?.length === 0 && (
+        <p className="text-center text-text-muted text-sm">{t("profile.no_stats")}</p>
+      )}
+      {/* Un bloque por juego jugado, en el orden del selector. */}
+      {ALL_GAMES.map((game) => {
+        const s = stats?.find((row) => row.game_id === game.id);
+        if (!s) return null;
+        return (
+          <div key={game.id}>
+            <h3 className="font-display font-bold text-xs text-text-secondary uppercase tracking-widest mb-3 text-center">
+              {t("profile.stats")} · {game.emoji} {game.name[locale]}
+            </h3>
+            <dl className="grid grid-cols-2 gap-2">
+              <Stat label={t("profile.games_played")} value={s.games_played} />
+              <Stat label={t("profile.partidas_played")} value={s.partidas_played} />
+              <Stat label={t("profile.wins_impostor")} value={`${s.partidas_won_as_impostor}/${s.partidas_as_impostor}`} />
+              <Stat label={t("profile.wins_innocent")} value={`${s.partidas_won_as_innocent}/${s.partidas_as_innocent}`} />
+              <Stat label={t("profile.vote_accuracy")} value={percent(s.correct_votes, s.innocent_votes)} />
+              <Stat label={t("profile.total_points")} value={s.total_points} />
+            </dl>
+          </div>
+        );
+      })}
     </AuthCard>
   );
 }

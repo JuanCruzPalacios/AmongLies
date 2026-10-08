@@ -1,16 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { ImpostorPlayerView, Room } from "@amonglies/shared";
+import type { DrawingPlayerView, ImpostorPlayerView, Room } from "@amonglies/shared";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar } from "@/components/ui";
 
 interface Props {
-  gameState: ImpostorPlayerView;
+  gameState: ImpostorPlayerView | DrawingPlayerView;
   room: Room;
+  /** Consejo para el impostor (cambia según el juego). */
+  impostorHintKey?: string;
 }
 
-export function WordReveal({ gameState, room }: Props) {
+export function WordReveal({ gameState, room, impostorHintKey = "game.impostor.find_word" }: Props) {
   const { t } = useTranslation();
 
   const fellowImpostors = gameState.fellowImpostorIds
@@ -49,7 +51,7 @@ export function WordReveal({ gameState, room }: Props) {
               {t("game.impostor.you_are_impostor")}
             </h2>
             <p className="text-text-secondary">
-              {t("game.impostor.find_word")}
+              {t(impostorHintKey)}
             </p>
             {gameState.category && (
               <p className="mt-3 text-sm">

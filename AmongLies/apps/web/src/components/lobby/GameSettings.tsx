@@ -1,6 +1,6 @@
 "use client";
 
-import { getGameDefinition, getWordListsByLocale } from "@amonglies/shared";
+import { getGameDefinition, getWordListsForGame } from "@amonglies/shared";
 import { useRoomStore } from "@/stores/roomStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -17,7 +17,7 @@ export function GameSettings() {
 
   const isAdmin = room.adminId === myId;
   const settings = room.gameSettings;
-  const wordLists = getWordListsByLocale(room.settings.locale);
+  const wordLists = getWordListsForGame(game, room.settings.locale);
   const selectedWordLists = (settings.selectedWordLists as string[] | undefined) ?? [];
 
   function updateSetting(key: string, value: unknown) {

@@ -17,6 +17,7 @@ import { GameSelector } from "@/components/lobby/GameSelector";
 import { GameSettings } from "@/components/lobby/GameSettings";
 import { ImpostorGame } from "@/components/impostor/ImpostorGame";
 import { TimeGame } from "@/components/time/TimeGame";
+import { DrawingGame } from "@/components/drawing/DrawingGame";
 import { Button, Input, Avatar } from "@/components/ui";
 import { getSocket, connectSocket, whenSessionReady } from "@/lib/socket";
 
@@ -62,6 +63,7 @@ export default function RoomPage() {
       no_word_lists_selected: t("game.impostor.no_word_lists"),
       word_already_used: t("game.impostor.error.word_used"),
       word_is_secret: t("game.impostor.error.word_secret"),
+      not_enough_ink: t("game.drawing.error.not_enough_ink"),
     };
     const handler = ({ message, code }: { message: string; code?: string }) => {
       setGameError(errorKeys[message] ?? t(`error.${code}`, undefined, message));
@@ -249,29 +251,25 @@ export default function RoomPage() {
           </div>
         )}
         <main className="flex-1 min-h-0 flex flex-col">
-          {gameState.gameId === "time" ? (
-            <TimeGame
-              gameState={gameState}
-              sendAction={sendAction}
-              room={room}
-              myId={myId!}
-              onBackToLobby={() => {
+          {(() => {
+            const common = {
+              sendAction,
+              room,
+              myId: myId!,
+              onBackToLobby: () => {
                 resetGame();
                 if (isAdmin) getSocket().emit("game:back-to-lobby");
-              }}
-            />
-          ) : (
-            <ImpostorGame
-            gameState={gameState}
-            sendAction={sendAction}
-            room={room}
-            myId={myId!}
-            onBackToLobby={() => {
-              resetGame();
-              if (isAdmin) getSocket().emit("game:back-to-lobby");
-            }}
-          />
-          )}
+              },
+            };
+            switch (gameState.gameId) {
+              case "time":
+                return <TimeGame gameState={gameState} {...common} />;
+              case "drawing":
+                return <DrawingGame gameState={gameState} {...common} />;
+              default:
+                return <ImpostorGame gameState={gameState} {...common} />;
+            }
+          })()}
         </main>
       </div>
     );

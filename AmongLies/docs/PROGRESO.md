@@ -20,7 +20,7 @@ tomó: no hace falta volver a preguntarlas.
 | 1 — Identidad y conexión (cuentas, invitado con token, reconexión con pausa) | ✅ hecha |
 | 2 — Reglas configurables y puntaje | ✅ hecha |
 | 3 — Juego Tiempo | ✅ hecha |
-| 4 — Juego Dibujo | pendiente |
+| 4 — Juego Dibujo | ✅ hecha |
 | 5 — Social: amigos, invitaciones, notificaciones, presencia | pendiente |
 | 6 — Workshop (listas de palabras y presets de reglas) | pendiente |
 | 7 — Ajustes, salas públicas, moderación con panel de admin, i18n, sonido, responsive | pendiente |
@@ -127,6 +127,27 @@ Chromium con `--proxy-server=https=<host:puerto de HTTPS_PROXY>`. En Railway no 
 - **Probado:** 173 tests; partida de Tiempo de punta a punta con el admin en el navegador y
   3 bots (10 checks); las suites de las fases 0, 1 y 2 siguen en verde. Se encontró y arregló
   el bug #22 (ver TESTING.md).
+
+## Fase 4 — qué quedó hecho
+- **Impostor dibujo** (`gameId: 'drawing'`): por partida hay **una palabra y un lienzo**; cada
+  ronda todos agregan un poco y se vota; si nadie gana, se sigue sobre el mismo dibujo. La
+  palabra no aparece en los resultados hasta que termina la partida (si no, el impostor la
+  vería al expulsar a un cómplice).
+- **Tinta** medida en anchos de lienzo (100 % = una línea de lado a lado). El navegador y el
+  servidor usan la misma función (`clipToInk` en shared): el servidor corta lo que se pasa y,
+  al acabarse la tinta, pasa el turno. Tinta mínima para tocar "Listo" y timer de seguridad.
+- Configurable: tinta por turno (por defecto 100 %), tinta mínima (20 %), veces que dibuja
+  cada uno por ronda (1), tiempo máximo por turno (30 s), colores libres o uno fijo por
+  jugador, pista de categoría. Pincel de 3 grosores y 10 colores. **Sin deshacer.**
+- Coordenadas normalizadas (0–1) en un lienzo 4:3, `touch-action: none` para dibujar con el
+  dedo. Los trazos van en vivo por `game:draw` (no se reenvía todo el estado); quien dibuja ve
+  los suyos al instante y el estado del servidor manda al terminar cada turno.
+- Las listas de palabras tienen la marca `drawable`; el Dibujo sólo ofrece y acepta las
+  dibujables (animales, comida, deportes, profesiones, objetos).
+- El perfil ahora muestra estadísticas de cada juego jugado.
+- **Probado:** 210 tests; partida de Dibujo de punta a punta con el admin dibujando con el
+  mouse + 3 bots, en escritorio y en celular (17 checks: trazos en vivo, tinta cortada por el
+  servidor, mismo lienzo en la ronda 2, palabra al final); las suites anteriores en verde.
 
 ## Deploy
 - **Producción en Render** (plan gratis, Virginia, auto-deploy desde `main`):

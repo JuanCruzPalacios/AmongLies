@@ -222,10 +222,13 @@ export function VoteResults({ gameState, room }: Props) {
                       </div>
                     ))}
                   </div>
-                  <p className="text-text-secondary text-sm pt-1">
-                    {t(roundAnswerLabelKey(lastResult))}{" "}
-                    <span className="font-bold text-primary">{roundAnswer(lastResult, locale)}</span>
-                  </p>
+                  {/* En el Dibujo la palabra sigue en juego hasta que termina la partida. */}
+                  {roundAnswer(lastResult, locale) && (
+                    <p className="text-text-secondary text-sm pt-1">
+                      {t(roundAnswerLabelKey(lastResult))}{" "}
+                      <span className="font-bold text-primary">{roundAnswer(lastResult, locale)}</span>
+                    </p>
+                  )}
                 </div>
               )}
 

@@ -24,13 +24,27 @@ interface Props {
   renderActivity: (phase: string) => ReactNode;
   /** Resumen de la ronda que se muestra en la discusión (pistas, tiempos…). */
   summary?: ReactNode;
+  /** Se muestra también durante la votación (p. ej. el dibujo). */
+  showSummaryWhileVoting?: boolean;
+  /** Arriba de los resultados de fin de partida y de juego (p. ej. el dibujo terminado). */
+  endSummary?: ReactNode;
 }
 
 /**
  * Pantalla común de la familia Impostor: chat, eliminados, pausa y las fases
  * de discusión, votación y resultados. Cada juego aporta su actividad.
  */
-export function DeductionGame({ gameState, sendAction, room, myId, onBackToLobby, renderActivity, summary }: Props) {
+export function DeductionGame({
+  gameState,
+  sendAction,
+  room,
+  myId,
+  onBackToLobby,
+  renderActivity,
+  summary,
+  showSummaryWhileVoting = false,
+  endSummary,
+}: Props) {
   const { t } = useTranslation();
   const chatMessages = useRoomStore((s) => s.room?.chat ?? []);
   const listRef = useRef<HTMLDivElement>(null);
@@ -68,13 +82,28 @@ export function DeductionGame({ gameState, sendAction, room, myId, onBackToLobby
       case "discussion":
         return <Discussion gameState={gameState} room={room} sendAction={sendAction} myId={myId} summary={summary} />;
       case "voting":
-        return <Voting gameState={gameState} sendAction={sendAction} room={room} myId={myId} />;
+        return (
+          <>
+            {showSummaryWhileVoting && <div className="mb-4">{summary}</div>}
+            <Voting gameState={gameState} sendAction={sendAction} room={room} myId={myId} />
+          </>
+        );
       case "vote-results":
         return <VoteResults gameState={gameState} room={room} />;
       case "partida-end":
-        return <PartidaEnd gameState={gameState} room={room} sendAction={sendAction} myId={myId} />;
+        return (
+          <>
+            {endSummary && <div className="mb-4">{endSummary}</div>}
+            <PartidaEnd gameState={gameState} room={room} sendAction={sendAction} myId={myId} />
+          </>
+        );
       case "game-end":
-        return <GameEnd gameState={gameState} room={room} onBackToLobby={onBackToLobby} />;
+        return (
+          <>
+            {endSummary && <div className="mb-4">{endSummary}</div>}
+            <GameEnd gameState={gameState} room={room} onBackToLobby={onBackToLobby} />
+          </>
+        );
       default:
         return renderActivity(gameState.phase);
     }

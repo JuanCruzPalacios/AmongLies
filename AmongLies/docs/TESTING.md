@@ -42,7 +42,7 @@ Casos que cubre la suite (origen entre paréntesis):
 
 ## 2. Suite de tests
 
-173 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
+210 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
 (nada de `toBeDefined()`), incluyen el camino de error y los bordes.
 
 | Archivo | Qué prueba | Bordes destacados |
@@ -59,6 +59,8 @@ Casos que cubre la suite (origen entre paréntesis):
 | `impostor/impostor.engine.spec.ts` | El motor completo con timers simulados (`jest.useFakeTimers`), incluida la pausa y la salida de jugadores a mitad de partida | el impostor nunca recibe la palabra, votos ocultos durante la votación, empate → nueva ronda, tope de rondas, votos a uno mismo, a jugadores inexistentes o dobles, pistas que no son texto, eliminados sin voto ni chat, `advance` sólo del admin |
 | `time/time.rules.spec.ts` (Fase 3) | Elegir el tiempo objetivo y aceptar el tiempo informado | mínimo = máximo, mínimo y máximo invertidos, décimas exactas, tiempo informado negativo, mayor al que pasó en el servidor, que no es número |
 | `time/time.engine.spec.ts` (Fase 3) | El juego de Tiempo con timers simulados | el impostor nunca recibe el objetivo, sólo el de turno arranca/para, parar sin arrancar, turno vencido sin arrancar y con el reloj corriendo, pausa con el reloj en marcha, estado emitido al pasar de turno |
+| `drawing/ink.spec.ts` (Fase 4) | Tinta del Dibujo (la usan el servidor y el navegador): validar puntos, medir y cortar en el presupuesto | lista impar, vacía, `NaN`, `Infinity`, texto; puntos fuera del lienzo; horizontal vs. vertical (lienzo 4:3); tinta justa, sin tinta, pasos diminutos repetidos |
+| `drawing/drawing.engine.spec.ts` (Fase 4) | El juego de Dibujo con timers simulados | el impostor nunca recibe la palabra (tampoco en los resultados de la partida en curso), el lienzo sigue entre rondas y se vacía en la partida nueva, colores/grosores fuera de la paleta, color fijo por jugador, tinta entre varios trazos, tinta mínima 0 y 50 %, timer de seguridad, 2 vueltas por ronda, se va el que dibuja |
 
 Como los impostores se eligen al azar, la suite se corrió 5 veces seguidas para confirmar
 que no hay tests que pasen "por casualidad".
@@ -159,3 +161,4 @@ Todos estaban en el MVP; ninguno rompía la compilación del servidor.
 | 20 | El cliente sólo usaba WebSocket (`transports: ["websocket", "polling"]` no cae a polling si falla): en redes que bloquean WebSockets (colegios, empresas) no se podía jugar | prueba en producción desde una red con proxy | transporte por defecto de Socket.io (HTTP primero, después sube a WebSocket) |
 | 21 | Al mover `RoomGateway` de módulo, el CORS de Socket.io pasó a depender del orden de los providers y el polling por HTTP quedó bloqueado | la prueba del navegador al cambiar el transporte | `GATEWAY_OPTIONS` compartido por los tres gateways |
 | 22 | Al pasar de turno el motor emitía el estado **antes** de preparar el turno nuevo: en el Tiempo, el siguiente jugador recibía el reloj del anterior como "corriendo", no podía tocar EMPEZAR y se le vencía el turno | una partida sólo con bots (dos de cuatro quedaban en el máximo) | `nextTurn` prepara el turno y después emite; test que revisa el estado en el momento en que se emite (falla sin el arreglo) |
+| 23 | El perfil sólo mostraba las estadísticas del Impostor: las del Tiempo se guardaban pero no se veían | revisando el perfil al agregar el Dibujo | el perfil muestra un bloque por cada juego jugado |
