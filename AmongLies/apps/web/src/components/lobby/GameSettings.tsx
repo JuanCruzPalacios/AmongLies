@@ -5,12 +5,16 @@ import { useRoomStore } from "@/stores/roomStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getSocket } from "@/lib/socket";
+import { useAuthStore } from "@/stores/authStore";
+import { PresetTools, useMyWorkshop } from "./WorkshopLobbyTools";
 
 /** Muestra los ajustes guardados en la sala. Sólo el admin puede cambiarlos (el servidor los valida). */
 export function GameSettings() {
   const { t, locale } = useTranslation();
   const room = useRoomStore((s) => s.room);
   const myId = usePlayerStore((s) => s.playerId);
+  const user = useAuthStore((s) => s.user);
+  const myWorkshop = useMyWorkshop();
 
   const game = room?.selectedGameId ? getGameDefinition(room.selectedGameId) : undefined;
   if (!room || !game) return null;
@@ -19,6 +23,22 @@ export function GameSettings() {
   const settings = room.gameSettings;
   const wordLists = getWordListsForGame(game, room.settings.locale);
   const selectedWordLists = (settings.selectedWordLists as string[] | undefined) ?? [];
+  // Listas del workshop: las que ya tiene la sala y, para el admin, las de su colección.
+  const roomLocale = room.settings.locale;
+  const customLists = new Map(
+    room.customWordLists
+      .filter((l) => l.locale === roomLocale && (!game.drawableWordsOnly || l.drawable))
+      .map((l) => [l.id, { id: l.id, title: l.title, wordCount: l.wordCount }]),
+  );
+  if (isAdmin) {
+    for (const item of myWorkshop.items) {
+      if (item.kind !== "word_list" || item.locale !== roomLocale || !("words" in item.content)) continue;
+      if (game.drawableWordsOnly && !item.drawable) continue;
+      if (!customLists.has(item.id)) customLists.set(item.id, { id: item.id, title: item.title, wordCount: item.content.words.length });
+    }
+  }
+  // Los demás jugadores sólo ven las del workshop que están elegidas.
+  const visibleCustom = [...customLists.values()].filter((l) => isAdmin || selectedWordLists.includes(l.id));
 
   function updateSetting(key: string, value: unknown) {
     if (isAdmin) getSocket().emit("game:update-settings", { [key]: value });
@@ -39,6 +59,9 @@ export function GameSettings() {
           {t("lobby.game_settings")}
         </h3>
         <div className="space-y-4">
+          {isAdmin && user && (
+            <PresetTools room={room} presets={myWorkshop.items} onSaved={myWorkshop.reload} />
+          )}
           {game.settingsSchema.map((schema) => {
             const value = settings[schema.key] ?? schema.default;
             return (
@@ -108,6 +131,31 @@ export function GameSettings() {
         <h3 className="font-display font-bold text-sm text-text-secondary mb-3 uppercase tracking-wider">
           {t("lobby.word_lists")}
         </h3>
+        {visibleCustom.length > 0 && (
+          <>
+            <p className="text-xs text-text-muted mb-2">{t("workshop.your_lists")}</p>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {visibleCustom.map((wl) => {
+                const isSelected = selectedWordLists.includes(wl.id);
+                return (
+                  <button
+                    key={wl.id}
+                    onClick={() => toggleWordList(wl.id)}
+                    disabled={!isAdmin}
+                    className={`px-3 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer text-left ${
+                      isSelected
+                        ? "bg-accent/15 text-accent border border-accent/40"
+                        : "bg-bg-surface-light text-text-secondary border border-border hover:border-accent/30"
+                    } disabled:cursor-not-allowed`}
+                  >
+                    <span className="block truncate">🧩 {wl.title}</span>
+                    <span className="text-xs text-text-muted">{t("lobby.words", { n: wl.wordCount })}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
         <div className="grid grid-cols-2 gap-2">
           {wordLists.map((wl) => {
             const isSelected = selectedWordLists.includes(wl.id);

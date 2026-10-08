@@ -42,7 +42,7 @@ Casos que cubre la suite (origen entre paréntesis):
 
 ## 2. Suite de tests
 
-234 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
+266 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
 (nada de `toBeDefined()`), incluyen el camino de error y los bordes.
 
 | Archivo | Qué prueba | Bordes destacados |
@@ -63,6 +63,8 @@ Casos que cubre la suite (origen entre paréntesis):
 | `drawing/drawing.engine.spec.ts` (Fase 4) | El juego de Dibujo con timers simulados | el impostor nunca recibe la palabra (tampoco en los resultados de la partida en curso), el lienzo sigue entre rondas y se vacía en la partida nueva, colores/grosores fuera de la paleta, color fijo por jugador, tinta entre varios trazos, tinta mínima 0 y 50 %, timer de seguridad, 2 vueltas por ronda, se va el que dibuja |
 | `social/social.rules.spec.ts` (Fase 5) | Relación entre dos cuentas, presencia y búsqueda | amistad pedida por cualquiera de los dos, filas de terceros, desconectado dentro de una sala, sala en juego o terminada (no se pasa el código), búsqueda con `@`, `*`, `,` y `)` (no se cuelan en la consulta), 21 caracteres |
 | `social/social.service.spec.ts` (Fase 5) | Solicitudes, aceptar/rechazar, eliminar y búsqueda, contra un repositorio en memoria | pedirse a uno mismo (sin importar mayúsculas), solicitud repetida, solicitudes cruzadas (quedan amigos), responder una solicitud propia, `accept` que no es `true`, cancelar una recibida, base caída → `unavailable` |
+| `workshop/workshop.rules.spec.ts` (Fase 6) | Validar listas y presets del workshop | 9, 10, 300 y 301 palabras; repetidas con otras mayúsculas y vacías (no cuentan); palabra de 30 y 31 letras; título de 2/3/40/41; descripción de 200/201; idioma `pt`; categoría inventada → "other"; preset con valores fuera de rango, claves extra y listas de palabras (se descartan) |
+| `workshop/workshop.service.spec.ts` (Fase 6) | Crear, editar, publicar, copiar, actualizar copias, likes y uso en salas, contra un repositorio en memoria | editar sólo el título no sube la versión; copiar algo privado de otro; copiar dos veces; copia editada → "modificada"; actualizar con el original despublicado; like doble; lista de otro idioma o privada de otro en una sala; un preset no sirve como lista; base caída |
 
 Como los impostores se eligen al azar, la suite se corrió 5 veces seguidas para confirmar
 que no hay tests que pasen "por casualidad".
@@ -164,3 +166,4 @@ Todos estaban en el MVP; ninguno rompía la compilación del servidor.
 | 21 | Al mover `RoomGateway` de módulo, el CORS de Socket.io pasó a depender del orden de los providers y el polling por HTTP quedó bloqueado | la prueba del navegador al cambiar el transporte | `GATEWAY_OPTIONS` compartido por los tres gateways |
 | 22 | Al pasar de turno el motor emitía el estado **antes** de preparar el turno nuevo: en el Tiempo, el siguiente jugador recibía el reloj del anterior como "corriendo", no podía tocar EMPEZAR y se le vencía el turno | una partida sólo con bots (dos de cuatro quedaban en el máximo) | `nextTurn` prepara el turno y después emite; test que revisa el estado en el momento en que se emite (falla sin el arreglo) |
 | 23 | El perfil sólo mostraba las estadísticas del Impostor: las del Tiempo se guardaban pero no se veían | revisando el perfil al agregar el Dibujo | el perfil muestra un bloque por cada juego jugado |
+| 24 | Volver a tocar en el lobby el juego que ya estaba elegido reiniciaba todos sus ajustes (y las listas elegidas) | el e2e del workshop: después de aplicar un preset, la palabra salía de las listas del juego | elegir el mismo juego no hace nada |

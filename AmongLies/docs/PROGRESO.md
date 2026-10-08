@@ -22,7 +22,7 @@ tomó: no hace falta volver a preguntarlas.
 | 3 — Juego Tiempo | ✅ hecha |
 | 4 — Juego Dibujo | ✅ hecha |
 | 5 — Social: amigos, invitaciones, notificaciones, presencia | ✅ hecha |
-| 6 — Workshop (listas de palabras y presets de reglas) | pendiente |
+| 6 — Workshop (listas de palabras y presets de reglas) | ✅ hecha |
 | 7 — Ajustes, salas públicas, moderación con panel de admin, i18n, sonido, responsive | pendiente |
 | 8 — Tests, deploy, actualizar la documentación del TP | pendiente |
 
@@ -167,6 +167,28 @@ Chromium con `--proxy-server=https=<host:puerto de HTTPS_PROXY>`. En Railway no 
 - **Probado:** 234 tests; dos cuentas reales en dos navegadores (16 checks: buscar, pedir,
   aviso en vivo, aceptar, presencia, invitar desde el lobby, entrar por la invitación,
   eliminar); las suites anteriores en verde. Usuarios de prueba creados y borrados.
+
+## Fase 6 — qué quedó hecho
+- **Decisiones de Juan:** publica **cualquier cuenta** (la moderación llega en la Fase 7);
+  descargar guarda **una copia editable** que **avisa si el autor sacó una versión nueva** y se
+  puede actualizar (si la editaste, avisa que se pisan tus cambios); un preset es **juego +
+  todos sus ajustes** (sin listas); explorar con **más likes / más nuevos, filtros por tipo,
+  idioma, juego y categoría, y búsqueda por nombre**.
+- Tablas `workshop_items` (listas y presets, con `version`, `source_id`/`source_version` para
+  las copias y `modified`) y `workshop_likes` (contador por trigger), migración
+  `20261008140000_create_workshop`. RLS: lo publicado lo lee cualquiera, lo propio sólo su
+  dueño; escribe sólo el servidor. Advisors de seguridad en 0.
+- Las lecturas van directo a Supabase; las escrituras por el socket (`workshop:*`) y el
+  servidor valida todo (10 a 300 palabras de hasta 30 letras, sin repetidas; los ajustes del
+  preset pasan por el mismo validador que el lobby).
+- **En el lobby:** el admin ve "Tus listas del workshop" (del idioma de la sala; para el Dibujo
+  sólo las dibujables). Al elegirla, el servidor la trae de Supabase y la guarda en la sala: los
+  demás reciben el nombre y la cantidad, **no las palabras**. "Guardar como preset" y aplicar
+  un preset propio. Al empezar, el motor recibe las listas ya resueltas (juego + workshop).
+- Arreglado: volver a elegir el juego ya elegido reiniciaba los ajustes (bug #24).
+- **Probado:** 266 tests; e2e con dos cuentas, un invitado y bots (23 checks: crear, publicar,
+  filtros, like, copia, versión nueva y actualizar, copia editada, lista propia en el lobby,
+  presets, la palabra sale de la lista). Las suites anteriores en verde.
 
 ## Deploy
 - **Producción en Render** (plan gratis, Virginia, auto-deploy desde `main`):

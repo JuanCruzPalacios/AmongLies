@@ -21,6 +21,14 @@ export function Header({ showAccount = true }: { showAccount?: boolean }) {
         </h1>
       </Link>
       <div className="flex items-center gap-2">
+        {showAccount && (
+          <Link
+            href="/workshop"
+            className="px-2 py-1.5 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-bg-surface-light"
+          >
+            {t("workshop.title")}
+          </Link>
+        )}
         {showAccount && ready && (
           user ? (
             <div className="flex items-center gap-2 text-sm">
