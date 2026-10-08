@@ -2,20 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { ImpostorPlayerView, Room, GameAction } from "@amonglies/shared";
-import { ScoreBoard } from "../ScoreBoard";
+import type { GameView, Room, GameAction } from "@amonglies/shared";
+import { ScoreBoard } from "./ScoreBoard";
+import { roundAnswer } from "./roundAnswer";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar } from "@/components/ui";
 
 const PARTIDA_END_SECONDS = 15;
 
 interface Props {
-  gameState: ImpostorPlayerView;
+  gameState: GameView;
   room: Room;
   sendAction: (action: GameAction) => void;
   myId: string;
 }
 
 export function PartidaEnd({ gameState, room, sendAction, myId }: Props) {
+  const { locale } = useTranslation();
   const [timeLeft, setTimeLeft] = useState(PARTIDA_END_SECONDS);
 
   useEffect(() => {
@@ -110,7 +113,7 @@ export function PartidaEnd({ gameState, room, sendAction, myId }: Props) {
               : "bg-accent/10"
             }`}>
               <span className="text-text-muted">Ronda {r.ronda}</span>
-              <span className="font-mono text-primary">{r.word}</span>
+              <span className="font-mono text-primary">{roundAnswer(r, locale)}</span>
               <span className={
                 r.winner === "players" ? "text-success font-semibold"
                 : r.winner === "tie" ? "text-text-muted"

@@ -1,15 +1,12 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import type { ImpostorPlayerView, Room, GameAction } from "@amonglies/shared";
-import { WordReveal } from "./phases/WordReveal";
-import { TurnsChat } from "./phases/TurnsChat";
-import { TurnsVoice } from "./phases/TurnsVoice";
-import { Discussion } from "./phases/Discussion";
-import { Voting } from "./phases/Voting";
-import { VoteResults } from "./phases/VoteResults";
-import { GameEnd } from "./phases/GameEnd";
-import { PartidaEnd } from "./phases/PartidaEnd";
+import { useRef, useEffect, useState, type ReactNode } from "react";
+import type { GameView, Room, GameAction } from "@amonglies/shared";
+import { Discussion } from "./Discussion";
+import { Voting } from "./Voting";
+import { VoteResults } from "./VoteResults";
+import { GameEnd } from "./GameEnd";
+import { PartidaEnd } from "./PartidaEnd";
 import { Avatar } from "@/components/ui";
 import { PauseOverlay } from "@/components/game/PauseOverlay";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -18,14 +15,22 @@ import { getSocket } from "@/lib/socket";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
-  gameState: ImpostorPlayerView;
+  gameState: GameView;
   sendAction: (action: GameAction) => void;
   room: Room;
   myId: string;
   onBackToLobby: () => void;
+  /** Pantalla de las fases propias del juego (revelación, turnos…). */
+  renderActivity: (phase: string) => ReactNode;
+  /** Resumen de la ronda que se muestra en la discusión (pistas, tiempos…). */
+  summary?: ReactNode;
 }
 
-export function ImpostorGame({ gameState, sendAction, room, myId, onBackToLobby }: Props) {
+/**
+ * Pantalla común de la familia Impostor: chat, eliminados, pausa y las fases
+ * de discusión, votación y resultados. Cada juego aporta su actividad.
+ */
+export function DeductionGame({ gameState, sendAction, room, myId, onBackToLobby, renderActivity, summary }: Props) {
   const { t } = useTranslation();
   const chatMessages = useRoomStore((s) => s.room?.chat ?? []);
   const listRef = useRef<HTMLDivElement>(null);
@@ -60,14 +65,8 @@ export function ImpostorGame({ gameState, sendAction, room, myId, onBackToLobby 
 
   const phaseContent = (() => {
     switch (gameState.phase) {
-      case "word-reveal":
-        return <WordReveal gameState={gameState} room={room} />;
-      case "turns":
-        return gameState.settings.communicationMode === "chat"
-          ? <TurnsChat gameState={gameState} sendAction={sendAction} room={room} myId={myId} />
-          : <TurnsVoice gameState={gameState} sendAction={sendAction} room={room} myId={myId} />;
       case "discussion":
-        return <Discussion gameState={gameState} room={room} sendAction={sendAction} myId={myId} />;
+        return <Discussion gameState={gameState} room={room} sendAction={sendAction} myId={myId} summary={summary} />;
       case "voting":
         return <Voting gameState={gameState} sendAction={sendAction} room={room} myId={myId} />;
       case "vote-results":
@@ -77,7 +76,7 @@ export function ImpostorGame({ gameState, sendAction, room, myId, onBackToLobby 
       case "game-end":
         return <GameEnd gameState={gameState} room={room} onBackToLobby={onBackToLobby} />;
       default:
-        return <p className="text-text-muted text-center">Cargando...</p>;
+        return renderActivity(gameState.phase);
     }
   })();
 
@@ -296,7 +295,7 @@ function EliminatedStrip({
   room,
   className = "",
 }: {
-  gameState: ImpostorPlayerView;
+  gameState: GameView;
   room: Room;
   className?: string;
 }) {

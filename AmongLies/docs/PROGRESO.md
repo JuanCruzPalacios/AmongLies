@@ -19,12 +19,12 @@ tomó: no hace falta volver a preguntarlas.
 | 0 — Base: bugs, `GameEngine` + registry, validación, tests, guardrails | ✅ hecha |
 | 1 — Identidad y conexión (cuentas, invitado con token, reconexión con pausa) | ✅ hecha |
 | 2 — Reglas configurables y puntaje | ✅ hecha |
-| 3 — Juego Tiempo | pendiente |
+| 3 — Juego Tiempo | ✅ hecha |
 | 4 — Juego Dibujo | pendiente |
 | 5 — Social: amigos, invitaciones, notificaciones, presencia | pendiente |
 | 6 — Workshop (listas de palabras y presets de reglas) | pendiente |
 | 7 — Ajustes, salas públicas, moderación con panel de admin, i18n, sonido, responsive | pendiente |
-| 8 — Tests, deploy en Railway, actualizar la documentación del TP | pendiente |
+| 8 — Tests, deploy, actualizar la documentación del TP | pendiente |
 
 ## Decisiones de producto (definitivas)
 
@@ -112,6 +112,21 @@ Chromium con `--proxy-server=https=<host:puerto de HTTPS_PROXY>`. En Railway no 
   partidas, victorias por rol, % de votos acertados y puntos.
 - **Probado:** 143 tests; partida de punta a punta con cuenta + bots (11 checks) verificando
   la fila guardada en Supabase; las suites de las fases 0 y 1 siguen en verde.
+
+## Fase 3 — qué quedó hecho
+- **Familia Impostor:** `DeductionEngine` (en `engines/deduction/`) tiene todo lo común —
+  partidas, rondas, turnos, votación, desempates, puntaje, estadísticas, pausa — y cada juego
+  sólo define su actividad de la ronda. El Impostor clásico pasó a usarlo sin cambiar reglas.
+  En la web, las pantallas comunes están en `components/deduction/`.
+- **Impostor por tiempo** (`gameId: 'time'`): cada ronda hay un tiempo objetivo (décimas de
+  segundo, entre el mínimo y el máximo configurables) que sólo ven los inocentes. En su turno
+  cada uno toca EMPEZAR y PARAR sin ver el reloj; el tiempo se revela a todos apenas para.
+  Se mide en el navegador (`performance.now()`) y el servidor no acepta más de lo que pasó
+  realmente. Si no arranca o no para antes del máximo por turno, queda "se le pasó". Pausar
+  con el reloj en marcha reinicia ese turno. No usa listas de palabras.
+- **Probado:** 173 tests; partida de Tiempo de punta a punta con el admin en el navegador y
+  3 bots (10 checks); las suites de las fases 0, 1 y 2 siguen en verde. Se encontró y arregló
+  el bug #22 (ver TESTING.md).
 
 ## Deploy
 - **Producción en Render** (plan gratis, Virginia, auto-deploy desde `main`):

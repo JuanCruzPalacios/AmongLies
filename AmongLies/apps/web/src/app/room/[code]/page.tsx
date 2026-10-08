@@ -16,6 +16,7 @@ import { Chat } from "@/components/lobby/Chat";
 import { GameSelector } from "@/components/lobby/GameSelector";
 import { GameSettings } from "@/components/lobby/GameSettings";
 import { ImpostorGame } from "@/components/impostor/ImpostorGame";
+import { TimeGame } from "@/components/time/TimeGame";
 import { Button, Input, Avatar } from "@/components/ui";
 import { getSocket, connectSocket, whenSessionReady } from "@/lib/socket";
 
@@ -248,7 +249,19 @@ export default function RoomPage() {
           </div>
         )}
         <main className="flex-1 min-h-0 flex flex-col">
-          <ImpostorGame
+          {gameState.gameId === "time" ? (
+            <TimeGame
+              gameState={gameState}
+              sendAction={sendAction}
+              room={room}
+              myId={myId!}
+              onBackToLobby={() => {
+                resetGame();
+                if (isAdmin) getSocket().emit("game:back-to-lobby");
+              }}
+            />
+          ) : (
+            <ImpostorGame
             gameState={gameState}
             sendAction={sendAction}
             room={room}
@@ -258,6 +271,7 @@ export default function RoomPage() {
               if (isAdmin) getSocket().emit("game:back-to-lobby");
             }}
           />
+          )}
         </main>
       </div>
     );

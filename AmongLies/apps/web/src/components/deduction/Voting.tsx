@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { SKIP_VOTE, type ImpostorPlayerView, type Room, type GameAction } from "@amonglies/shared";
+import { SKIP_VOTE, type GameView, type Room, type GameAction } from "@amonglies/shared";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar, Button } from "@/components/ui";
 
 interface Props {
-  gameState: ImpostorPlayerView;
+  gameState: GameView;
   sendAction: (action: GameAction) => void;
   room: Room;
   myId: string;

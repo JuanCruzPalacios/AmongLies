@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { getSocket } from "@/lib/socket";
-import type { ImpostorPlayerView, GameAction } from "@amonglies/shared";
+import type { GameView, GameAction } from "@amonglies/shared";
 
 export function useGame() {
-  const [gameState, setGameState] = useState<ImpostorPlayerView | null>(null);
+  const [gameState, setGameState] = useState<GameView | null>(null);
 
   useEffect(() => {
     const socket = getSocket();

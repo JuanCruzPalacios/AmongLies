@@ -1,25 +1,26 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { ImpostorPlayerView, Room, RoundResult } from "@amonglies/shared";
+import type { GameView, Room } from "@amonglies/shared";
 import { useTranslation } from "@/hooks/useTranslation";
+import { roundAnswer } from "./roundAnswer";
 import { Button } from "@/components/ui";
-import { ScoreBoard } from "../ScoreBoard";
+import { ScoreBoard } from "./ScoreBoard";
 
 interface Props {
-  gameState: ImpostorPlayerView;
+  gameState: GameView;
   room: Room;
   onBackToLobby: () => void;
 }
 
 export function GameEnd({ gameState, room, onBackToLobby }: Props) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   // Cada partida terminada con su ganador (calculado en el servidor) y sus rondas
   const partidaResults = gameState.partidaResults.map((p) => ({
     partida: p.partida,
     playersWon: p.winner === "players",
-    rounds: gameState.results.filter((r: RoundResult) => r.partida === p.partida),
+    rounds: gameState.results.filter((r) => r.partida === p.partida),
   }));
 
   const playersPartidas = partidaResults.filter((p) => p.playersWon).length;
@@ -101,7 +102,7 @@ export function GameEnd({ gameState, room, onBackToLobby }: Props) {
                   return (
                     <div key={i} className="flex items-center justify-between px-4 py-2 text-xs">
                       <span className="text-text-muted">Ronda {r.ronda}</span>
-                      <span className="font-mono text-primary">{r.word}</span>
+                      <span className="font-mono text-primary">{roundAnswer(r, locale)}</span>
                       <span className="text-text-secondary">
                         {r.winner === "tie"
                           ? "Empate"

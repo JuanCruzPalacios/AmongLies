@@ -1,19 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { ImpostorPlayerView, Room, GameAction } from "@amonglies/shared";
+import type { GameView, Room, GameAction } from "@amonglies/shared";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar } from "@/components/ui";
 
 interface Props {
-  gameState: ImpostorPlayerView;
+  gameState: GameView;
   room: Room;
   sendAction: (action: GameAction) => void;
   myId: string;
+  summary?: ReactNode;
 }
 
-export function Discussion({ gameState, room, sendAction, myId }: Props) {
+export function Discussion({ gameState, room, sendAction, myId, summary }: Props) {
   const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState(gameState.settings.discussionTimeSeconds);
 
@@ -126,26 +127,8 @@ export function Discussion({ gameState, room, sendAction, myId }: Props) {
           </div>
         )}
 
-        {/* Words said */}
-        {gameState.wordsUsed.length > 0 && (
-          <div className="border-t border-border pt-4">
-            <p className="text-text-muted text-xs mb-3 uppercase tracking-wider text-center">
-              {t("game.impostor.words_said")}
-            </p>
-            <div className="space-y-1.5">
-              {gameState.wordsUsed.map((entry, i) => {
-                const player = room.players.find((p) => p.id === entry.playerId);
-                return (
-                  <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg-surface-light">
-                    <Avatar avatarId={player?.avatarId || "fox"} size="sm" />
-                    <span className="text-sm text-text-secondary flex-1">{player?.nickname}</span>
-                    <span className="font-mono text-sm text-primary font-semibold">{entry.word}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Resumen de la ronda (pistas, tiempos…): lo pasa cada juego */}
+        {summary && <div className="border-t border-border pt-4">{summary}</div>}
       </div>
     </motion.div>
   );

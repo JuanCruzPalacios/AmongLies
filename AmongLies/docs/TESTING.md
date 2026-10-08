@@ -42,7 +42,7 @@ Casos que cubre la suite (origen entre paréntesis):
 
 ## 2. Suite de tests
 
-143 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
+173 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
 (nada de `toBeDefined()`), incluyen el camino de error y los bordes.
 
 | Archivo | Qué prueba | Bordes destacados |
@@ -57,6 +57,8 @@ Casos que cubre la suite (origen entre paréntesis):
 | `auth/token-verifier.spec.ts` | Verificación del JWT de Supabase (claves ES256 generadas en el test) | firmado con otra clave, otro issuer, otra audience, vencido, modificado después de firmar, texto que no es JWT |
 | `room/decider.spec.ts` | Quién decide si se sigue sin un desconectado | admin desconectado, el más antiguo también desconectado, nadie conectado |
 | `impostor/impostor.engine.spec.ts` | El motor completo con timers simulados (`jest.useFakeTimers`), incluida la pausa y la salida de jugadores a mitad de partida | el impostor nunca recibe la palabra, votos ocultos durante la votación, empate → nueva ronda, tope de rondas, votos a uno mismo, a jugadores inexistentes o dobles, pistas que no son texto, eliminados sin voto ni chat, `advance` sólo del admin |
+| `time/time.rules.spec.ts` (Fase 3) | Elegir el tiempo objetivo y aceptar el tiempo informado | mínimo = máximo, mínimo y máximo invertidos, décimas exactas, tiempo informado negativo, mayor al que pasó en el servidor, que no es número |
+| `time/time.engine.spec.ts` (Fase 3) | El juego de Tiempo con timers simulados | el impostor nunca recibe el objetivo, sólo el de turno arranca/para, parar sin arrancar, turno vencido sin arrancar y con el reloj corriendo, pausa con el reloj en marcha, estado emitido al pasar de turno |
 
 Como los impostores se eligen al azar, la suite se corrió 5 veces seguidas para confirmar
 que no hay tests que pasen "por casualidad".
@@ -156,3 +158,4 @@ Todos estaban en el MVP; ninguno rompía la compilación del servidor.
 | 19 | `jose` v6 sólo viene como ESM y el servidor compila a CommonJS: en Node 20 fallaría al arrancar | Jest no podía cargarlo | `jose` v5 (misma API, con build CommonJS) |
 | 20 | El cliente sólo usaba WebSocket (`transports: ["websocket", "polling"]` no cae a polling si falla): en redes que bloquean WebSockets (colegios, empresas) no se podía jugar | prueba en producción desde una red con proxy | transporte por defecto de Socket.io (HTTP primero, después sube a WebSocket) |
 | 21 | Al mover `RoomGateway` de módulo, el CORS de Socket.io pasó a depender del orden de los providers y el polling por HTTP quedó bloqueado | la prueba del navegador al cambiar el transporte | `GATEWAY_OPTIONS` compartido por los tres gateways |
+| 22 | Al pasar de turno el motor emitía el estado **antes** de preparar el turno nuevo: en el Tiempo, el siguiente jugador recibía el reloj del anterior como "corriendo", no podía tocar EMPEZAR y se le vencía el turno | una partida sólo con bots (dos de cuatro quedaban en el máximo) | `nextTurn` prepara el turno y después emite; test que revisa el estado en el momento en que se emite (falla sin el arreglo) |

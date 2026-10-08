@@ -103,6 +103,7 @@ export function GameSettings() {
         </div>
       </div>
 
+      {game.usesWordLists && (
       <div>
         <h3 className="font-display font-bold text-sm text-text-secondary mb-3 uppercase tracking-wider">
           {t("lobby.word_lists")}
@@ -128,6 +129,7 @@ export function GameSettings() {
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }

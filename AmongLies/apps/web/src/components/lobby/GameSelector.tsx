@@ -42,7 +42,7 @@ export function GameSelector() {
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center text-2xl">
-                  🎭
+                  {game.emoji}
                 </div>
                 <div className="flex-1">
                   <h4 className="font-display font-bold">{game.name[locale]}</h4>

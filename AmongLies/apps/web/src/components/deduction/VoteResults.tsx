@@ -2,17 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SKIP_VOTE, type ImpostorPlayerView, type Room } from "@amonglies/shared";
+import { SKIP_VOTE, type GameView, type Room } from "@amonglies/shared";
 import { useTranslation } from "@/hooks/useTranslation";
+import { roundAnswer, roundAnswerLabelKey } from "./roundAnswer";
 import { Avatar } from "@/components/ui";
 
 interface Props {
-  gameState: ImpostorPlayerView;
+  gameState: GameView;
   room: Room;
 }
 
 export function VoteResults({ gameState, room }: Props) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   // stage 0: "el expulsado es..."  (0–2.5s)
   // stage 1: ERA / NO ERA impostor  (2.5–5.5s)
   // stage 2: info completa          (5.5s+)
@@ -222,8 +223,8 @@ export function VoteResults({ gameState, room }: Props) {
                     ))}
                   </div>
                   <p className="text-text-secondary text-sm pt-1">
-                    {t("game.impostor.word_was")}{" "}
-                    <span className="font-bold text-primary">{lastResult.word}</span>
+                    {t(roundAnswerLabelKey(lastResult))}{" "}
+                    <span className="font-bold text-primary">{roundAnswer(lastResult, locale)}</span>
                   </p>
                 </div>
               )}
