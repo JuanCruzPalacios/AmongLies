@@ -98,16 +98,25 @@ La red del contenedor sale por un proxy. Para que el **servidor** llegue al JWKS
 hay que levantarlo con `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt`, y
 Chromium con `--proxy-server=https=<host:puerto de HTTPS_PROXY>`. En Railway no hace falta.
 
+## Deploy
+- **Producción en Render** (plan gratis, Virginia, auto-deploy desde `main`):
+  web https://amonglies-web.onrender.com · server https://amonglies-server.onrender.com.
+  Probado con una partida completa de 4 navegadores reales contra producción.
+- Railway quedó configurado en el repo (`railway.*.json`) pero la cuenta tiene la prueba
+  vencida: no se usa.
+
 ## Pendientes de Juan (no los puede hacer Claude)
 - [ ] Habilitar `pyamkqingktpeexkgryb.supabase.co` en *Network access → Allowed domains* del
   environment de Claude Code (dejando "Allow package managers") y cargar `SUPABASE_SECRET_KEY`
   como variable de entorno. Aplica a sesiones nuevas.
-- [ ] En Railway, servicio `server`: `SUPABASE_URL` y `SUPABASE_SECRET_KEY`. Servicio `web`:
-  `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (si faltan, el web usa los
-  valores públicos del proyecto por defecto).
+- [x] Variables cargadas en Render (incluida `SUPABASE_SECRET_KEY` en `amonglies-server`).
+  Si rotás la clave, actualizala ahí.
 - [ ] **Rotar la clave secreta** (quedó en el historial del chat): *Project Settings → API Keys*.
-- [ ] En Supabase, *Authentication → URL Configuration*: Site URL de producción y redirect
-  URLs (`http://localhost:3000/**` y la URL de producción), para los mails de confirmación y de recuperación.
+- [ ] En Supabase, *Authentication → URL Configuration*: Site URL `https://amonglies-web.onrender.com`
+  y redirect URLs `https://amonglies-web.onrender.com/**` y `http://localhost:3000/**`
+  (sin esto los links de confirmación y de recuperación de contraseña no vuelven a la app).
 - [ ] Activar la protección de `main` en GitHub: *Settings → Branches → Require status checks* → `verificar`.
-- [ ] Definir dominio y hosting definitivos.
+- [ ] Definir dominio propio (hoy: subdominios de onrender.com).
+- [ ] Borrar desde el dashboard de Railway los proyectos viejos `magnificent-integrity`,
+  `carefree-smile` y `sparkling-forgiveness` (el conector no puede borrar proyectos).
 - [ ] Decidir si se transfiere el proyecto de Supabase a una organización propia `amonglies`.

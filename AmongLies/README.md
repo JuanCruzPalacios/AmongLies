@@ -180,17 +180,21 @@ Un proyecto con dos servicios conectados al repo de GitHub (rama `main`), cada u
 que volver a deployar el web. Cada servicio sólo se redeploya cuando cambian sus archivos
 (`watchPatterns`).
 
-### Render
+### Render (producción actual)
 
-Crear dos servicios web en Render (dejar Root Directory en **blanco**):
+- Web: https://amonglies-web.onrender.com
+- Server: https://amonglies-server.onrender.com
 
-**Backend:**
-- Build: `cd AmongLies && npm install && npx turbo run build --filter=@amonglies/server...`
-- Start: `node AmongLies/apps/server/dist/main`
+Dos *Web Services* gratis (región Virginia) conectados a `main` con auto-deploy. Root Directory en
+**blanco** (el monorepo está en la subcarpeta `AmongLies/`):
 
-**Frontend:**
-- Build: `cd AmongLies && npm install && npx turbo run build --filter=@amonglies/web... && cp -r apps/web/public apps/web/.next/standalone/apps/web/public && cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static`
-- Start: `node AmongLies/apps/web/.next/standalone/apps/web/server.js`
+| Servicio | Build | Start |
+|---|---|---|
+| `amonglies-server` | `cd AmongLies && npm ci && npx turbo run build --filter=@amonglies/server...` | `cd AmongLies && node apps/server/dist/main` |
+| `amonglies-web` | `cd AmongLies && npm ci && npx turbo run build --filter=@amonglies/web... && cp -r apps/web/public apps/web/.next/standalone/apps/web/public && cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static` | `cd AmongLies && node apps/web/.next/standalone/apps/web/server.js` |
+
+Variables: las mismas que en Railway (tabla de arriba), más `NODE_VERSION=22`. En el plan gratis
+cada servicio se duerme a los 15 minutos sin uso y tarda 30–60 s en despertar.
 
 ---
 
