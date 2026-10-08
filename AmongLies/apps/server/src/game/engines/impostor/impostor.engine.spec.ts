@@ -641,3 +641,48 @@ describe('ImpostorEngine — reglas configurables (Fase 2)', () => {
     });
   });
 });
+
+describe('ImpostorEngine — listas del workshop (Fase 6)', () => {
+  const custom = {
+    id: 'mi-lista',
+    locale: 'es' as const,
+    category: { es: 'Mi lista', en: 'Mi lista' },
+    drawable: false,
+    words: ['Ornitorrinco'],
+  };
+
+  it('la palabra sale de las listas resueltas que recibe', () => {
+    const callbacks = {
+      onStateUpdate: jest.fn(),
+      onPhaseChange: jest.fn(),
+      onRoundStart: jest.fn(),
+      onGameEnd: jest.fn(),
+    };
+    const engine = new ImpostorEngine(
+      makePlayers(4),
+      makeSettings({ selectedWordLists: ['mi-lista'] }),
+      callbacks,
+      [custom],
+    );
+    engine.start();
+    const views = ['p1', 'p2', 'p3', 'p4'].map(
+      (id) => engine.getStateForPlayer(id) as ImpostorPlayerView,
+    );
+    const innocent = views.find((v) => !v.isImpostor)!;
+    expect(innocent.secretWord).toBe('Ornitorrinco');
+    expect(innocent.category).toBe('Mi lista');
+    engine.destroy();
+  });
+
+  it('validateStart usa las listas resueltas (una del workshop cuenta)', () => {
+    const settings = makeSettings({ selectedWordLists: ['mi-lista'] });
+    expect(
+      IMPOSTOR_REGISTRATION.validateStart(makePlayers(4), { ...settings }, [
+        custom,
+      ]),
+    ).toBeNull();
+    expect(
+      IMPOSTOR_REGISTRATION.validateStart(makePlayers(4), { ...settings }, []),
+    ).toBe('no_word_lists_selected');
+  });
+});

@@ -1,4 +1,5 @@
 import type {
+  WordList,
   DrawEvent,
   GameAction,
   GameSettingsValues,
@@ -48,11 +49,17 @@ export interface GameEngine {
 
 export interface GameRegistration {
   /** Error de inicio (p. ej. demasiados impostores) o null si se puede empezar. */
-  validateStart(players: Player[], settings: GameSettingsValues): string | null;
+  /** `wordLists`: las listas elegidas ya resueltas (del juego o del workshop). */
+  validateStart(
+    players: Player[],
+    settings: GameSettingsValues,
+    wordLists?: WordList[],
+  ): string | null;
   create(
     players: Player[],
     settings: GameSettingsValues,
     callbacks: EngineCallbacks,
+    wordLists?: WordList[],
   ): GameEngine;
 }
 

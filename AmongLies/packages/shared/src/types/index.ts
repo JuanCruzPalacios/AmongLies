@@ -8,5 +8,6 @@ export * from './impostor';
 export * from './time';
 export * from './drawing';
 export * from './social';
+export * from './workshop';
 export * from './events';
 export * from './session';

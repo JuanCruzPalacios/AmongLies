@@ -4,6 +4,7 @@ import type {
   ImpostorPhase,
   ImpostorSettings,
   Player,
+  WordList,
   RoundResult,
   WordEntry,
 } from '@amonglies/shared';
@@ -35,12 +36,16 @@ export class ImpostorEngine extends DeductionEngine<
     players: Player[],
     settings: ImpostorSettings,
     callbacks: EngineCallbacks,
+    /** Listas ya resueltas (del juego o del workshop); por defecto, las del juego. */
+    private readonly wordLists: WordList[] = getWordListsByIds(
+      settings.selectedWordLists,
+    ),
   ) {
     super('impostor', players, settings, callbacks);
   }
 
   protected startRoundActivity(): void {
-    const wordLists = getWordListsByIds(this.state.settings.selectedWordLists);
+    const wordLists = this.wordLists;
     const allWords = wordLists.flatMap((list) =>
       list.words.map((word) => ({
         word,
@@ -172,10 +177,11 @@ export const IMPOSTOR_REGISTRATION: GameRegistration = {
   validateStart(
     players: Player[],
     settings: GameSettingsValues,
+    wordLists?: WordList[],
   ): string | null {
-    const lists = getWordListsByIds(
-      (settings.selectedWordLists as string[]) ?? [],
-    );
+    const lists =
+      wordLists ??
+      getWordListsByIds((settings.selectedWordLists as string[]) ?? []);
     if (!lists.some((list) => list.words.length > 0))
       return 'no_word_lists_selected';
     if ((settings.impostorCount as number) > maxImpostorsFor(players.length)) {
@@ -183,12 +189,13 @@ export const IMPOSTOR_REGISTRATION: GameRegistration = {
     }
     return null;
   },
-  create(players, settings, callbacks) {
+  create(players, settings, callbacks, wordLists) {
     // Los ajustes ya vienen validados por sanitizeGameSettings.
     return new ImpostorEngine(
       players,
       settings as unknown as ImpostorSettings,
       callbacks,
+      wordLists,
     );
   },
 };

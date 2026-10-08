@@ -6,6 +6,7 @@ import type { GameAction } from './game';
 import type { ImpostorPlayerView } from './impostor';
 import type { TimePlayerView } from './time';
 import type { DrawEvent, DrawingPlayerView } from './drawing';
+import type { WorkshopAck, WorkshopDraft } from './workshop';
 import type { FriendProfile, Presence, RoomInvite, SocialAck, SocialState } from './social';
 
 /** Lo que recibe cada jugador del juego en curso (según `gameId`). */
@@ -36,6 +37,16 @@ export interface ClientEvents {
   'social:respond': (data: { userId: string; accept: boolean }, ack: SocialAck) => void;
   'social:remove': (data: { userId: string }, ack: SocialAck) => void;
   'social:invite': (data: { userId: string }, ack: SocialAck) => void;
+
+  // Workshop (sólo cuentas). Las lecturas van directo a Supabase; las escrituras pasan por acá.
+  'workshop:save': (data: WorkshopDraft, ack: WorkshopAck) => void;
+  'workshop:publish': (data: { id: string; published: boolean }, ack: WorkshopAck) => void;
+  'workshop:delete': (data: { id: string }, ack: WorkshopAck) => void;
+  /** Guarda una copia propia de un ítem publicado (o devuelve la que ya tenías). */
+  'workshop:copy': (data: { id: string }, ack: WorkshopAck) => void;
+  /** Trae a tu copia la última versión del original (pisa tus cambios). */
+  'workshop:update-copy': (data: { id: string }, ack: WorkshopAck) => void;
+  'workshop:like': (data: { id: string; like: boolean }, ack: WorkshopAck) => void;
 }
 
 // Server -> Client

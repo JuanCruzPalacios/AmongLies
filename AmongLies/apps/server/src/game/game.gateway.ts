@@ -9,13 +9,14 @@ import { Server, Socket } from 'socket.io';
 import { GATEWAY_OPTIONS } from '../gateway.options.js';
 import { v4 as uuid } from 'uuid';
 import type { ChatMessage, GameAction, GameId, Room } from '@amonglies/shared';
-import { getGameDefinition } from '@amonglies/shared';
+import { getGameDefinition, getWordListById } from '@amonglies/shared';
 import { GameService } from './game.service.js';
 import { getDefaultGameSettings, sanitizeGameSettings } from './settings.js';
 import { getDecider } from '@amonglies/shared';
 import { RoomStore } from '../room/room.store.js';
 import { PlayerService } from '../player/player.service.js';
 import { StatsService } from '../stats/stats.service.js';
+import { WorkshopService } from '../workshop/workshop.service.js';
 
 @WebSocketGateway(GATEWAY_OPTIONS)
 export class GameGateway {
@@ -27,6 +28,7 @@ export class GameGateway {
     private readonly roomStore: RoomStore,
     private readonly playerService: PlayerService,
     private readonly statsService: StatsService,
+    private readonly workshopService: WorkshopService,
   ) {}
 
   @SubscribeMessage('game:select')
@@ -38,7 +40,8 @@ export class GameGateway {
     if (!room || room.state !== 'lobby') return;
 
     const definition = getGameDefinition(data?.gameId);
-    if (!definition) return;
+    // Volver a tocar el juego ya elegido no borra los ajustes.
+    if (!definition || definition.id === room.selectedGameId) return;
 
     room.selectedGameId = definition.id;
     room.gameSettings = getDefaultGameSettings(
@@ -49,21 +52,51 @@ export class GameGateway {
   }
 
   @SubscribeMessage('game:update-settings')
-  handleUpdateSettings(
+  async handleUpdateSettings(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: unknown,
   ) {
     const room = this.getAdminRoom(client);
     if (!room || room.state !== 'lobby' || !room.selectedGameId) return;
 
+    await this.loadWorkshopLists(client, room, data);
     const definition = getGameDefinition(room.selectedGameId)!;
     room.gameSettings = sanitizeGameSettings(
       definition,
       data,
       room.gameSettings,
       room.settings.locale,
+      this.roomStore.getCustomLists(room.code),
     );
     this.server.to(room.code).emit('room:updated', { room });
+  }
+
+  /**
+   * Si el admin eligió listas del workshop que la sala todavía no tiene, las
+   * trae de Supabase (tienen que ser suyas o publicadas, y del idioma de la sala).
+   */
+  private async loadWorkshopLists(
+    client: Socket,
+    room: Room,
+    data: unknown,
+  ): Promise<void> {
+    const ids = (data as { selectedWordLists?: unknown } | null)
+      ?.selectedWordLists;
+    const userId = this.playerService.getSession(client.id)?.userId;
+    if (!Array.isArray(ids) || !userId) return;
+    const loaded = new Set(room.customWordLists.map((l) => l.id));
+    const missing = ids
+      .filter((id): id is string => typeof id === 'string')
+      .filter((id) => !getWordListById(id) && !loaded.has(id))
+      .slice(0, 10);
+    for (const id of missing) {
+      const list = await this.workshopService.wordListFor(
+        userId,
+        id,
+        room.settings.locale,
+      );
+      if (list) this.roomStore.addCustomList(room.code, list);
+    }
   }
 
   @SubscribeMessage('game:start')

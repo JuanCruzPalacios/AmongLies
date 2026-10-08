@@ -3,6 +3,7 @@ import type { GameAction, Room } from '@amonglies/shared';
 import type { ActionContext, EngineCallbacks, GameEngine } from './engine.js';
 import { getGameRegistration } from './game.registry.js';
 import { RoomStore } from '../room/room.store.js';
+import { resolveWordLists } from './settings.js';
 
 @Injectable()
 export class GameService {
@@ -21,7 +22,15 @@ export class GameService {
     if (!room.selectedGameId) return 'no_game_selected';
     const registration = getGameRegistration(room.selectedGameId);
 
-    const error = registration.validateStart(room.players, room.gameSettings);
+    const wordLists = resolveWordLists(
+      room.gameSettings.selectedWordLists,
+      this.roomStore.getCustomLists(room.code),
+    );
+    const error = registration.validateStart(
+      room.players,
+      room.gameSettings,
+      wordLists,
+    );
     if (error) return error;
 
     this.endGame(room.code);
@@ -29,6 +38,7 @@ export class GameService {
       [...room.players],
       room.gameSettings,
       callbacks,
+      wordLists,
     );
     this.activeGames.set(room.code, engine);
     this.roomStore.setState(room.code, 'playing');

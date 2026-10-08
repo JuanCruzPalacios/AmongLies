@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
-import type { Room, Player, ChatMessage } from '@amonglies/shared';
+import type { Room, Player, ChatMessage, WordList } from '@amonglies/shared';
 import { DEFAULT_ROOM_SETTINGS, ROOM_CODE_LENGTH } from '@amonglies/shared';
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -11,6 +11,8 @@ const ROOM_MAX_INACTIVE_MS = 60 * 60 * 1000;
 export class RoomStore {
   private rooms = new Map<string, Room>();
   private deleteListeners: ((code: string) => void)[] = [];
+  /** Palabras de las listas del workshop de cada sala (no se mandan a los clientes). */
+  private customLists = new Map<string, Map<string, WordList>>();
 
   constructor() {
     setInterval(() => this.cleanup(), ROOM_CLEANUP_INTERVAL_MS);
@@ -40,6 +42,7 @@ export class RoomStore {
       gameSettings: {},
       chat: [],
       createdAt: Date.now(),
+      customWordLists: [],
     };
     this.rooms.set(code, room);
     return room;
@@ -50,8 +53,32 @@ export class RoomStore {
     this.deleteListeners.push(listener);
   }
 
+  /** Suma a la sala una lista del workshop (las palabras quedan sólo en el servidor). */
+  addCustomList(code: string, list: WordList): void {
+    const room = this.rooms.get(code);
+    if (!room) return;
+    const lists = this.customLists.get(code) ?? new Map<string, WordList>();
+    lists.set(list.id, list);
+    this.customLists.set(code, lists);
+    room.customWordLists = [
+      ...room.customWordLists.filter((l) => l.id !== list.id),
+      {
+        id: list.id,
+        title: list.category[list.locale],
+        locale: list.locale,
+        drawable: list.drawable,
+        wordCount: list.words.length,
+      },
+    ];
+  }
+
+  getCustomLists(code: string): WordList[] {
+    return [...(this.customLists.get(code)?.values() ?? [])];
+  }
+
   private deleteRoom(code: string): void {
     this.rooms.delete(code);
+    this.customLists.delete(code);
     for (const listener of this.deleteListeners) listener(code);
   }
 

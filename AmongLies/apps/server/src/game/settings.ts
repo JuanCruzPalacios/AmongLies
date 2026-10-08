@@ -4,6 +4,7 @@ import type {
   GameSettingsValues,
   Locale,
 } from '@amonglies/shared';
+import type { WordList } from '@amonglies/shared';
 import { getWordListById, getWordListsForGame } from '@amonglies/shared';
 
 /** Las listas de palabras se guardan aparte del settingsSchema porque dependen del idioma. */
@@ -34,6 +35,8 @@ export function sanitizeGameSettings(
   input: unknown,
   current: GameSettingsValues,
   locale: Locale,
+  /** Listas del workshop disponibles en la sala. */
+  customLists: WordList[] = [],
 ): GameSettingsValues {
   if (typeof input !== 'object' || input === null || Array.isArray(input))
     return current;
@@ -51,6 +54,7 @@ export function sanitizeGameSettings(
       raw[WORD_LISTS_KEY],
       locale,
       def.drawableWordsOnly,
+      customLists,
     );
     if (lists.length > 0) next[WORD_LISTS_KEY] = lists;
   }
@@ -81,11 +85,30 @@ export function sanitizeWordLists(
   value: unknown,
   locale: Locale,
   drawableOnly = false,
+  customLists: WordList[] = [],
 ): string[] {
   if (!Array.isArray(value)) return [];
   const ids = value.filter((id): id is string => {
-    const list = typeof id === 'string' ? getWordListById(id) : undefined;
+    const list =
+      typeof id === 'string'
+        ? (getWordListById(id) ?? customLists.find((l) => l.id === id))
+        : undefined;
     return list?.locale === locale && (!drawableOnly || list.drawable);
   });
   return [...new Set(ids)];
+}
+
+/** Las listas elegidas, sean del juego o del workshop (en el orden elegido). */
+export function resolveWordLists(
+  ids: unknown,
+  customLists: WordList[],
+): WordList[] {
+  if (!Array.isArray(ids)) return [];
+  return ids
+    .map((id) =>
+      typeof id === 'string'
+        ? (getWordListById(id) ?? customLists.find((l) => l.id === id))
+        : undefined,
+    )
+    .filter((list): list is WordList => list !== undefined);
 }

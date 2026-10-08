@@ -5,6 +5,7 @@ import type {
   GameAction,
   GameSettingsValues,
   Player,
+  WordList,
   Stroke,
 } from '@amonglies/shared';
 import {
@@ -54,6 +55,10 @@ export class DrawingEngine extends DeductionEngine<
     players: Player[],
     settings: DrawingSettings,
     callbacks: EngineCallbacks,
+    /** Listas ya resueltas (del juego o del workshop); por defecto, las del juego. */
+    private readonly wordLists: WordList[] = getWordListsByIds(
+      settings.selectedWordLists,
+    ),
   ) {
     super('drawing', players, settings, callbacks);
     this.playerColors =
@@ -82,7 +87,7 @@ export class DrawingEngine extends DeductionEngine<
       this.startTurns();
       return;
     }
-    const lists = getWordListsByIds(this.state.settings.selectedWordLists);
+    const lists = this.wordLists;
     const words = lists.flatMap((list) =>
       list.words.map((word) => ({
         word,
@@ -260,10 +265,11 @@ export const DRAWING_REGISTRATION: GameRegistration = {
   validateStart(
     players: Player[],
     settings: GameSettingsValues,
+    wordLists?: WordList[],
   ): string | null {
-    const lists = getWordListsByIds(
-      (settings.selectedWordLists as string[]) ?? [],
-    );
+    const lists =
+      wordLists ??
+      getWordListsByIds((settings.selectedWordLists as string[]) ?? []);
     if (!lists.some((list) => list.drawable && list.words.length > 0))
       return 'no_word_lists_selected';
     if ((settings.impostorCount as number) > maxImpostorsFor(players.length)) {
@@ -271,12 +277,13 @@ export const DRAWING_REGISTRATION: GameRegistration = {
     }
     return null;
   },
-  create(players, settings, callbacks) {
+  create(players, settings, callbacks, wordLists) {
     // Los ajustes ya vienen validados por sanitizeGameSettings.
     return new DrawingEngine(
       players,
       settings as unknown as DrawingSettings,
       callbacks,
+      wordLists,
     );
   },
 };

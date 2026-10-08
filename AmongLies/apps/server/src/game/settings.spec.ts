@@ -6,6 +6,7 @@ import {
 import {
   getDefaultGameSettings,
   sanitizeGameSettings,
+  resolveWordLists,
   sanitizeWordLists,
 } from './settings.js';
 
@@ -136,5 +137,35 @@ describe('sanitizeWordLists', () => {
       'es',
     );
     expect(next.selectedWordLists).toEqual(current.selectedWordLists);
+  });
+});
+
+describe('listas del workshop en una sala', () => {
+  const custom = {
+    id: 'mi-lista',
+    locale: 'es' as const,
+    category: { es: 'Mi lista', en: 'Mi lista' },
+    drawable: false,
+    words: ['uno', 'dos'],
+  };
+
+  it('acepta las listas del workshop que la sala ya cargó (del mismo idioma)', () => {
+    expect(
+      sanitizeWordLists(['mi-lista', 'otra'], 'es', false, [custom]),
+    ).toEqual(['mi-lista']);
+    expect(sanitizeWordLists(['mi-lista'], 'en', false, [custom])).toEqual([]);
+  });
+
+  it('el Dibujo no acepta una lista del workshop sin marca de dibujable', () => {
+    expect(sanitizeWordLists(['mi-lista'], 'es', true, [custom])).toEqual([]);
+  });
+
+  it('resuelve las listas elegidas, del juego y del workshop', () => {
+    const lists = resolveWordLists(
+      ['es-animales', 'mi-lista', 'nope', 3],
+      [custom],
+    );
+    expect(lists.map((l) => l.id)).toEqual(['es-animales', 'mi-lista']);
+    expect(resolveWordLists('es-animales', [])).toEqual([]);
   });
 });

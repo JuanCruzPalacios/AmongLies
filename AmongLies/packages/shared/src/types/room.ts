@@ -23,6 +23,16 @@ export interface Room {
   gameSettings: GameSettingsValues;
   chat: ChatMessage[];
   createdAt: number;
+  /** Listas del workshop que el admin sumó a la sala (sin las palabras). */
+  customWordLists: CustomWordListSummary[];
+}
+
+export interface CustomWordListSummary {
+  id: string;
+  title: string;
+  locale: Locale;
+  drawable: boolean;
+  wordCount: number;
 }
 
 export interface RoomPublicView {
