@@ -7,5 +7,6 @@ export * from './deduction';
 export * from './impostor';
 export * from './time';
 export * from './drawing';
+export * from './social';
 export * from './events';
 export * from './session';

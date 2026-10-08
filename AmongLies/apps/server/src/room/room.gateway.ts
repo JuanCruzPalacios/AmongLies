@@ -21,6 +21,7 @@ import { WORD_LISTS_KEY } from '../game/settings.js';
 import { GameGateway } from '../game/game.gateway.js';
 import { PlayerService } from '../player/player.service.js';
 import { AuthService } from '../auth/auth.service.js';
+import { SocialGateway } from '../social/social.gateway.js';
 
 const SESSION_TOKEN_PATTERN = /^[A-Za-z0-9-]{16,64}$/;
 
@@ -37,6 +38,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly playerService: PlayerService,
     private readonly authService: AuthService,
     private readonly gameGateway: GameGateway,
+    private readonly socialGateway: SocialGateway,
   ) {}
 
   // ─── Conexión e identidad ────────────────────────────────────────────────
@@ -67,6 +69,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
       previous?.emit('session:replaced');
       previous?.disconnect(true);
     }
+    if (userId) void this.socialGateway.onAccountConnected(userId);
 
     const saved = this.playerService.getRestorable(key);
     const room = saved ? this.roomStore.getRoom(saved.roomCode) : undefined;

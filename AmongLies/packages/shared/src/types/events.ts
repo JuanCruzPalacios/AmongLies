@@ -6,6 +6,7 @@ import type { GameAction } from './game';
 import type { ImpostorPlayerView } from './impostor';
 import type { TimePlayerView } from './time';
 import type { DrawEvent, DrawingPlayerView } from './drawing';
+import type { FriendProfile, Presence, RoomInvite, SocialAck, SocialState } from './social';
 
 /** Lo que recibe cada jugador del juego en curso (según `gameId`). */
 export type GameView = ImpostorPlayerView | TimePlayerView | DrawingPlayerView;
@@ -28,6 +29,13 @@ export interface ClientEvents {
   /** Quien decide (admin, o el conectado más antiguo) sigue sin un jugador desconectado. */
   'game:continue-without': (data: { playerId: string }) => void;
   'game:action': (data: GameAction) => void;
+
+  // Social (sólo cuentas)
+  'social:search': (data: { query: string }, ack: (results: FriendProfile[]) => void) => void;
+  'social:request': (data: { username: string }, ack: SocialAck) => void;
+  'social:respond': (data: { userId: string; accept: boolean }, ack: SocialAck) => void;
+  'social:remove': (data: { userId: string }, ack: SocialAck) => void;
+  'social:invite': (data: { userId: string }, ack: SocialAck) => void;
 }
 
 // Server -> Client
@@ -52,6 +60,12 @@ export interface ServerEvents {
   'game:draw': (data: DrawEvent) => void;
   'game:phase-change': (data: { phase: string }) => void;
   'game:error': (data: { message: string; code?: string }) => void;
+
+  /** Amigos y solicitudes: se manda al conectar y cada vez que cambian. */
+  'social:state': (data: SocialState) => void;
+  'social:presence': (data: { userId: string; presence: Presence }) => void;
+  'social:request-received': (data: FriendProfile) => void;
+  'social:invited': (data: RoomInvite) => void;
 
   'player:reconnected': (data: { playerId: string }) => void;
   'player:disconnected': (data: { playerId: string }) => void;

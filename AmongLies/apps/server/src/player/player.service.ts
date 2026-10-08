@@ -81,6 +81,16 @@ export class PlayerService {
     return this.findByPlayerId(playerId)?.userId ?? null;
   }
 
+  /** Conexión y sala de una cuenta (para la presencia de los amigos). */
+  getAccount(
+    userId: string,
+  ): { socketId: string | null; roomCode: string | null } | undefined {
+    const identity = this.identities.get(`user:${userId}`);
+    return identity
+      ? { socketId: identity.socketId, roomCode: identity.roomCode }
+      : undefined;
+  }
+
   getSocketIdByPlayerId(playerId: string): string | null {
     return this.findByPlayerId(playerId)?.socketId ?? null;
   }
