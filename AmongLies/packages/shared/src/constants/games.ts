@@ -33,7 +33,7 @@ const COMMON_FIRST: GameSettingSchema[] = [
 const COMMON_LAST: GameSettingSchema[] = [
   {
     key: 'discussionTimeSeconds',
-    label: { es: 'Tiempo de discusion (seg)', en: 'Discussion time (sec)' },
+    label: { es: 'Tiempo de discusión (seg)', en: 'Discussion time (sec)' },
     type: 'number',
     default: 120,
     min: 0,
@@ -41,7 +41,7 @@ const COMMON_LAST: GameSettingSchema[] = [
   },
   {
     key: 'votingTimeSeconds',
-    label: { es: 'Tiempo de votacion (seg)', en: 'Voting time (sec)' },
+    label: { es: 'Tiempo de votación (seg)', en: 'Voting time (sec)' },
     type: 'number',
     default: 30,
     min: 10,
@@ -84,7 +84,7 @@ export const GAME_IMPOSTOR: GameDefinition = {
     en: 'The Impostor',
   },
   description: {
-    es: 'Descubre quien no conoce la palabra secreta. El impostor debe pasar desapercibido.',
+    es: 'Descubrí quién no conoce la palabra secreta. El impostor tiene que pasar desapercibido.',
     en: 'Find out who doesn\'t know the secret word. The impostor must blend in.',
   },
   minPlayers: 4,
@@ -117,7 +117,7 @@ export const GAME_IMPOSTOR: GameDefinition = {
     },
     {
       key: 'communicationMode',
-      label: { es: 'Modo de comunicacion', en: 'Communication mode' },
+      label: { es: 'Modo de comunicación', en: 'Communication mode' },
       type: 'select',
       default: 'chat',
       options: [

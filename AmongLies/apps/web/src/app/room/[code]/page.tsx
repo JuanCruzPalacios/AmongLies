@@ -7,7 +7,7 @@ import type { Room } from "@amonglies/shared";
 import { AVATARS, MIN_NICKNAME_LENGTH, MAX_NICKNAME_LENGTH, getGameDefinition } from "@amonglies/shared";
 import { useRoomStore } from "@/stores/roomStore";
 import { usePlayerStore } from "@/stores/playerStore";
-import { useSocket } from "@/hooks/useSocket";
+import { useSocketConnected } from "@/hooks/useSocketConnected";
 import { useGame } from "@/hooks/useGame";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Header } from "@/components/layout/Header";
@@ -33,7 +33,7 @@ export default function RoomPage() {
   const room = useRoomStore((s) => s.room);
   const { setRoom, setConnecting, setError, isConnecting, error } = useRoomStore();
   const { nickname, avatarId, playerId: myId, locale, hydrated: mounted, setNickname, setAvatarId, loadFromStorage } = usePlayerStore();
-  const { isConnected } = useSocket();
+  const isConnected = useSocketConnected();
   const { gameState, sendAction, resetGame } = useGame();
 
   const [copied, setCopied] = useState(false);

@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthInit } from "@/components/auth/AuthInit";
 import { SocialInit } from "@/components/social/SocialInit";
 import { SoundManager } from "@/components/sound/SoundManager";
+import { RoomEvents } from "@/components/room/RoomEvents";
 
 const inter = Inter({
   variable: "--font-body",
@@ -41,6 +42,7 @@ export default function RootLayout({
         {children}
         <SocialInit />
         <SoundManager />
+        <RoomEvents />
       </body>
     </html>
   );
