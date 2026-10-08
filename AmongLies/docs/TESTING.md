@@ -42,7 +42,7 @@ Casos que cubre la suite (origen entre paréntesis):
 
 ## 2. Suite de tests
 
-210 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
+234 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
 (nada de `toBeDefined()`), incluyen el camino de error y los bordes.
 
 | Archivo | Qué prueba | Bordes destacados |
@@ -61,6 +61,8 @@ Casos que cubre la suite (origen entre paréntesis):
 | `time/time.engine.spec.ts` (Fase 3) | El juego de Tiempo con timers simulados | el impostor nunca recibe el objetivo, sólo el de turno arranca/para, parar sin arrancar, turno vencido sin arrancar y con el reloj corriendo, pausa con el reloj en marcha, estado emitido al pasar de turno |
 | `drawing/ink.spec.ts` (Fase 4) | Tinta del Dibujo (la usan el servidor y el navegador): validar puntos, medir y cortar en el presupuesto | lista impar, vacía, `NaN`, `Infinity`, texto; puntos fuera del lienzo; horizontal vs. vertical (lienzo 4:3); tinta justa, sin tinta, pasos diminutos repetidos |
 | `drawing/drawing.engine.spec.ts` (Fase 4) | El juego de Dibujo con timers simulados | el impostor nunca recibe la palabra (tampoco en los resultados de la partida en curso), el lienzo sigue entre rondas y se vacía en la partida nueva, colores/grosores fuera de la paleta, color fijo por jugador, tinta entre varios trazos, tinta mínima 0 y 50 %, timer de seguridad, 2 vueltas por ronda, se va el que dibuja |
+| `social/social.rules.spec.ts` (Fase 5) | Relación entre dos cuentas, presencia y búsqueda | amistad pedida por cualquiera de los dos, filas de terceros, desconectado dentro de una sala, sala en juego o terminada (no se pasa el código), búsqueda con `@`, `*`, `,` y `)` (no se cuelan en la consulta), 21 caracteres |
+| `social/social.service.spec.ts` (Fase 5) | Solicitudes, aceptar/rechazar, eliminar y búsqueda, contra un repositorio en memoria | pedirse a uno mismo (sin importar mayúsculas), solicitud repetida, solicitudes cruzadas (quedan amigos), responder una solicitud propia, `accept` que no es `true`, cancelar una recibida, base caída → `unavailable` |
 
 Como los impostores se eligen al azar, la suite se corrió 5 veces seguidas para confirmar
 que no hay tests que pasen "por casualidad".

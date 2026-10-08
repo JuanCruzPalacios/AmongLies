@@ -21,7 +21,7 @@ tomó: no hace falta volver a preguntarlas.
 | 2 — Reglas configurables y puntaje | ✅ hecha |
 | 3 — Juego Tiempo | ✅ hecha |
 | 4 — Juego Dibujo | ✅ hecha |
-| 5 — Social: amigos, invitaciones, notificaciones, presencia | pendiente |
+| 5 — Social: amigos, invitaciones, notificaciones, presencia | ✅ hecha |
 | 6 — Workshop (listas de palabras y presets de reglas) | pendiente |
 | 7 — Ajustes, salas públicas, moderación con panel de admin, i18n, sonido, responsive | pendiente |
 | 8 — Tests, deploy, actualizar la documentación del TP | pendiente |
@@ -148,6 +148,25 @@ Chromium con `--proxy-server=https=<host:puerto de HTTPS_PROXY>`. En Railway no 
 - **Probado:** 210 tests; partida de Dibujo de punta a punta con el admin dibujando con el
   mouse + 3 bots, en escritorio y en celular (17 checks: trazos en vivo, tinta cortada por el
   servidor, mismo lienzo en la ronda 2, palabra al final); las suites anteriores en verde.
+
+## Fase 5 — qué quedó hecho
+- **Decisiones de Juan:** se agrega por **solicitud que el otro acepta**; **sólo los amigos**
+  te pueden invitar; los amigos ven **estado + sala** (desconectado / en línea / en una sala
+  con "Unirme" / jugando); **las solicitudes quedan guardadas**, las invitaciones son sólo en
+  vivo y vencen a los 5 minutos.
+- Tabla `friendships` (migración `20261008130000_create_friendships`): una fila por par
+  (índice único sin importar quién pidió), RLS con lectura sólo para los dos involucrados;
+  escribe sólo el servidor. Advisors de seguridad en 0.
+- Todo va por el socket del juego (`social:*`): el servidor conoce la presencia porque ya
+  sabe quién está conectado y en qué sala; cada 2 s avisa a los amigos de los cambios.
+  Si los dos se mandan solicitud, quedan amigos. Invitar al mismo amigo: una vez cada 10 s.
+- Web: página `/amigos` (buscar por @usuario, solicitudes, amigos con presencia, Unirme,
+  eliminar), "Amigos" en el header con contador de solicitudes, avisos en vivo abajo a la
+  derecha (solicitud → Ver; invitación → Unirme) y panel "Invitar amigos" en el lobby.
+- Los invitados no tienen amigos (la página les pide crear una cuenta).
+- **Probado:** 234 tests; dos cuentas reales en dos navegadores (16 checks: buscar, pedir,
+  aviso en vivo, aceptar, presencia, invitar desde el lobby, entrar por la invitación,
+  eliminar); las suites anteriores en verde. Usuarios de prueba creados y borrados.
 
 ## Deploy
 - **Producción en Render** (plan gratis, Virginia, auto-deploy desde `main`):

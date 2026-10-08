@@ -15,6 +15,7 @@ import { PlayerList } from "@/components/lobby/PlayerList";
 import { Chat } from "@/components/lobby/Chat";
 import { GameSelector } from "@/components/lobby/GameSelector";
 import { GameSettings } from "@/components/lobby/GameSettings";
+import { InviteFriends } from "@/components/social/InviteFriends";
 import { ImpostorGame } from "@/components/impostor/ImpostorGame";
 import { TimeGame } from "@/components/time/TimeGame";
 import { DrawingGame } from "@/components/drawing/DrawingGame";
@@ -361,8 +362,7 @@ export default function RoomPage() {
                 </div>
               )}
             </div>
-
-
+            <InviteFriends roomCode={room.code} />
           </div>
         </div>
       </main>

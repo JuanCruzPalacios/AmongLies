@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthInit } from "@/components/auth/AuthInit";
+import { SocialInit } from "@/components/social/SocialInit";
 
 const inter = Inter({
   variable: "--font-body",
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="min-h-dvh flex flex-col bg-bg-primary text-text-primary font-body">
         <AuthInit />
         {children}
+        <SocialInit />
       </body>
     </html>
   );
