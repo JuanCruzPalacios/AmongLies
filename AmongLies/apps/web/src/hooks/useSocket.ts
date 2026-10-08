@@ -60,7 +60,19 @@ export function useSocket() {
       router.push("/");
     }
 
+    function onSuspended({ until }: { until: string; reason: string | null }) {
+      const locale = usePlayerStore.getState().locale;
+      setRoom(null);
+      setError(
+        until === "infinity"
+          ? t("account.suspended_forever", locale)
+          : t("account.suspended_until", locale, { date: new Date(until).toLocaleString(locale) }),
+      );
+      router.push("/");
+    }
+
     socket.on("session:ready", onSessionReady);
+    socket.on("account:suspended", onSuspended);
     socket.on("session:replaced", onSessionReplaced);
 
     socket.on("room:kicked", () => {
@@ -88,6 +100,7 @@ export function useSocket() {
       socket.off("room:player-left");
       socket.off("room:updated");
       socket.off("session:ready", onSessionReady);
+      socket.off("account:suspended", onSuspended);
       socket.off("session:replaced", onSessionReplaced);
       socket.off("room:kicked");
       socket.off("chat:message");

@@ -18,6 +18,7 @@ import { GATEWAY_OPTIONS } from '../gateway.options.js';
 import { PlayerService } from '../player/player.service.js';
 import { RoomStore } from '../room/room.store.js';
 import { SocialService, type Result } from './social.service.js';
+import { AccountService } from '../moderation/account.service.js';
 import { presenceOf } from './social.rules.js';
 
 /** Cada cuánto se revisa si cambió la presencia de las cuentas conectadas. */
@@ -50,6 +51,7 @@ export class SocialGateway implements OnModuleInit, OnModuleDestroy {
     private readonly social: SocialService,
     private readonly playerService: PlayerService,
     private readonly roomStore: RoomStore,
+    private readonly accounts: AccountService,
   ) {}
 
   onModuleInit() {
@@ -160,6 +162,8 @@ export class SocialGateway implements OnModuleInit, OnModuleDestroy {
       return { ok: false, error: 'not_in_room' };
     if (this.presence(target).status === 'offline')
       return { ok: false, error: 'friend_offline' };
+    if (!this.accounts.flags(target).allowInvites)
+      return { ok: false, error: 'invites_disabled' };
 
     const key = `${me}:${target}`;
     const now = Date.now();
@@ -179,7 +183,10 @@ export class SocialGateway implements OnModuleInit, OnModuleDestroy {
 
   // ─── Presencia ───────────────────────────────────────────────────────────
 
+  /** Lo que ven los amigos (si eligió aparecer desconectado, se muestra así). */
   presence(userId: string): Presence {
+    if (this.accounts.flags(userId).appearOffline)
+      return { status: 'offline', roomCode: null };
     const account = this.playerService.getAccount(userId);
     const room = account?.roomCode
       ? this.roomStore.getRoom(account.roomCode)

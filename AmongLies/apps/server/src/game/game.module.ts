@@ -7,11 +7,19 @@ import { AuthService } from '../auth/auth.service.js';
 import { StatsService } from '../stats/stats.service.js';
 import { SocialModule } from '../social/social.module.js';
 import { WorkshopModule } from '../workshop/workshop.module.js';
+import { ModerationGateway } from '../moderation/moderation.gateway.js';
 
 /** Salas y juego van juntos: la conexión de un jugador afecta a la partida en curso. */
 @Module({
   imports: [RoomModule, SocialModule, WorkshopModule],
-  providers: [GameGateway, GameService, RoomGateway, AuthService, StatsService],
+  providers: [
+    GameGateway,
+    GameService,
+    RoomGateway,
+    AuthService,
+    StatsService,
+    ModerationGateway,
+  ],
   exports: [GameService],
 })
 export class GameModule {}

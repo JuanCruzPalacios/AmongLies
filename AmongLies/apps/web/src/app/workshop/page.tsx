@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ALL_GAMES, WORKSHOP_CATEGORIES } from "@amonglies/shared";
 import { Header } from "@/components/layout/Header";
 import { ItemDetails, GameIcons } from "@/components/workshop/ItemDetails";
+import { ReportDialog, type ReportTarget } from "@/components/moderation/ReportDialog";
 import {
   browseWorkshop,
   myLikes,
@@ -87,6 +88,7 @@ function Explore({ userId }: { userId: string | null }) {
   const [owned, setOwned] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
 
   useEffect(() => {
     const id = setTimeout(() => void browseWorkshop(filters).then(setItems), 250);
@@ -204,6 +206,14 @@ function Explore({ userId }: { userId: string | null }) {
               >
                 {open === item.id ? t("workshop.hide") : t("workshop.show")}
               </button>
+              <button
+                type="button"
+                onClick={() => setReportTarget({ kind: "workshop_item", itemId: item.id, name: item.title })}
+                className="px-2 py-1.5 rounded-lg text-xs text-text-muted hover:text-danger cursor-pointer"
+                aria-label={t("report.action_item", { name: item.title })}
+              >
+                ⚑
+              </button>
               <span className="flex-1" />
               {userId &&
                 (owned.has(item.id) ? (
@@ -221,6 +231,7 @@ function Explore({ userId }: { userId: string | null }) {
           </li>
         ))}
       </ul>
+      <ReportDialog target={reportTarget} onClose={() => setReportTarget(null)} />
     </div>
   );
 }

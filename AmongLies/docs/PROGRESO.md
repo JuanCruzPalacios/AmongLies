@@ -190,6 +190,29 @@ Chromium con `--proxy-server=https=<host:puerto de HTTPS_PROXY>`. En Railway no 
   filtros, like, copia, versión nueva y actualizar, copia editada, lista propia en el lobby,
   presets, la palabra sale de la lista). Las suites anteriores en verde.
 
+## Fase 7 — en curso
+**Moderación (hecha):**
+- Decisiones de Juan: admins con una marca en la base (`profiles.is_admin`, arranca @Pipita;
+  desde el panel se nombran otros); se reportan jugadores y contenido del workshop; el admin
+  oculta/borra del workshop y suspende cuentas (días o permanente); el filtro de insultos
+  **censura con *** en el chat y en las pistas** y **no deja guardar** apodos, usuarios ni
+  títulos/palabras del workshop con insultos.
+- Migración `20261008220000_moderation_and_privacy`: `is_admin`, `suspended_until`,
+  `suspension_reason`, `appear_offline`, `allow_invites` en perfiles; **cada usuario sólo puede
+  cambiar avatar, idioma y privacidad** (antes podía cambiar cualquier columna, bug #26);
+  tabla `reports` sólo para el servidor.
+- Reportes: ⚑ en la lista de jugadores del lobby, "Reportar" durante la partida y en el
+  workshop; se guardan los últimos 20 mensajes del chat como evidencia; máximo 5 cada 10 min.
+- Panel `/admin` (link en el header sólo para admins): reportes abiertos/resueltos/descartados
+  con la evidencia, suspender, ocultar/borrar del workshop, resolver/descartar; usuarios:
+  buscar, suspender/levantar, hacer o quitar admin. El servidor verifica en la base que seas
+  admin en cada acción.
+- Suspendido: se lo saca de su sala con un aviso y no puede crear/entrar a salas ni publicar.
+- Privacidad (la usa el servidor; la pantalla de ajustes llega en esta misma fase): aparecer
+  desconectado y no aceptar invitaciones.
+- **Probado:** 288 tests; e2e de moderación con dos cuentas y un invitado (15 checks), y con el
+  token de un usuario común: no puede hacerse admin ni leer reportes. Suites anteriores en verde.
+
 ## Deploy
 - **Producción en Render** (plan gratis, Virginia, auto-deploy desde `main`):
   web https://amonglies-web.onrender.com · server https://amonglies-server.onrender.com.

@@ -8,7 +8,11 @@ import type {
   RoundResult,
   WordEntry,
 } from '@amonglies/shared';
-import { MAX_CHAT_MESSAGE_LENGTH, getWordListsByIds } from '@amonglies/shared';
+import {
+  MAX_CHAT_MESSAGE_LENGTH,
+  censor,
+  getWordListsByIds,
+} from '@amonglies/shared';
 import type {
   ActionContext,
   EngineCallbacks,
@@ -148,7 +152,7 @@ export class ImpostorEngine extends DeductionEngine<
       return 'word_is_secret';
     }
 
-    this.wordsUsed.push({ playerId, word: trimmed });
+    this.wordsUsed.push({ playerId, word: censor(trimmed) });
     this.clearTimer('turn');
     this.nextTurn();
     return null;

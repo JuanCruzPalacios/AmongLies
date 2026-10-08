@@ -8,6 +8,7 @@ import type {
   WordList,
 } from '@amonglies/shared';
 import {
+  containsProfanity,
   WORKSHOP_CATEGORIES,
   WORKSHOP_LIMITS,
   getGameDefinition,
@@ -53,6 +54,7 @@ export function sanitizeWords(
     if (word.length > WORKSHOP_LIMITS.wordMax) return fail('invalid');
     const key = word.toLocaleLowerCase();
     if (seen.has(key)) continue;
+    if (containsProfanity(word)) return fail('inappropriate');
     seen.add(key);
     words.push(word);
   }
@@ -81,6 +83,8 @@ export function validateDraft(
     description.length > WORKSHOP_LIMITS.descriptionMax
   )
     return fail('invalid');
+  if (containsProfanity(title) || containsProfanity(description))
+    return fail('inappropriate');
 
   if (d.kind === 'word_list') {
     if (d.locale !== 'es' && d.locale !== 'en') return fail('invalid');

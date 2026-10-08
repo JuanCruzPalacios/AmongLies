@@ -114,6 +114,27 @@ describe('validateDraft — listas', () => {
   });
 });
 
+describe('validateDraft — filtro de insultos', () => {
+  it('no deja publicar títulos, descripciones ni palabras con insultos', () => {
+    const inappropriate = { ok: false, error: 'inappropriate' };
+    expect(validateDraft(list({ title: 'Lista de mierda' }))).toEqual(
+      inappropriate,
+    );
+    expect(validateDraft(list({ description: 'para idiotas' }))).toEqual(
+      inappropriate,
+    );
+    expect(validateDraft(list({ words: [...words(10), 'pelotudo'] }))).toEqual(
+      inappropriate,
+    );
+  });
+
+  it('palabras normales que contienen un insulto adentro pasan', () => {
+    expect(
+      validateDraft(list({ words: [...words(9), 'Computadora'] })).ok,
+    ).toBe(true);
+  });
+});
+
 describe('validateDraft — presets', () => {
   const preset = (overrides: Record<string, unknown> = {}) => ({
     kind: 'preset',

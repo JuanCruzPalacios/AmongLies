@@ -50,6 +50,8 @@ export type WorkshopError =
   | 'not_owner'
   | 'too_few_words'
   | 'too_many_words'
+  | 'inappropriate'
+  | 'suspended'
   | 'unavailable';
 
 export type WorkshopAck = (

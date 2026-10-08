@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AVATARS } from "@amonglies/shared";
+import { AVATARS, containsProfanity } from "@amonglies/shared";
 import { AuthCard, CheckEmail, FormError } from "@/components/auth/AuthCard";
 import { Avatar, Button, Input } from "@/components/ui";
 import { USERNAME_PATTERN, useAuthStore } from "@/stores/authStore";
@@ -27,6 +27,10 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (containsProfanity(username)) {
+      setError(t("auth.error.username_inappropriate"));
+      return;
+    }
     if (!USERNAME_PATTERN.test(username)) {
       setError(t("auth.error.username_invalid"));
       return;

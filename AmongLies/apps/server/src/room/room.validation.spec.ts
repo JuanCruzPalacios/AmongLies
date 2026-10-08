@@ -94,3 +94,16 @@ describe('sanitizeRoomSettings', () => {
     ).toEqual(current);
   });
 });
+
+describe('parseIdentity — filtro de insultos', () => {
+  it('rechaza apodos con insultos (también disfrazados)', () => {
+    expect(parseIdentity({ nickname: 'Pelotudo', avatarId: 'fox' })).toBeNull();
+    expect(parseIdentity({ nickname: 'sh1t', avatarId: 'fox' })).toBeNull();
+  });
+
+  it('acepta apodos normales aunque tengan un insulto adentro', () => {
+    expect(
+      parseIdentity({ nickname: 'Disputa', avatarId: 'fox' })?.nickname,
+    ).toBe('Disputa');
+  });
+});

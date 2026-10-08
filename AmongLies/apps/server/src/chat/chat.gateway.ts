@@ -9,7 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { GATEWAY_OPTIONS } from '../gateway.options.js';
 import { v4 as uuid } from 'uuid';
 import type { ChatMessage } from '@amonglies/shared';
-import { MAX_CHAT_MESSAGE_LENGTH } from '@amonglies/shared';
+import { MAX_CHAT_MESSAGE_LENGTH, censor } from '@amonglies/shared';
 import { RoomStore } from '../room/room.store.js';
 import { PlayerService } from '../player/player.service.js';
 import { GameService } from '../game/game.service.js';
@@ -53,7 +53,7 @@ export class ChatGateway {
       playerId: player.id,
       playerNickname: player.nickname,
       playerAvatarId: player.avatarId,
-      message: trimmed,
+      message: censor(trimmed),
       timestamp: Date.now(),
       type: 'player',
     };

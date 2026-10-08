@@ -42,7 +42,7 @@ Casos que cubre la suite (origen entre paréntesis):
 
 ## 2. Suite de tests
 
-266 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
+288 tests en `apps/server/src/**/*.spec.ts`. Todos verifican **valores concretos**
 (nada de `toBeDefined()`), incluyen el camino de error y los bordes.
 
 | Archivo | Qué prueba | Bordes destacados |
@@ -65,6 +65,8 @@ Casos que cubre la suite (origen entre paréntesis):
 | `social/social.service.spec.ts` (Fase 5) | Solicitudes, aceptar/rechazar, eliminar y búsqueda, contra un repositorio en memoria | pedirse a uno mismo (sin importar mayúsculas), solicitud repetida, solicitudes cruzadas (quedan amigos), responder una solicitud propia, `accept` que no es `true`, cancelar una recibida, base caída → `unavailable` |
 | `workshop/workshop.rules.spec.ts` (Fase 6) | Validar listas y presets del workshop | 9, 10, 300 y 301 palabras; repetidas con otras mayúsculas y vacías (no cuentan); palabra de 30 y 31 letras; título de 2/3/40/41; descripción de 200/201; idioma `pt`; categoría inventada → "other"; preset con valores fuera de rango, claves extra y listas de palabras (se descartan) |
 | `workshop/workshop.service.spec.ts` (Fase 6) | Crear, editar, publicar, copiar, actualizar copias, likes y uso en salas, contra un repositorio en memoria | editar sólo el título no sube la versión; copiar algo privado de otro; copiar dos veces; copia editada → "modificada"; actualizar con el original despublicado; like doble; lista de otro idioma o privada de otro en una sala; un preset no sirve como lista; base caída |
+| `moderation/profanity.spec.ts` (Fase 7) | Filtro de insultos (está en shared: lo usan el servidor y la web) | mayúsculas, acentos, letras estiradas, leetspeak (`p3l0tud0`, `$hit`), plurales, palabras pegadas conocidas; **no** marca "computadora", "disputa", "Scunthorpe", "class"; la censura respeta signos, emojis y el largo |
+| `moderation/moderation.rules.spec.ts` (Fase 7) | Suspensiones, reportes y límite de reportes | 0/negativos/decimales/más de 365 días; permanente; suspensión vencida un segundo antes; motivo inventado; detalle de 400 → 300; ventana del límite |
 
 Como los impostores se eligen al azar, la suite se corrió 5 veces seguidas para confirmar
 que no hay tests que pasen "por casualidad".
@@ -168,3 +170,5 @@ Todos estaban en el MVP; ninguno rompía la compilación del servidor.
 | 23 | El perfil sólo mostraba las estadísticas del Impostor: las del Tiempo se guardaban pero no se veían | revisando el perfil al agregar el Dibujo | el perfil muestra un bloque por cada juego jugado |
 | 24 | Volver a tocar en el lobby el juego que ya estaba elegido reiniciaba todos sus ajustes (y las listas elegidas) | el e2e del workshop: después de aplicar un preset, la palabra salía de las listas del juego | elegir el mismo juego no hace nada |
 | 25 | En producción "no se encuentra la sala" aunque el creador la ve: el plan gratis de Render duerme el servidor a los 15 min sin tráfico HTTP y al despertar se pierden las salas (viven en memoria); el creador quedaba en una sala fantasma y crear con el servidor dormido fallaba a los 10 s | reporte de Juan; los logs de Render mostraban el servidor arrancando sin deploy | `/health` que los clientes en una sala consultan cada 4 min; si al reconectar la sala ya no existe se avisa y se vuelve al inicio; al crear/unirse se espera hasta 70 s con el aviso "Despertando el servidor…" (e2e local apagando y prendiendo el servidor, 6 checks) |
+| 26 | Los perfiles dejaban a cada usuario cambiar **cualquier** columna propia (incluido el nombre de usuario sin pasar por el filtro); con `is_admin` cualquiera se habría hecho admin | revisando los permisos antes de agregar la moderación | sólo se pueden cambiar avatar, idioma y privacidad (permiso por columna); probado con el token de un usuario: 403 al intentar `is_admin` |
+| 27 | Un mensaje que llegaba al servidor justo después de conectar (antes de que termine de identificar la cuenta) se trataba como de un invitado ("Necesitás una cuenta" al guardar en el workshop recién abierta la página) | e2e de moderación | el servidor registra la identidad antes de leer las marcas de la cuenta y los chequeos de suspensión esperan esa lectura; la web espera `session:ready` antes de mandar acciones del workshop, del panel y de reportes |

@@ -2,7 +2,7 @@
 
 import type { GameId, WorkshopAck, WorkshopDraft, WorkshopItem, WorkshopKind } from "@amonglies/shared";
 import { supabase } from "./supabase";
-import { getSocket } from "./socket";
+import { getSocket, whenSessionReady } from "./socket";
 
 /** Un ítem con el nombre de su autor. */
 export interface WorkshopRow extends WorkshopItem {
@@ -78,12 +78,13 @@ function call<E extends "workshop:save" | "workshop:publish" | "workshop:delete"
   data: E extends "workshop:save" ? WorkshopDraft : E extends "workshop:publish" ? { id: string; published: boolean } : E extends "workshop:like" ? { id: string; like: boolean } : { id: string },
 ): Promise<AckResult> {
   return new Promise((resolve) => {
-    const socket = getSocket();
-    if (!socket.connected) socket.connect();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (socket.timeout(10000) as any).emit(event, data, (err: unknown, result: AckResult) =>
-      resolve(err ? { ok: false, error: "unavailable" } : result),
-    );
+    // Se espera a que el servidor haya identificado la cuenta (si no, te trataría como invitado).
+    whenSessionReady(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (getSocket().timeout(10000) as any).emit(event, data, (err: unknown, result: AckResult) =>
+        resolve(err ? { ok: false, error: "unavailable" } : result),
+      );
+    });
   });
 }
 

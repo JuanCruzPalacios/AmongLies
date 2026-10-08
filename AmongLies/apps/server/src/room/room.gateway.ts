@@ -13,6 +13,7 @@ import { v4 as uuid } from 'uuid';
 import type { GuestIdentity, Player, SocketAuth } from '@amonglies/shared';
 import {
   RECONNECT_GRACE_PERIOD_MS,
+  containsProfanity,
   getWordListsByLocale,
 } from '@amonglies/shared';
 import { RoomStore } from './room.store.js';
@@ -22,6 +23,7 @@ import { GameGateway } from '../game/game.gateway.js';
 import { PlayerService } from '../player/player.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import { SocialGateway } from '../social/social.gateway.js';
+import { AccountService } from '../moderation/account.service.js';
 
 const SESSION_TOKEN_PATTERN = /^[A-Za-z0-9-]{16,64}$/;
 
@@ -39,6 +41,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly authService: AuthService,
     private readonly gameGateway: GameGateway,
     private readonly socialGateway: SocialGateway,
+    private readonly accounts: AccountService,
   ) {}
 
   // ─── Conexión e identidad ────────────────────────────────────────────────
@@ -69,12 +72,20 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
       previous?.emit('session:replaced');
       previous?.disconnect(true);
     }
+    // Primero se registra la identidad (los mensajes pueden llegar mientras tanto)
+    // y después se leen las marcas de la cuenta (suspensión, privacidad).
+    if (userId) await this.accounts.load(userId);
+    if (!client.connected) return;
     if (userId) void this.socialGateway.onAccountConnected(userId);
 
     const saved = this.playerService.getRestorable(key);
     const room = saved ? this.roomStore.getRoom(saved.roomCode) : undefined;
     const player = room?.players.find((p) => p.id === saved?.playerId);
-    if (!saved || !room || !player) {
+    // Una cuenta suspendida no vuelve a su sala.
+    if (saved && room && player && this.accounts.isSuspended(userId)) {
+      this.gameGateway.removePlayerFromRoom(room.code, player.id);
+    }
+    if (!saved || !room || !player || this.accounts.isSuspended(userId)) {
       if (saved) this.playerService.clearRoom(saved.playerId);
       client.emit('session:ready', { restored: false });
       return;
@@ -138,7 +149,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: unknown,
   ) {
-    const identity = this.parseOrReject(client, data);
+    const identity = await this.parseOrReject(client, data);
     if (!identity) return;
     this.leaveCurrentRoom(client);
 
@@ -155,7 +166,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { code?: unknown },
   ) {
-    const identity = this.parseOrReject(client, data);
+    const identity = await this.parseOrReject(client, data);
     if (!identity) return;
 
     const code =
@@ -281,7 +292,27 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
-  private parseOrReject(client: Socket, data: unknown): GuestIdentity | null {
+  private async parseOrReject(
+    client: Socket,
+    data: unknown,
+  ): Promise<GuestIdentity | null> {
+    const userId = this.playerService.getSession(client.id)?.userId;
+    if (userId) await this.accounts.ready(userId);
+    if (this.accounts.isSuspended(userId)) {
+      client.emit('room:error', {
+        message: 'Account suspended',
+        code: 'SUSPENDED',
+      });
+      return null;
+    }
+    const nickname = (data as { nickname?: unknown } | null)?.nickname;
+    if (typeof nickname === 'string' && containsProfanity(nickname)) {
+      client.emit('room:error', {
+        message: 'Nickname not allowed',
+        code: 'NICKNAME_NOT_ALLOWED',
+      });
+      return null;
+    }
     const identity = parseIdentity(data);
     if (!identity) {
       client.emit('room:error', {

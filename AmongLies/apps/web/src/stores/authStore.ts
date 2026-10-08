@@ -4,7 +4,7 @@ import { create } from "zustand";
 import type { Locale } from "@amonglies/shared";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
-import { setAccessToken } from "@/lib/socket";
+import { getSocket, setAccessToken } from "@/lib/socket";
 import { usePlayerStore } from "@/stores/playerStore";
 
 export interface Profile {
@@ -12,6 +12,9 @@ export interface Profile {
   username: string;
   avatar_id: string;
   locale: Locale;
+  is_admin: boolean;
+  appear_offline: boolean;
+  allow_invites: boolean;
 }
 
 export const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,16}$/;
@@ -34,7 +37,9 @@ interface AuthState {
   requestPasswordReset: (email: string) => Promise<string | null>;
   updatePassword: (password: string) => Promise<string | null>;
   isUsernameTaken: (username: string) => Promise<boolean>;
-  updateProfile: (changes: Partial<Pick<Profile, "avatar_id" | "locale">>) => Promise<void>;
+  updateProfile: (
+    changes: Partial<Pick<Profile, "avatar_id" | "locale" | "appear_offline" | "allow_invites">>,
+  ) => Promise<void>;
 }
 
 let initialized = false;
@@ -70,7 +75,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       setTimeout(async () => {
         const { data } = await supabase
           .from("profiles")
-          .select("id, username, avatar_id, locale")
+          .select("id, username, avatar_id, locale, is_admin, appear_offline, allow_invites")
           .eq("id", user.id)
           .maybeSingle();
         if (!data) return;
@@ -126,5 +131,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!profile) return;
     set({ profile: { ...profile, ...changes } });
     await supabase.from("profiles").update(changes).eq("id", profile.id);
+    // El servidor guarda en memoria la privacidad de las cuentas conectadas.
+    if ("appear_offline" in changes || "allow_invites" in changes) getSocket().emit("account:refresh");
   },
 }));

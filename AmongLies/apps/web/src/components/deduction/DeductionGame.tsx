@@ -9,6 +9,7 @@ import { GameEnd } from "./GameEnd";
 import { PartidaEnd } from "./PartidaEnd";
 import { Avatar } from "@/components/ui";
 import { PauseOverlay } from "@/components/game/PauseOverlay";
+import { ReportDialog, type ReportTarget } from "@/components/moderation/ReportDialog";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useRoomStore } from "@/stores/roomStore";
 import { getSocket } from "@/lib/socket";
@@ -50,6 +51,8 @@ export function DeductionGame({
   const listRef = useRef<HTMLDivElement>(null);
   const mobileListRef = useRef<HTMLDivElement>(null);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
   // Mensajes de jugadores ya vistos en el drawer mobile (para el contador de no leídos)
   const playerMessageCount = chatMessages.filter((m) => m.type === "player").length;
   const [seenCount, setSeenCount] = useState(playerMessageCount);
@@ -124,12 +127,42 @@ export function DeductionGame({
               ronda: gameState.roundWithinPartida,
             })}
           </span>
+          <button
+            type="button"
+            onClick={() => setReportOpen((o) => !o)}
+            className="ml-auto mr-2 text-xs text-text-muted hover:text-danger cursor-pointer"
+            aria-expanded={reportOpen}
+          >
+            ⚑ {t("report.action")}
+          </button>
           {gameState.isImpostor && gameState.phase !== "game-end" && (
             <span className="bg-accent/20 border border-accent/50 text-accent text-xs font-bold px-3 py-1 rounded-full font-display tracking-wide">
               🕵️ IMPOSTOR
             </span>
           )}
         </div>
+
+        {reportOpen && (
+          <div className="max-w-2xl mx-auto w-full mb-3 flex flex-wrap gap-2 items-center bg-bg-surface border border-border rounded-xl p-2">
+            <span className="text-xs text-text-muted">{t("report.who")}</span>
+            {room.players
+              .filter((p) => p.id !== myId)
+              .map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    setReportOpen(false);
+                    setReportTarget({ kind: "player", playerId: p.id, name: p.nickname });
+                  }}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bg-surface-light text-xs cursor-pointer hover:text-danger"
+                >
+                  <Avatar avatarId={p.avatarId} size="sm" /> {p.nickname}
+                </button>
+              ))}
+          </div>
+        )}
+        <ReportDialog target={reportTarget} onClose={() => setReportTarget(null)} />
 
         {/* Eliminated strip — mobile only */}
         <EliminatedStrip gameState={gameState} room={room} className="lg:hidden mb-3 max-w-2xl mx-auto w-full" />

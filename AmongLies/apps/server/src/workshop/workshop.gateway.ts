@@ -7,10 +7,12 @@ import {
 import { Socket } from 'socket.io';
 import { GATEWAY_OPTIONS } from '../gateway.options.js';
 import { PlayerService } from '../player/player.service.js';
+import { AccountService } from '../moderation/account.service.js';
 import { WorkshopService, type WorkshopResult } from './workshop.service.js';
 
 type Data = Record<string, unknown> | undefined;
 const GUEST: WorkshopResult = { ok: false, error: 'guest' };
+const SUSPENDED: WorkshopResult = { ok: false, error: 'suspended' };
 
 /** Escrituras del workshop (las lecturas van directo a Supabase con RLS). */
 @WebSocketGateway(GATEWAY_OPTIONS)
@@ -18,6 +20,7 @@ export class WorkshopGateway {
   constructor(
     private readonly workshop: WorkshopService,
     private readonly playerService: PlayerService,
+    private readonly accounts: AccountService,
   ) {}
 
   private userOf(client: Socket): string | null {
@@ -25,14 +28,18 @@ export class WorkshopGateway {
   }
 
   @SubscribeMessage('workshop:save')
-  save(@ConnectedSocket() client: Socket, @MessageBody() data: unknown) {
+  async save(@ConnectedSocket() client: Socket, @MessageBody() data: unknown) {
     const me = this.userOf(client);
+    if (me) await this.accounts.ready(me);
+    if (this.accounts.isSuspended(me)) return SUSPENDED;
     return me ? this.workshop.save(me, data) : GUEST;
   }
 
   @SubscribeMessage('workshop:publish')
-  publish(@ConnectedSocket() client: Socket, @MessageBody() data: Data) {
+  async publish(@ConnectedSocket() client: Socket, @MessageBody() data: Data) {
     const me = this.userOf(client);
+    if (me) await this.accounts.ready(me);
+    if (this.accounts.isSuspended(me)) return SUSPENDED;
     return me ? this.workshop.publish(me, data?.id, data?.published) : GUEST;
   }
 

@@ -32,6 +32,14 @@ export function Header({ showAccount = true }: { showAccount?: boolean }) {
         {showAccount && ready && (
           user ? (
             <div className="flex items-center gap-2 text-sm">
+              {profile?.is_admin && (
+                <Link
+                  href="/admin"
+                  className="px-2 py-1.5 rounded-lg text-warning hover:bg-bg-surface-light"
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 href="/amigos"
                 className="relative px-2 py-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-surface-light"

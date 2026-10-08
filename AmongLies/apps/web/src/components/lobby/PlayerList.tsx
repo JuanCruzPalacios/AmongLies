@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Avatar } from "@/components/ui";
+import { ReportDialog, type ReportTarget } from "@/components/moderation/ReportDialog";
 import { useRoomStore } from "@/stores/roomStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -10,6 +12,7 @@ export function PlayerList() {
   const { t } = useTranslation();
   const room = useRoomStore((s) => s.room);
   const myId = usePlayerStore((s) => s.playerId);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
 
   if (!room) return null;
 
@@ -51,6 +54,16 @@ export function PlayerList() {
                 👑
               </span>
             )}
+            {player.id !== myId && (
+              <button
+                onClick={() => setReportTarget({ kind: "player", playerId: player.id, name: player.nickname })}
+                className="text-text-muted hover:text-danger text-xs cursor-pointer p-1"
+                title={t("report.action")}
+                aria-label={t("report.action_player", { name: player.nickname })}
+              >
+                ⚑
+              </button>
+            )}
             {isAdmin && player.id !== myId && (
               <div className="flex gap-1">
                 <button
@@ -72,6 +85,7 @@ export function PlayerList() {
           </div>
         ))}
       </div>
+      <ReportDialog target={reportTarget} onClose={() => setReportTarget(null)} />
     </div>
   );
 }

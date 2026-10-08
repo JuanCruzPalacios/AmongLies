@@ -3,6 +3,7 @@ import {
   AVATARS,
   MAX_NICKNAME_LENGTH,
   MIN_NICKNAME_LENGTH,
+  containsProfanity,
   isLocale,
 } from '@amonglies/shared';
 
@@ -17,7 +18,8 @@ export function parseIdentity(data: unknown): GuestIdentity | null {
   const trimmed = nickname.trim();
   if (
     trimmed.length < MIN_NICKNAME_LENGTH ||
-    trimmed.length > MAX_NICKNAME_LENGTH
+    trimmed.length > MAX_NICKNAME_LENGTH ||
+    containsProfanity(trimmed)
   )
     return null;
   if (!AVATARS.some((avatar) => avatar.id === avatarId)) return null;

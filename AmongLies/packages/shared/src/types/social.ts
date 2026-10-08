@@ -43,6 +43,7 @@ export type SocialError =
   | 'not_in_room'
   | 'friend_offline'
   | 'too_soon'
+  | 'invites_disabled'
   | 'unavailable';
 
 export type SocialAck = (result: { ok: true } | { ok: false; error: SocialError }) => void;

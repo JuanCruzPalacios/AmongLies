@@ -9,5 +9,6 @@ export * from './time';
 export * from './drawing';
 export * from './social';
 export * from './workshop';
+export * from './moderation';
 export * from './events';
 export * from './session';

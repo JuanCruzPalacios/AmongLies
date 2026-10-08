@@ -7,6 +7,7 @@ import type { ImpostorPlayerView } from './impostor';
 import type { TimePlayerView } from './time';
 import type { DrawEvent, DrawingPlayerView } from './drawing';
 import type { WorkshopAck, WorkshopDraft } from './workshop';
+import type { AdminUserView, ModerationAck, ReportInput, ReportStatus, ReportView } from './moderation';
 import type { FriendProfile, Presence, RoomInvite, SocialAck, SocialState } from './social';
 
 /** Lo que recibe cada jugador del juego en curso (según `gameId`). */
@@ -47,6 +48,19 @@ export interface ClientEvents {
   /** Trae a tu copia la última versión del original (pisa tus cambios). */
   'workshop:update-copy': (data: { id: string }, ack: WorkshopAck) => void;
   'workshop:like': (data: { id: string; like: boolean }, ack: WorkshopAck) => void;
+
+  // Moderación
+  'report:create': (data: ReportInput, ack: ModerationAck) => void;
+  /** La cuenta cambió sus ajustes de privacidad: el servidor los vuelve a leer. */
+  'account:refresh': () => void;
+  'admin:reports': (data: { status: ReportStatus }, ack: ModerationAck<{ reports: ReportView[] }>) => void;
+  'admin:resolve': (data: { id: string; status: 'resolved' | 'dismissed'; resolution?: string }, ack: ModerationAck) => void;
+  'admin:users': (data: { query: string }, ack: ModerationAck<{ users: AdminUserView[] }>) => void;
+  /** `days` null = permanente. */
+  'admin:suspend': (data: { userId: string; days: number | null; reason: string }, ack: ModerationAck) => void;
+  'admin:unsuspend': (data: { userId: string }, ack: ModerationAck) => void;
+  'admin:set-admin': (data: { userId: string; isAdmin: boolean }, ack: ModerationAck) => void;
+  'admin:workshop': (data: { itemId: string; action: 'hide' | 'delete' }, ack: ModerationAck) => void;
 }
 
 // Server -> Client
@@ -77,6 +91,9 @@ export interface ServerEvents {
   'social:presence': (data: { userId: string; presence: Presence }) => void;
   'social:request-received': (data: FriendProfile) => void;
   'social:invited': (data: RoomInvite) => void;
+
+  /** Un admin suspendió esta cuenta: se la saca de la sala. */
+  'account:suspended': (data: { until: string; reason: string | null }) => void;
 
   'player:reconnected': (data: { playerId: string }) => void;
   'player:disconnected': (data: { playerId: string }) => void;
