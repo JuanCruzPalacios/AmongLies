@@ -12,6 +12,7 @@ import { useRoomStore } from "@/stores/roomStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useTranslation } from "@/hooks/useTranslation";
 import { connectSocket, whenSessionReady } from "@/lib/socket";
+import { CONNECT_TIMEOUT_MS, useWakeNotice } from "@/lib/keepAlive";
 
 export default function Home() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function Home() {
   const [joinCode, setJoinCode] = useState("");
   const [showJoin, setShowJoin] = useState(false);
   const [nicknameError, setNicknameError] = useState("");
+  const waking = useWakeNotice(isConnecting);
 
   useEffect(() => {
     loadFromStorage();
@@ -48,7 +50,7 @@ export default function Home() {
       socket.off("room:error", onRoomError);
       setConnecting(false);
       setError(t("landing.error.timeout"));
-    }, 10000);
+    }, CONNECT_TIMEOUT_MS);
 
     function onCreated({ room, playerId }: { room: Room; playerId: string }) {
       clearTimeout(timeout);
@@ -87,7 +89,7 @@ export default function Home() {
       socket.off("room:error", onRoomError);
       setConnecting(false);
       setError(t("landing.error.timeout"));
-    }, 10000);
+    }, CONNECT_TIMEOUT_MS);
 
     function onJoined({ room, playerId }: { room: Room; playerId: string }) {
       clearTimeout(timeout);
@@ -171,6 +173,11 @@ export default function Home() {
             </div>
           </div>
 
+          {waking && (
+            <p role="status" className="text-text-secondary text-sm text-center">
+              {t("landing.waking")}
+            </p>
+          )}
           {error && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}

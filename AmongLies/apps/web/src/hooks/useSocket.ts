@@ -45,6 +45,12 @@ export function useSocket() {
       if (data.restored && data.room && data.playerId) {
         usePlayerStore.getState().setPlayerId(data.playerId);
         setRoom(data.room);
+      } else if (!data.restored && useRoomStore.getState().room) {
+        // Estábamos en una sala y el servidor ya no la tiene (se reinició o se durmió):
+        // mejor avisarlo que dejar una sala "fantasma" a la que nadie puede entrar.
+        setRoom(null);
+        setError(t("room.lost", usePlayerStore.getState().locale));
+        router.push("/");
       }
     }
 

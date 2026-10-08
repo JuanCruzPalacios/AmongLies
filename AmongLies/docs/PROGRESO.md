@@ -194,6 +194,11 @@ Chromium con `--proxy-server=https=<host:puerto de HTTPS_PROXY>`. En Railway no 
 - **Producción en Render** (plan gratis, Virginia, auto-deploy desde `main`):
   web https://amonglies-web.onrender.com · server https://amonglies-server.onrender.com.
   Probado con una partida completa de 4 navegadores reales contra producción.
+- **Plan gratis de Render:** el servidor se duerme a los 15 min sin tráfico HTTP (tarda ~1 min
+  en despertar) y al despertar **se pierden las salas** (viven en memoria). Mitigado en código
+  (bug #25): los clientes en una sala hacen `GET /health` cada 4 min, la sala perdida se avisa,
+  y al crear/unirse se espera al servidor con un aviso. Si se quiere evitar del todo, el plan
+  pago de Render (Starter) no duerme: decisión de Juan.
 - Railway quedó configurado en el repo (`railway.*.json`) pero la cuenta tiene la prueba
   vencida: no se usa.
 

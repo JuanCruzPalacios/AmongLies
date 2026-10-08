@@ -21,6 +21,7 @@ import { TimeGame } from "@/components/time/TimeGame";
 import { DrawingGame } from "@/components/drawing/DrawingGame";
 import { Button, Input, Avatar } from "@/components/ui";
 import { getSocket, connectSocket, whenSessionReady } from "@/lib/socket";
+import { CONNECT_TIMEOUT_MS, useServerKeepAlive, useWakeNotice } from "@/lib/keepAlive";
 
 export default function RoomPage() {
   const router = useRouter();
@@ -38,6 +39,9 @@ export default function RoomPage() {
   const [codeCopied, setCodeCopied] = useState(false);
   const [gameError, setGameError] = useState<string | null>(null);
   const [nicknameError, setNicknameError] = useState("");
+  const waking = useWakeNotice(isConnecting);
+  // Mientras haya una sala abierta, que el servidor no se duerma (se perderían las salas).
+  useServerKeepAlive(room !== null);
 
   // null = todavía preguntándole al servidor si este jugador ya estaba en la sala
   const [restoreChecked, setRestoreChecked] = useState(() => useRoomStore.getState().room !== null);
@@ -94,7 +98,7 @@ export default function RoomPage() {
       socket.off("room:error", onRoomError);
       setConnecting(false);
       setError(t("landing.error.timeout"));
-    }, 10000);
+    }, CONNECT_TIMEOUT_MS);
 
     function onJoined({ room, playerId }: { room: Room; playerId: string }) {
       clearTimeout(timeout);
@@ -201,6 +205,11 @@ export default function RoomPage() {
               </div>
             </div>
 
+            {waking && (
+              <p role="status" className="text-text-secondary text-sm text-center">
+                {t("landing.waking")}
+              </p>
+            )}
             {error && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
