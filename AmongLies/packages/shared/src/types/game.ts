@@ -1,6 +1,6 @@
 import type { Locale, CommunicationMode } from './common';
 
-export type GameId = 'impostor' | 'time';
+export type GameId = 'impostor' | 'time' | 'drawing';
 
 export interface GameDefinition {
   id: GameId;
@@ -13,6 +13,8 @@ export interface GameDefinition {
   availableLocales: Locale[];
   /** Usa listas de palabras (se eligen en el lobby). */
   usesWordLists: boolean;
+  /** Sólo acepta listas de palabras dibujables. */
+  drawableWordsOnly?: boolean;
   emoji: string;
 }
 

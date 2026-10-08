@@ -4,7 +4,7 @@ import type {
   GameSettingsValues,
   Locale,
 } from '@amonglies/shared';
-import { getWordListById, getWordListsByLocale } from '@amonglies/shared';
+import { getWordListById, getWordListsForGame } from '@amonglies/shared';
 
 /** Las listas de palabras se guardan aparte del settingsSchema porque dependen del idioma. */
 export const WORD_LISTS_KEY = 'selectedWordLists';
@@ -18,7 +18,7 @@ export function getDefaultGameSettings(
     values[schema.key] = schema.default;
   }
   if (def.usesWordLists) {
-    values[WORD_LISTS_KEY] = getWordListsByLocale(locale).map(
+    values[WORD_LISTS_KEY] = getWordListsForGame(def, locale).map(
       (list) => list.id,
     );
   }
@@ -47,7 +47,11 @@ export function sanitizeGameSettings(
   }
 
   if (def.usesWordLists && WORD_LISTS_KEY in raw) {
-    const lists = sanitizeWordLists(raw[WORD_LISTS_KEY], locale);
+    const lists = sanitizeWordLists(
+      raw[WORD_LISTS_KEY],
+      locale,
+      def.drawableWordsOnly,
+    );
     if (lists.length > 0) next[WORD_LISTS_KEY] = lists;
   }
 
@@ -72,12 +76,16 @@ function sanitizeValue(schema: GameSettingSchema, value: unknown): unknown {
   }
 }
 
-/** Sólo ids existentes del idioma de la sala, sin repetidos. */
-export function sanitizeWordLists(value: unknown, locale: Locale): string[] {
+/** Sólo ids existentes del idioma de la sala (y dibujables si hace falta), sin repetidos. */
+export function sanitizeWordLists(
+  value: unknown,
+  locale: Locale,
+  drawableOnly = false,
+): string[] {
   if (!Array.isArray(value)) return [];
-  const ids = value.filter(
-    (id): id is string =>
-      typeof id === 'string' && getWordListById(id)?.locale === locale,
-  );
+  const ids = value.filter((id): id is string => {
+    const list = typeof id === 'string' ? getWordListById(id) : undefined;
+    return list?.locale === locale && (!drawableOnly || list.drawable);
+  });
   return [...new Set(ids)];
 }

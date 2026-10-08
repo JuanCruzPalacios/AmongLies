@@ -5,9 +5,10 @@ import type { ChatMessage } from './chat';
 import type { GameAction } from './game';
 import type { ImpostorPlayerView } from './impostor';
 import type { TimePlayerView } from './time';
+import type { DrawEvent, DrawingPlayerView } from './drawing';
 
 /** Lo que recibe cada jugador del juego en curso (según `gameId`). */
-export type GameView = ImpostorPlayerView | TimePlayerView;
+export type GameView = ImpostorPlayerView | TimePlayerView | DrawingPlayerView;
 
 // Client -> Server
 export interface ClientEvents {
@@ -47,6 +48,8 @@ export interface ServerEvents {
   'chat:message': (data: ChatMessage) => void;
 
   'game:state-update': (data: GameView) => void;
+  /** Trazos en vivo del juego de Dibujo. */
+  'game:draw': (data: DrawEvent) => void;
   'game:phase-change': (data: { phase: string }) => void;
   'game:error': (data: { message: string; code?: string }) => void;
 

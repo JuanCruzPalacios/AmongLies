@@ -3,6 +3,7 @@ import type { WordList } from '../types';
 export const MOVIES: WordList = {
   id: 'en-movies',
   locale: 'en',
+  drawable: false,
   category: { es: 'Peliculas y Series', en: 'Movies & Shows' },
   words: [
     'Harry Potter', 'Star Wars', 'Lord of the Rings', 'The Matrix', 'Titanic',

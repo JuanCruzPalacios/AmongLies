@@ -180,7 +180,84 @@ export const GAME_TIME: GameDefinition = {
   ]),
 };
 
-export const ALL_GAMES: GameDefinition[] = [GAME_IMPOSTOR, GAME_TIME];
+export const GAME_DRAWING: GameDefinition = {
+  id: 'drawing',
+  emoji: '🎨',
+  name: {
+    es: 'Impostor dibujo',
+    en: 'Drawing Impostor',
+  },
+  description: {
+    es: 'Entre todos dibujan la palabra secreta, de a poquito. El impostor no la sabe: tiene que dibujar sin delatarse.',
+    en: 'Everyone draws the secret word, a little at a time. The impostor doesn\'t know it and must draw without giving themselves away.',
+  },
+  minPlayers: 4,
+  maxPlayers: null,
+  supportedModes: ['chat', 'voice'],
+  availableLocales: ['es', 'en'],
+  usesWordLists: true,
+  drawableWordsOnly: true,
+  settingsSchema: deductionSchema([
+    {
+      key: 'wordRevealTimeSeconds',
+      label: { es: 'Tiempo para ver la palabra (seg)', en: 'Word reveal time (sec)' },
+      type: 'number',
+      default: 8,
+      min: 3,
+      max: 30,
+    },
+    {
+      key: 'impostorCategoryHint',
+      label: { es: 'El impostor ve la categoría', en: 'Impostor sees the category' },
+      type: 'boolean',
+      default: false,
+    },
+    {
+      key: 'turnsPerRound',
+      label: { es: 'Veces que dibuja cada uno por ronda', en: 'Turns per player each round' },
+      type: 'number',
+      default: 1,
+      min: 1,
+      max: 3,
+    },
+    {
+      key: 'inkPerTurn',
+      label: { es: 'Tinta por turno (% del ancho del lienzo)', en: 'Ink per turn (% of canvas width)' },
+      type: 'number',
+      default: 100,
+      min: 20,
+      max: 1000,
+    },
+    {
+      key: 'minInkPercent',
+      label: { es: 'Tinta mínima para terminar el turno (%)', en: 'Minimum ink to end the turn (%)' },
+      type: 'number',
+      default: 20,
+      min: 0,
+      max: 100,
+    },
+    {
+      key: 'turnTimeSeconds',
+      label: { es: 'Tiempo máximo por turno (seg)', en: 'Max time per turn (sec)' },
+      type: 'number',
+      default: 30,
+      min: 10,
+      max: 120,
+    },
+    {
+      key: 'colorMode',
+      label: { es: 'Colores', en: 'Colors' },
+      type: 'select',
+      default: 'free',
+      options: [
+        { value: 'free', label: { es: 'Cada uno elige', en: 'Free choice' } },
+        { value: 'per-player', label: { es: 'Uno fijo por jugador', en: 'One per player' } },
+      ],
+    },
+  ]),
+};
+
+export const ALL_GAMES: GameDefinition[] = [GAME_IMPOSTOR, GAME_TIME, GAME_DRAWING];
 
 export function getGameDefinition(id: string): GameDefinition | undefined {
   return ALL_GAMES.find((game) => game.id === id);

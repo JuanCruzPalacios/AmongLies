@@ -114,6 +114,7 @@ export class GameGateway {
           `── Partida ${partida} · Ronda ${ronda} ──`,
         );
       },
+      onDraw: (event) => this.server.to(roomCode).emit('game:draw', event),
       onGameEnd: () => {
         this.saveStats(roomCode, gameId);
         // La sala vuelve al lobby para que puedan entrar jugadores nuevos por link,

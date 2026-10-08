@@ -129,6 +129,10 @@ export abstract class DeductionEngine<
   ): GameView;
   /** Se pausó la partida (p. ej. el Tiempo cancela un reloj en marcha). */
   protected onPause(): void {}
+  /** Jugaron todos: true si el juego quiere otra vuelta de turnos en la misma ronda. */
+  protected startNextLap(): boolean {
+    return false;
+  }
 
   // ─── GameEngine ──────────────────────────────────────────────────────────
 
@@ -340,8 +344,11 @@ export abstract class DeductionEngine<
   protected nextTurn(): void {
     this.state.currentTurnIndex++;
     if (this.state.currentTurnIndex >= this.state.turnOrder.length) {
-      this.startDiscussion();
-      return;
+      if (!this.startNextLap()) {
+        this.startDiscussion();
+        return;
+      }
+      this.state.currentTurnIndex = 0;
     }
     // Primero se prepara el turno nuevo, así el estado emitido ya es el correcto.
     this.beginTurn();

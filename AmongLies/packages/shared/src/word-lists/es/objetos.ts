@@ -3,6 +3,7 @@ import type { WordList } from '../types';
 export const OBJETOS: WordList = {
   id: 'es-objetos',
   locale: 'es',
+  drawable: true,
   category: { es: 'Objetos Cotidianos', en: 'Everyday Objects' },
   words: [
     'Telefono', 'Computadora', 'Television', 'Control remoto', 'Reloj',

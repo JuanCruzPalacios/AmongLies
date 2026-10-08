@@ -3,6 +3,7 @@ import type { WordList } from '../types';
 export const COUNTRIES: WordList = {
   id: 'en-countries',
   locale: 'en',
+  drawable: false,
   category: { es: 'Paises y Ciudades', en: 'Countries & Cities' },
   words: [
     'Argentina', 'Brazil', 'Mexico', 'Spain', 'France', 'Italy', 'Germany',

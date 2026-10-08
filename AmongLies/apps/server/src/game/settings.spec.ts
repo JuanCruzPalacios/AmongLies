@@ -1,4 +1,8 @@
-import { GAME_IMPOSTOR, getWordListsByLocale } from '@amonglies/shared';
+import {
+  GAME_DRAWING,
+  GAME_IMPOSTOR,
+  getWordListsByLocale,
+} from '@amonglies/shared';
 import {
   getDefaultGameSettings,
   sanitizeGameSettings,
@@ -20,6 +24,16 @@ describe('getDefaultGameSettings', () => {
     expect(
       getDefaultGameSettings(GAME_IMPOSTOR, 'en').selectedWordLists,
     ).toEqual(getWordListsByLocale('en').map((list) => list.id));
+  });
+
+  it('el Dibujo arranca sólo con las listas dibujables', () => {
+    const lists = getDefaultGameSettings(GAME_DRAWING, 'es')
+      .selectedWordLists as string[];
+    expect(lists).toContain('es-animales');
+    expect(lists).toContain('es-objetos');
+    expect(lists).not.toContain('es-paises');
+    expect(lists).not.toContain('es-peliculas');
+    expect(lists).not.toContain('es-marcas');
   });
 });
 
@@ -105,5 +119,22 @@ describe('sanitizeWordLists', () => {
 
   it('devuelve vacío si no es un array', () => {
     expect(sanitizeWordLists('es-animales', 'es')).toEqual([]);
+  });
+
+  it('para el Dibujo descarta las listas que no se pueden dibujar', () => {
+    expect(
+      sanitizeWordLists(['es-animales', 'es-paises', 'es-marcas'], 'es', true),
+    ).toEqual(['es-animales']);
+  });
+
+  it('el Dibujo no acepta un cambio a sólo listas no dibujables', () => {
+    const current = getDefaultGameSettings(GAME_DRAWING, 'es');
+    const next = sanitizeGameSettings(
+      GAME_DRAWING,
+      { selectedWordLists: ['es-paises'] },
+      current,
+      'es',
+    );
+    expect(next.selectedWordLists).toEqual(current.selectedWordLists);
   });
 });

@@ -1,4 +1,5 @@
 import type {
+  DrawEvent,
   GameAction,
   GameSettingsValues,
   GameView,
@@ -14,6 +15,8 @@ export interface EngineCallbacks {
   /** Empieza una ronda nueva (para el separador del chat). */
   onRoundStart: (info: { partida: number; ronda: number }) => void;
   onGameEnd: () => void;
+  /** Trazos en vivo del Dibujo: se reenvían a la sala sin mandar todo el estado. */
+  onDraw?: (event: DrawEvent) => void;
 }
 
 export interface ActionContext {
