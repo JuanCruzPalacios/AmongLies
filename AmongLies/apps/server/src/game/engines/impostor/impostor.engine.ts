@@ -8,14 +8,20 @@ import type {
   RoundResult,
   Player,
 } from '@amonglies/shared';
-import { MAX_CHAT_MESSAGE_LENGTH, getWordListsByIds } from '@amonglies/shared';
+import {
+  MAX_CHAT_MESSAGE_LENGTH,
+  SKIP_VOTE,
+  getWordListsByIds,
+} from '@amonglies/shared';
 import type {
   ActionContext,
   EngineCallbacks,
   GameEngine,
   GameRegistration,
+  PlayerGameStats,
 } from '../../engine.js';
-import { resolveVotes } from '../core/votes.js';
+import { decideVoteOutcome, resolveVotes } from '../core/votes.js';
+import { mergePoints, partidaBonus, roundPoints } from '../core/scoring.js';
 import { getPartidaEndReason, maxImpostorsFor } from '../core/rules.js';
 import { PausableTimers } from '../core/timers.js';
 import type { PartidaEndReason } from '@amonglies/shared';
@@ -28,6 +34,7 @@ export class ImpostorEngine implements GameEngine {
   private players: Player[];
   private timers = new PausableTimers();
   private callbacks: EngineCallbacks;
+  private stats = new Map<string, PlayerGameStats>();
 
   constructor(
     players: Player[],
@@ -42,12 +49,14 @@ export class ImpostorEngine implements GameEngine {
       totalPartidas: settings.partidas,
       roundWithinPartida: 1,
       secretWord: '',
+      category: '',
       impostorIds: [],
       eliminatedPlayerIds: [],
       turnOrder: [],
       currentTurnIndex: 0,
       wordsUsed: [],
       votes: {},
+      revoteCandidates: null,
       skipDiscussionVotes: [],
       partidaEndSkipVotes: [],
       results: [],
@@ -55,6 +64,8 @@ export class ImpostorEngine implements GameEngine {
       settings,
       gameWinner: null,
       paused: false,
+      scores: {},
+      pendingPoints: {},
     };
   }
 
@@ -96,6 +107,10 @@ export class ImpostorEngine implements GameEngine {
       roundWithinPartida: this.state.roundWithinPartida,
       isImpostor,
       secretWord: isImpostor ? null : this.state.secretWord,
+      category:
+        !isImpostor || this.state.settings.impostorCategoryHint
+          ? this.state.category
+          : null,
       fellowImpostorIds: isImpostor
         ? this.state.impostorIds.filter((id) => id !== playerId)
         : [],
@@ -107,13 +122,15 @@ export class ImpostorEngine implements GameEngine {
         this.state.turnOrder[this.state.currentTurnIndex] === playerId,
       wordsUsed: this.state.wordsUsed,
       votes:
-        phase === 'vote-results' ||
-        phase === 'partida-end' ||
-        phase === 'game-end'
+        !this.state.settings.secretVote &&
+        (phase === 'vote-results' ||
+          phase === 'partida-end' ||
+          phase === 'game-end')
           ? this.state.votes
           : {},
       hasVoted: playerId in this.state.votes,
       voteCount: Object.keys(this.state.votes).length,
+      revoteCandidates: this.state.revoteCandidates,
       skipDiscussionVotes: [...this.state.skipDiscussionVotes],
       partidaEndSkipVotes: [...this.state.partidaEndSkipVotes],
       results: sanitizedResults,
@@ -121,6 +138,7 @@ export class ImpostorEngine implements GameEngine {
       settings: this.state.settings,
       gameWinner: this.state.gameWinner,
       paused: this.state.paused,
+      scores: this.state.scores,
     };
   }
 
@@ -158,6 +176,14 @@ export class ImpostorEngine implements GameEngine {
       this.state.phase === 'game-end' ||
       !this.state.eliminatedPlayerIds.includes(playerId)
     );
+  }
+
+  /** Estadísticas de cada jugador que sigue en la partida (se guardan al terminar). */
+  getPlayerStats(): PlayerGameStats[] {
+    return this.players.map((p) => ({
+      ...this.statsFor(p.id),
+      points: this.state.scores[p.id] ?? 0,
+    }));
   }
 
   destroy(): void {
@@ -278,21 +304,29 @@ export class ImpostorEngine implements GameEngine {
     this.state.roundWithinPartida = 1;
     this.state.impostorIds = this.selectImpostors();
     this.state.gameWinner = null;
+    this.state.pendingPoints = {};
     this.startRound();
   }
 
   private startRound(): void {
     const wordLists = getWordListsByIds(this.state.settings.selectedWordLists);
-    const allWords = wordLists.flatMap((wl) => wl.words);
+    const allWords = wordLists.flatMap((list) =>
+      list.words.map((word) => ({
+        word,
+        category: list.category[list.locale],
+      })),
+    );
 
-    this.state.secretWord =
-      allWords[Math.floor(Math.random() * allWords.length)];
+    const pick = allWords[Math.floor(Math.random() * allWords.length)];
+    this.state.secretWord = pick.word;
+    this.state.category = pick.category;
     this.state.turnOrder = this.shuffleArray(
       this.activePlayers().map((p) => p.id),
     );
     this.state.currentTurnIndex = 0;
     this.state.wordsUsed = [];
     this.state.votes = {};
+    this.state.revoteCandidates = null;
     this.state.skipDiscussionVotes = [];
 
     this.callbacks.onRoundStart({
@@ -407,7 +441,14 @@ export class ImpostorEngine implements GameEngine {
     if (playerId in this.state.votes) return;
     const active = this.activePlayers();
     if (!active.some((p) => p.id === playerId)) return;
-    if (!active.some((p) => p.id === targetId)) return;
+
+    const isSkip = targetId === SKIP_VOTE;
+    if (isSkip && !this.state.settings.allowSkipVote) return;
+    if (!isSkip) {
+      if (!active.some((p) => p.id === targetId)) return;
+      const candidates = this.state.revoteCandidates;
+      if (candidates && !candidates.includes(targetId)) return;
+    }
 
     this.state.votes[playerId] = targetId;
     this.callbacks.onStateUpdate();
@@ -442,7 +483,36 @@ export class ImpostorEngine implements GameEngine {
   }
 
   private finishVoting(): void {
-    const { votedOutId } = resolveVotes(this.state.votes);
+    const resolution = resolveVotes(this.state.votes);
+    const isRevote = this.state.revoteCandidates !== null;
+    const outcome = decideVoteOutcome(resolution, {
+      tieBreak: this.state.settings.tieBreak,
+      alreadyRevoted: isRevote,
+    });
+
+    // Empate con re-voto: se vota de nuevo, sólo entre los empatados.
+    if (outcome.kind === 'revote') {
+      this.state.revoteCandidates = outcome.candidates;
+      this.state.votes = {};
+      this.startVoting();
+      return;
+    }
+
+    const votedOutId = outcome.kind === 'expel' ? outcome.playerId : null;
+    const tieBreak = isRevote ? 'revote' : outcome.tieBreak;
+    this.state.revoteCandidates = null;
+
+    // Los puntos de la ronda quedan ocultos hasta que termina la partida.
+    mergePoints(
+      this.state.pendingPoints,
+      roundPoints({
+        votes: this.state.votes,
+        impostorIds: this.state.impostorIds,
+        activeImpostorIds: this.activeImpostors(),
+        votedOutId,
+      }),
+    );
+    this.countVotes();
 
     if (votedOutId !== null) {
       this.state.eliminatedPlayerIds.push(votedOutId);
@@ -468,6 +538,8 @@ export class ImpostorEngine implements GameEngine {
           : this.state.impostorIds.includes(votedOutId)
             ? 'players'
             : 'impostor',
+      voteCounts: resolution.counts,
+      tieBreak,
     });
 
     if (endReason) this.recordPartidaEnd(endReason);
@@ -486,13 +558,65 @@ export class ImpostorEngine implements GameEngine {
 
   private recordPartidaEnd(reason: PartidaEndReason): void {
     const winner = reason === 'impostors-eliminated' ? 'players' : 'impostor';
+    const playerIds = this.players.map((p) => p.id);
+    const points = mergePoints(
+      this.state.pendingPoints,
+      partidaBonus({ winner, impostorIds: this.state.impostorIds, playerIds }),
+    );
+    mergePoints(this.state.scores, points);
+    this.state.pendingPoints = {};
+
+    for (const id of playerIds) {
+      const isImpostor = this.state.impostorIds.includes(id);
+      const won = (winner === 'impostor') === isImpostor;
+      const stats = this.statsFor(id);
+      stats.partidasPlayed++;
+      if (isImpostor) {
+        stats.partidasAsImpostor++;
+        if (won) stats.partidasWonAsImpostor++;
+      } else {
+        stats.partidasAsInnocent++;
+        if (won) stats.partidasWonAsInnocent++;
+      }
+    }
+
     this.state.gameWinner = winner;
     this.state.partidaResults.push({
       partida: this.state.partida,
       winner,
       reason,
       impostorIds: [...this.state.impostorIds],
+      points,
     });
+  }
+
+  /** Votos de inocentes (para el % de votos acertados de las estadísticas). */
+  private countVotes(): void {
+    for (const [voterId, targetId] of Object.entries(this.state.votes)) {
+      if (this.state.impostorIds.includes(voterId)) continue;
+      const stats = this.statsFor(voterId);
+      stats.innocentVotes++;
+      if (this.state.impostorIds.includes(targetId)) stats.correctVotes++;
+    }
+  }
+
+  private statsFor(playerId: string): PlayerGameStats {
+    let stats = this.stats.get(playerId);
+    if (!stats) {
+      stats = {
+        playerId,
+        partidasPlayed: 0,
+        partidasAsImpostor: 0,
+        partidasWonAsImpostor: 0,
+        partidasAsInnocent: 0,
+        partidasWonAsInnocent: 0,
+        correctVotes: 0,
+        innocentVotes: 0,
+        points: 0,
+      };
+      this.stats.set(playerId, stats);
+    }
+    return stats;
   }
 
   /** Resumen de la partida, o fin del juego si era la última. */

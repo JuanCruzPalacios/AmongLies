@@ -4,11 +4,12 @@ import { GameService } from './game.service.js';
 import { RoomModule } from '../room/room.module.js';
 import { RoomGateway } from '../room/room.gateway.js';
 import { AuthService } from '../auth/auth.service.js';
+import { StatsService } from '../stats/stats.service.js';
 
 /** Salas y juego van juntos: la conexión de un jugador afecta a la partida en curso. */
 @Module({
   imports: [RoomModule],
-  providers: [GameGateway, GameService, RoomGateway, AuthService],
+  providers: [GameGateway, GameService, RoomGateway, AuthService, StatsService],
   exports: [GameService],
 })
 export class GameModule {}

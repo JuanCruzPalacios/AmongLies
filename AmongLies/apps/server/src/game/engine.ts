@@ -39,6 +39,8 @@ export interface GameEngine {
   resume(): void;
   /** Saca a un jugador que se fue o con el que no se espera más. */
   removePlayer(playerId: string): void;
+  /** Estadísticas de los jugadores al terminar el juego (para guardarlas en sus cuentas). */
+  getPlayerStats(): PlayerGameStats[];
   destroy(): void;
 }
 
@@ -50,4 +52,18 @@ export interface GameRegistration {
     settings: GameSettingsValues,
     callbacks: EngineCallbacks,
   ): GameEngine;
+}
+
+/** Lo que se suma a las estadísticas de una cuenta al terminar un juego. */
+export interface PlayerGameStats {
+  playerId: string;
+  partidasPlayed: number;
+  partidasAsImpostor: number;
+  partidasWonAsImpostor: number;
+  partidasAsInnocent: number;
+  partidasWonAsInnocent: number;
+  /** Votos de este jugador, como inocente, que fueron a un impostor. */
+  correctVotes: number;
+  innocentVotes: number;
+  points: number;
 }

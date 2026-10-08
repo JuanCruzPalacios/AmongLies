@@ -73,6 +73,35 @@ export const GAME_IMPOSTOR: GameDefinition = {
       max: 30,
     },
     {
+      key: 'impostorCategoryHint',
+      label: { es: 'El impostor ve la categoría', en: 'Impostor sees the category' },
+      type: 'boolean',
+      default: false,
+    },
+    {
+      key: 'secretVote',
+      label: { es: 'Voto secreto', en: 'Secret vote' },
+      type: 'boolean',
+      default: false,
+    },
+    {
+      key: 'allowSkipVote',
+      label: { es: 'Permitir votar "saltear"', en: 'Allow "skip" vote' },
+      type: 'boolean',
+      default: true,
+    },
+    {
+      key: 'tieBreak',
+      label: { es: 'Si hay empate', en: 'On a tie' },
+      type: 'select',
+      default: 'none',
+      options: [
+        { value: 'none', label: { es: 'Nadie sale', en: 'Nobody is out' } },
+        { value: 'revote', label: { es: 'Re-votar', en: 'Vote again' } },
+        { value: 'random', label: { es: 'Al azar', en: 'Random' } },
+      ],
+    },
+    {
       key: 'communicationMode',
       label: { es: 'Modo de comunicacion', en: 'Communication mode' },
       type: 'select',

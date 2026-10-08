@@ -76,6 +76,11 @@ export class PlayerService {
     if (!identity.socketId) this.identities.delete(identity.key);
   }
 
+  /** Cuenta del jugador, o null si es invitado. */
+  getUserIdByPlayerId(playerId: string): string | null {
+    return this.findByPlayerId(playerId)?.userId ?? null;
+  }
+
   getSocketIdByPlayerId(playerId: string): string | null {
     return this.findByPlayerId(playerId)?.socketId ?? null;
   }

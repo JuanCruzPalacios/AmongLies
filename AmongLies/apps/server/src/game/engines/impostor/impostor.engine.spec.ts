@@ -30,6 +30,10 @@ function makeSettings(
     wordRevealTimeSeconds: 5,
     selectedWordLists: ['es-animales'],
     communicationMode: 'chat',
+    secretVote: false,
+    allowSkipVote: true,
+    tieBreak: 'none',
+    impostorCategoryHint: false,
     ...overrides,
   };
 }
@@ -153,8 +157,15 @@ describe('ImpostorEngine — flujo de una partida', () => {
   });
 
   it('expulsar al único impostor hace ganar a los inocentes y termina el juego', () => {
-    const { phase, view, playTurns, everyoneVotes, impostorIds, callbacks } =
-      setup();
+    const {
+      phase,
+      view,
+      playTurns,
+      everyoneVotes,
+      impostorIds,
+      innocentIds,
+      callbacks,
+    } = setup();
     playTurns();
     expect(phase()).toBe('voting');
 
@@ -165,14 +176,17 @@ describe('ImpostorEngine — flujo de una partida', () => {
     jest.advanceTimersByTime(9000);
     expect(phase()).toBe('game-end');
     expect(callbacks.onGameEnd).toHaveBeenCalledTimes(1);
+    const points = Object.fromEntries(innocentIds.map((id) => [id, 3]));
     expect(view('p1').partidaResults).toEqual([
       {
         partida: 1,
         winner: 'players',
         reason: 'impostors-eliminated',
         impostorIds,
+        points,
       },
     ]);
+    expect(view('p1').scores).toEqual(points);
   });
 
   it('con empate nadie es expulsado y se juega otra ronda', () => {
@@ -498,5 +512,127 @@ describe('ImpostorEngine — pausa y salida de jugadores', () => {
     const before = view('p1');
     engine.removePlayer('desconocido');
     expect(view('p1')).toEqual(before);
+  });
+});
+
+describe('ImpostorEngine — reglas configurables (Fase 2)', () => {
+  /** Hace votar a cada jugador según `ballot` (votante → votado). */
+  const castVotes = (
+    engine: ImpostorEngine,
+    ballot: Record<string, string>,
+  ) => {
+    for (const [voter, target] of Object.entries(ballot)) {
+      engine.handleAction(voter, { type: 'vote', payload: target }, PLAYER);
+    }
+  };
+
+  it('pista de categoría: el impostor la ve sólo si está activada', () => {
+    const off = setup({ impostorCategoryHint: false });
+    expect(off.view(off.impostorIds[0]).category).toBeNull();
+    expect(off.view(off.innocentIds[0]).category).toBe('Animales');
+
+    const on = setup({ impostorCategoryHint: true });
+    expect(on.view(on.impostorIds[0]).category).toBe('Animales');
+    expect(on.view(on.impostorIds[0]).secretWord).toBeNull();
+  });
+
+  it('"saltear" con mayoría: no se expulsa a nadie', () => {
+    const { engine, view, playTurns } = setup({ allowSkipVote: true });
+    playTurns();
+    castVotes(engine, { p1: 'skip', p2: 'skip', p3: 'skip', p4: 'p1' });
+    const result = view('p1').results[0];
+    expect(result.votedOutId).toBeNull();
+    expect(result.voteCounts).toEqual({ skip: 3, p1: 1 });
+  });
+
+  it('"saltear" desactivado: el voto se ignora', () => {
+    const { engine, view, playTurns } = setup({ allowSkipVote: false });
+    playTurns();
+    engine.handleAction('p1', { type: 'vote', payload: 'skip' }, PLAYER);
+    expect(view('p1').voteCount).toBe(0);
+  });
+
+  it('empate con re-voto: se vota de nuevo sólo entre los empatados', () => {
+    const { engine, view, playTurns } = setup({ tieBreak: 'revote' });
+    playTurns();
+    castVotes(engine, { p1: 'p2', p2: 'p1', p3: 'p2', p4: 'p1' }); // 2 a 2
+    expect(view('p1').phase).toBe('voting');
+    expect([...(view('p1').revoteCandidates ?? [])].sort()).toEqual([
+      'p1',
+      'p2',
+    ]);
+    expect(view('p1').voteCount).toBe(0);
+
+    engine.handleAction('p3', { type: 'vote', payload: 'p4' }, PLAYER); // fuera del re-voto
+    expect(view('p1').voteCount).toBe(0);
+
+    castVotes(engine, { p1: 'p2', p2: 'p1', p3: 'p2', p4: 'p2' });
+    const result = view('p1').results[0];
+    expect(result.votedOutId).toBe('p2');
+    expect(result.tieBreak).toBe('revote');
+    expect(view('p1').revoteCandidates).toBeNull();
+  });
+
+  it('empate al azar: sale uno de los empatados', () => {
+    const { engine, view, playTurns } = setup({ tieBreak: 'random' });
+    playTurns();
+    const random = jest.spyOn(Math, 'random').mockReturnValue(0);
+    castVotes(engine, { p1: 'p2', p2: 'p1', p3: 'p2', p4: 'p1' });
+    random.mockRestore();
+    const result = view('p1').results[0];
+    expect(['p1', 'p2']).toContain(result.votedOutId);
+    expect(result.tieBreak).toBe('random');
+  });
+
+  it('voto secreto: en los resultados no se ve quién votó a quién, pero sí los conteos', () => {
+    const { engine, view, playTurns } = setup({ secretVote: true });
+    playTurns();
+    castVotes(engine, { p1: 'p2', p2: 'p1', p3: 'p2', p4: 'p2' });
+    expect(view('p1').phase).toBe('vote-results');
+    expect(view('p1').votes).toEqual({});
+    expect(view('p1').results[0].voteCounts).toEqual({ p2: 3, p1: 1 });
+  });
+
+  it('los puntos de la partida en curso se ocultan hasta que termina', () => {
+    const { engine, view, playTurns, impostorIds, innocentIds } = setup(
+      { impostorCount: 2 },
+      6,
+    );
+    playTurns();
+    // Todos los inocentes votan al primer impostor: sale, pero queda otro (1 vs 4).
+    const ballot: Record<string, string> = {};
+    for (const id of innocentIds) ballot[id] = impostorIds[0];
+    ballot[impostorIds[0]] = innocentIds[0];
+    ballot[impostorIds[1]] = innocentIds[0];
+    castVotes(engine, ballot);
+    expect(view(innocentIds[0]).phase).toBe('vote-results');
+    expect(view(innocentIds[0]).scores).toEqual({});
+  });
+
+  it('las estadísticas cuentan partidas, roles, victorias y votos acertados', () => {
+    const { engine, playTurns, everyoneVotes, impostorIds, innocentIds } =
+      setup();
+    playTurns();
+    everyoneVotes(impostorIds[0]);
+    jest.advanceTimersByTime(9000);
+
+    const stats = engine.getPlayerStats();
+    const impostor = stats.find((s) => s.playerId === impostorIds[0])!;
+    const innocent = stats.find((s) => s.playerId === innocentIds[0])!;
+    expect(impostor).toMatchObject({
+      partidasPlayed: 1,
+      partidasAsImpostor: 1,
+      partidasWonAsImpostor: 0,
+      innocentVotes: 0,
+      points: 0,
+    });
+    expect(innocent).toMatchObject({
+      partidasPlayed: 1,
+      partidasAsInnocent: 1,
+      partidasWonAsInnocent: 1,
+      correctVotes: 1,
+      innocentVotes: 1,
+      points: 3,
+    });
   });
 });

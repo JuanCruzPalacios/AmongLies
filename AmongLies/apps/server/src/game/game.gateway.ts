@@ -8,13 +8,14 @@ import {
 import { Server, Socket } from 'socket.io';
 import { GATEWAY_OPTIONS } from '../gateway.options.js';
 import { v4 as uuid } from 'uuid';
-import type { ChatMessage, GameAction, Room } from '@amonglies/shared';
+import type { ChatMessage, GameAction, GameId, Room } from '@amonglies/shared';
 import { getGameDefinition } from '@amonglies/shared';
 import { GameService } from './game.service.js';
 import { getDefaultGameSettings, sanitizeGameSettings } from './settings.js';
 import { getDecider } from '@amonglies/shared';
 import { RoomStore } from '../room/room.store.js';
 import { PlayerService } from '../player/player.service.js';
+import { StatsService } from '../stats/stats.service.js';
 
 @WebSocketGateway(GATEWAY_OPTIONS)
 export class GameGateway {
@@ -25,6 +26,7 @@ export class GameGateway {
     private readonly gameService: GameService,
     private readonly roomStore: RoomStore,
     private readonly playerService: PlayerService,
+    private readonly statsService: StatsService,
   ) {}
 
   @SubscribeMessage('game:select')
@@ -101,6 +103,7 @@ export class GameGateway {
     }
 
     const roomCode = room.code;
+    const gameId = definition.id;
     const error = this.gameService.startGame(room, {
       onStateUpdate: () => this.broadcastGameState(roomCode),
       onPhaseChange: (phase) =>
@@ -112,6 +115,7 @@ export class GameGateway {
         );
       },
       onGameEnd: () => {
+        this.saveStats(roomCode, gameId);
         // La sala vuelve al lobby para que puedan entrar jugadores nuevos por link,
         // mientras los demás siguen viendo la pantalla final.
         const updatedRoom = this.roomStore.setState(roomCode, 'lobby');
@@ -224,6 +228,17 @@ export class GameGateway {
       (p) => !p.isConnected && engine.hasPlayer(p.id),
     );
     if (!someoneMissing) engine.resume();
+  }
+
+  /** Guarda las estadísticas de los jugadores con cuenta (los invitados no tienen). */
+  private saveStats(roomCode: string, gameId: GameId): void {
+    const engine = this.gameService.getEngine(roomCode);
+    if (!engine) return;
+    const entries = engine.getPlayerStats().flatMap((stats) => {
+      const userId = this.playerService.getUserIdByPlayerId(stats.playerId);
+      return userId ? [{ ...stats, userId }] : [];
+    });
+    void this.statsService.record(gameId, entries);
   }
 
   private getAdminRoom(client: Socket): Room | undefined {
