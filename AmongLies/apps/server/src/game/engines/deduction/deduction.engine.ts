@@ -343,8 +343,9 @@ export abstract class DeductionEngine<
       this.startDiscussion();
       return;
     }
-    this.callbacks.onStateUpdate();
+    // Primero se prepara el turno nuevo, así el estado emitido ya es el correcto.
     this.beginTurn();
+    this.callbacks.onStateUpdate();
   }
 
   protected setPhase(phase: TPhase | DeductionCommonPhase): void {

@@ -121,6 +121,17 @@ describe('TimeEngine — turnos con reloj', () => {
     expect(view('p2').clockRunning).toBe(true);
   });
 
+  it('el estado que se emite al pasar de turno ya tiene el reloj frenado', () => {
+    const { engine, view, toTurns, play } = setup();
+    toTurns();
+    const emitted: boolean[] = [];
+    (engine['callbacks'].onStateUpdate as jest.Mock).mockImplementation(() =>
+      emitted.push(view('p1').clockRunning),
+    );
+    play(1000);
+    expect(emitted.at(-1)).toBe(false);
+  });
+
   it('sólo el jugador de turno puede arrancar y parar su reloj', () => {
     const { engine, view, toTurns, current } = setup();
     toTurns();
