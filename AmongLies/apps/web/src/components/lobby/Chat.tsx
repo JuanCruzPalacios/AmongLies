@@ -47,9 +47,9 @@ export function Chat() {
       </div>
 
       {/* Messages */}
-      <div ref={listRef} className="flex-1 overflow-y-auto min-h-0 px-3 py-3 space-y-1">
+      <div ref={listRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-3 py-3 space-y-1">
         {room.chat.length === 0 && (
-          <p className="text-text-muted text-xs text-center py-10 opacity-60">Sin mensajes aún...</p>
+          <p className="text-text-muted text-xs text-center py-10 opacity-60">{t("chat.empty")}...</p>
         )}
 
         {room.chat.map((msg, idx) => {
@@ -61,7 +61,7 @@ export function Chat() {
             return (
               <div key={msg.id} className="flex items-center gap-2 py-1.5">
                 <div className="flex-1 h-px bg-border opacity-40" />
-                <span className="text-text-muted text-xs opacity-60 shrink-0">{msg.message}</span>
+                <span className="text-text-muted text-xs opacity-60 min-w-0 text-center whitespace-pre-wrap [overflow-wrap:anywhere]">{msg.message}</span>
                 <div className="flex-1 h-px bg-border opacity-40" />
               </div>
             );
@@ -77,13 +77,13 @@ export function Chat() {
                   <Avatar avatarId={msg.playerAvatarId} size="sm" />
                 )}
               </div>
-              <div className={`flex flex-col max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
+              <div className={`flex flex-col min-w-0 max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
                 {!isSameAuthor && (
-                  <span className={`text-xs font-semibold mb-0.5 px-1 ${isMe ? "text-primary" : "text-text-secondary"}`}>
-                    {isMe ? "Vos" : msg.playerNickname}
+                  <span className={`text-xs font-semibold mb-0.5 px-1 max-w-full truncate ${isMe ? "text-primary" : "text-text-secondary"}`}>
+                    {isMe ? t("chat.you") : msg.playerNickname}
                   </span>
                 )}
-                <div className={`px-3 py-1.5 text-sm leading-snug break-words rounded-2xl ${
+                <div className={`px-3 py-1.5 text-sm leading-snug break-words whitespace-pre-wrap [overflow-wrap:anywhere] max-w-full rounded-2xl ${
                   isMe
                     ? "bg-primary/25 text-text-primary rounded-br-sm"
                     : "bg-bg-surface-light text-text-primary rounded-bl-sm"
@@ -110,7 +110,7 @@ export function Chat() {
         <button
           onClick={handleSend}
           disabled={!message.trim()}
-          aria-label="Enviar"
+          aria-label={t("chat.send")}
           className="shrink-0 bg-primary hover:bg-primary-light text-white w-9 h-9 rounded-xl text-base font-bold disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors flex items-center justify-center"
         >
           ↑

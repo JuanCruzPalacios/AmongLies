@@ -83,7 +83,7 @@ export function WordReveal({ gameState, room, impostorHintKey = "game.impostor.f
                           {p!.nickname}
                         </span>
                         {expelled && (
-                          <span className="text-xs text-danger font-bold ml-1">expulsado</span>
+                          <span className="text-xs text-danger font-bold ml-1">{t("game.reveal.expelled")}</span>
                         )}
                       </div>
                     );
@@ -114,13 +114,13 @@ export function WordReveal({ gameState, room, impostorHintKey = "game.impostor.f
           className="bg-bg-surface border border-border rounded-2xl px-4 py-3"
         >
           <p className="text-text-muted text-xs uppercase tracking-wider mb-2">
-            Expulsados esta partida
+            {t("game.reveal.expelled_this_partida")}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {prevResults.map((r, i) => {
               if (!r.votedOutId) return (
                 <span key={i} className="text-xs text-text-muted bg-bg-surface-light rounded-lg px-2 py-1">
-                  Ronda {r.ronda} — Empate
+                  {t("game.reveal.round_tie", { n: r.ronda })}
                 </span>
               );
               const expelled = room.players.find((p) => p.id === r.votedOutId);
@@ -129,7 +129,7 @@ export function WordReveal({ gameState, room, impostorHintKey = "game.impostor.f
                 <div key={i} className="flex items-center gap-1.5 bg-bg-surface-light rounded-lg px-2 py-1">
                   <Avatar avatarId={expelled.avatarId} size="sm" />
                   <span className="text-xs text-text-secondary line-through">{expelled.nickname}</span>
-                  <span className="text-xs text-text-muted">R{r.ronda}</span>
+                  <span className="text-xs text-text-muted">{t("game.round_short", { n: r.ronda })}</span>
                 </div>
               );
             })}

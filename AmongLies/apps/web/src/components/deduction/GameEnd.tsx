@@ -56,12 +56,12 @@ export function GameEnd({ gameState, room, onBackToLobby }: Props) {
           <div className="flex justify-center gap-10 mt-6">
             <div className="text-center">
               <p className="text-4xl font-bold text-success">{playersPartidas}</p>
-              <p className="text-xs text-text-muted uppercase tracking-wider mt-1">Jugadores</p>
+              <p className="text-xs text-text-muted uppercase tracking-wider mt-1">{t("game.end.players")}</p>
             </div>
             <div className="text-text-muted text-2xl font-bold self-center">vs</div>
             <div className="text-center">
               <p className="text-4xl font-bold text-accent">{impostorPartidas}</p>
-              <p className="text-xs text-text-muted uppercase tracking-wider mt-1">Impostor</p>
+              <p className="text-xs text-text-muted uppercase tracking-wider mt-1">{t("game.end.impostor")}</p>
             </div>
           </div>
         )}
@@ -83,10 +83,10 @@ export function GameEnd({ gameState, room, onBackToLobby }: Props) {
                 playersWon ? "bg-success/10" : "bg-accent/10"
               }`}>
                 <span className="font-display font-bold text-sm">
-                  Partida {partida}
+                  {t("game.partida_n", { n: partida })}
                 </span>
                 <span className={`text-xs font-bold ${playersWon ? "text-success" : "text-accent"}`}>
-                  {playersWon ? "Jugadores ganaron" : "Impostor ganó"}
+                  {playersWon ? t("game.end.players_won") : t("game.end.impostor_won")}
                 </span>
                 <span className="text-text-muted text-xs">
                   🕵️ {impostorNames}
@@ -101,13 +101,13 @@ export function GameEnd({ gameState, room, onBackToLobby }: Props) {
                     : null;
                   return (
                     <div key={i} className="flex items-center justify-between px-4 py-2 text-xs">
-                      <span className="text-text-muted">Ronda {r.ronda}</span>
+                      <span className="text-text-muted">{t("game.round_n", { n: r.ronda })}</span>
                       <span className="font-mono text-primary">{roundAnswer(r, locale)}</span>
                       <span className="text-text-secondary">
                         {r.winner === "tie"
-                          ? "Empate"
+                          ? t("game.tie")
                           : votedOut
-                          ? `${votedOut} eliminado`
+                          ? t("game.end.player_eliminated", { name: votedOut })
                           : "—"}
                       </span>
                       <span className={

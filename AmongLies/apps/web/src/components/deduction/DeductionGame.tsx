@@ -178,15 +178,15 @@ export function DeductionGame({
       {!hideChat && (
         <div className="hidden lg:flex w-68 xl:w-72 flex-col border-l border-border shrink-0" style={{ background: "var(--color-bg-surface)" }}>
           <div className="px-4 py-3 border-b border-border shrink-0">
-            <h3 className="font-display font-bold text-xs text-text-secondary uppercase tracking-widest">Chat</h3>
+            <h3 className="font-display font-bold text-xs text-text-secondary uppercase tracking-widest">{t("lobby.chat")}</h3>
           </div>
 
           {isEliminated && (
             <div className="mx-3 mt-3 mb-1 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2 flex items-center gap-2 shrink-0">
               <span className="text-lg">👻</span>
               <p className="text-danger text-xs font-semibold leading-tight">
-                Fuiste eliminado.<br />
-                <span className="font-normal text-text-muted">No podés chatear.</span>
+                {t("game.chat.eliminated")}<br />
+                <span className="font-normal text-text-muted">{t("game.chat.cant_chat_sentence")}</span>
               </p>
             </div>
           )}
@@ -198,7 +198,7 @@ export function DeductionGame({
           {isEliminated ? (
             <div className="p-3 border-t border-border shrink-0">
               <div className="w-full py-2.5 px-3 rounded-xl bg-bg-surface-light text-text-muted text-xs text-center border border-border">
-                No podés chatear
+                {t("game.chat.cant_chat")}
               </div>
             </div>
           ) : (
@@ -214,7 +214,7 @@ export function DeductionGame({
           <button
             onClick={() => setMobileChatOpen(true)}
             className="lg:hidden fixed bottom-5 right-5 z-40 w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center text-white text-2xl active:scale-95 transition-transform"
-            aria-label="Abrir chat"
+            aria-label={t("game.chat.open")}
           >
             💬
             {unreadCount > 0 && (
@@ -249,11 +249,11 @@ export function DeductionGame({
                   {/* Handle + header */}
                   <div className="shrink-0 px-4 pt-3 pb-2 border-b border-border flex items-center justify-between">
                     <div className="w-10 h-1 bg-border rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2" />
-                    <h3 className="font-display font-bold text-sm text-text-secondary uppercase tracking-widest">Chat</h3>
+                    <h3 className="font-display font-bold text-sm text-text-secondary uppercase tracking-widest">{t("lobby.chat")}</h3>
                     <button
                       onClick={closeMobileChat}
                       className="text-text-muted text-xl leading-none p-1"
-                      aria-label="Cerrar"
+                      aria-label={t("social.toast.close")}
                     >
                       ×
                     </button>
@@ -263,7 +263,7 @@ export function DeductionGame({
                     <div className="mx-3 mt-2 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2 flex items-center gap-2 shrink-0">
                       <span>👻</span>
                       <p className="text-danger text-xs font-semibold">
-                        Fuiste eliminado — solo podés leer.
+                        {t("game.chat.eliminated_read_only")}
                       </p>
                     </div>
                   )}
@@ -273,7 +273,7 @@ export function DeductionGame({
                   {isEliminated ? (
                     <div className="p-3 border-t border-border shrink-0">
                       <div className="w-full py-2.5 px-3 rounded-xl bg-bg-surface-light text-text-muted text-xs text-center border border-border">
-                        No podés chatear
+                        {t("game.chat.cant_chat")}
                       </div>
                     </div>
                   ) : (
@@ -302,12 +302,13 @@ function ChatMessages({
   myId: string;
   listRef: React.RefObject<HTMLDivElement | null>;
 }) {
+  const { t } = useTranslation();
   const chatMessages = messages;
 
   return (
-    <div ref={listRef} className="flex-1 overflow-y-auto min-h-0 py-3 px-3 space-y-1">
+    <div ref={listRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 py-3 px-3 space-y-1">
       {chatMessages.length === 0 && (
-        <p className="text-text-muted text-xs text-center py-10 opacity-60">Sin mensajes aún</p>
+        <p className="text-text-muted text-xs text-center py-10 opacity-60">{t("chat.empty")}</p>
       )}
       {chatMessages.map((msg, idx) => {
         const isMe = msg.playerId === myId;
@@ -318,7 +319,7 @@ function ChatMessages({
           return (
             <div key={msg.id} className="flex items-center gap-2 py-2">
               <div className="flex-1 h-px bg-border opacity-50" />
-              <span className="text-text-muted text-xs font-mono opacity-70 shrink-0">{msg.message}</span>
+              <span className="text-text-muted text-xs font-mono opacity-70 min-w-0 text-center whitespace-pre-wrap [overflow-wrap:anywhere]">{msg.message}</span>
               <div className="flex-1 h-px bg-border opacity-50" />
             </div>
           );
@@ -331,13 +332,13 @@ function ChatMessages({
                 <Avatar avatarId={msg.playerAvatarId} size="sm" />
               )}
             </div>
-            <div className={`flex flex-col max-w-[78%] ${isMe ? "items-end" : "items-start"}`}>
+            <div className={`flex flex-col min-w-0 max-w-[78%] ${isMe ? "items-end" : "items-start"}`}>
               {!isSameAuthor && (
-                <span className={`text-xs font-semibold mb-0.5 px-1 ${isMe ? "text-primary" : "text-text-secondary"}`}>
-                  {isMe ? "Vos" : msg.playerNickname}
+                <span className={`text-xs font-semibold mb-0.5 px-1 max-w-full truncate ${isMe ? "text-primary" : "text-text-secondary"}`}>
+                  {isMe ? t("chat.you") : msg.playerNickname}
                 </span>
               )}
-              <div className={`px-3 py-1.5 rounded-2xl text-sm leading-snug break-words ${
+              <div className={`px-3 py-1.5 rounded-2xl text-sm leading-snug break-words whitespace-pre-wrap [overflow-wrap:anywhere] max-w-full ${
                 isMe
                   ? "bg-primary/20 text-text-primary rounded-br-sm"
                   : "bg-bg-surface-light text-text-primary rounded-bl-sm"
@@ -363,6 +364,7 @@ function EliminatedStrip({
   room: Room;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const eliminated = (gameState.eliminatedPlayerIds ?? [])
     .map((id) => room.players.find((p) => p.id === id))
     .filter(Boolean);
@@ -374,7 +376,7 @@ function EliminatedStrip({
       <div className="flex items-center gap-1.5 flex-wrap">
         <span className="text-text-muted text-xs opacity-60 shrink-0">👻</span>
         {eliminated.map((p) => (
-          <div key={p!.id} className="flex items-center gap-1 opacity-50" title={`${p!.nickname} — eliminado`}>
+          <div key={p!.id} className="flex items-center gap-1 opacity-50" title={t("game.eliminated.player_title", { name: p!.nickname })}>
             <Avatar avatarId={p!.avatarId} size="sm" />
             <span className="text-xs text-text-muted line-through leading-none hidden sm:inline lg:hidden xl:inline">
               {p!.nickname}
@@ -418,7 +420,7 @@ function SideChatInput({ onSend, t }: { onSend: (msg: string) => void; t: (k: st
       <button
         onClick={handleSend}
         className="shrink-0 bg-primary hover:bg-primary-light text-white w-9 h-9 rounded-xl text-base font-bold cursor-pointer transition-colors flex items-center justify-center"
-        aria-label="Enviar"
+        aria-label={t("chat.send")}
       >
         ↑
       </button>

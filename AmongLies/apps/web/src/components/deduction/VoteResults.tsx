@@ -59,7 +59,7 @@ export function VoteResults({ gameState, room }: Props) {
   // ── Helper strings ──────────────────────────────────────────────────────
   function stage1Headline() {
     if (!votedOut) return t("game.impostor.tie_no_expel");
-    return wasImpostor ? "¡ERA EL IMPOSTOR!" : "¡NO ERA EL IMPOSTOR!";
+    return wasImpostor ? t("game.results.was_impostor") : t("game.results.was_not_impostor");
   }
 
   function stage1Color() {
@@ -73,10 +73,10 @@ export function VoteResults({ gameState, room }: Props) {
       return (
         <p className="text-text-muted text-sm mt-2">
           {lastResult.winner === "tie"
-            ? "Nadie fue expulsado — la partida continúa"
+            ? t("game.results.tie_continues")
             : wasImpostor
-              ? "¡Buen trabajo! La partida continúa..."
-              : "La partida continúa..."}
+              ? t("game.results.good_job_continues")
+              : t("game.results.continues")}
         </p>
       );
     }
@@ -212,7 +212,7 @@ export function VoteResults({ gameState, room }: Props) {
               {revealedImpostors.length > 0 && (
                 <div className="pt-3 border-t border-border/50 space-y-2">
                   <p className="text-text-muted text-xs uppercase tracking-wider">
-                    {isPartidaOver ? t("game.impostor.impostors_were") : "Impostor expulsado"}
+                    {isPartidaOver ? t("game.impostor.impostors_were") : t("game.results.impostor_expelled")}
                   </p>
                   <div className="flex justify-center gap-3 flex-wrap">
                     {revealedImpostors.map((p) => (
@@ -236,7 +236,7 @@ export function VoteResults({ gameState, room }: Props) {
               {tallyEntries.length > 0 && (
                 <div className="pt-3 border-t border-border/50 space-y-3">
                   <div>
-                    <p className="text-text-muted text-xs mb-2 uppercase tracking-wider">Recuento</p>
+                    <p className="text-text-muted text-xs mb-2 uppercase tracking-wider">{t("game.results.tally")}</p>
                     <div className="space-y-1.5">
                       {tallyEntries.map(({ player, count }) => {
                         const maxVotes = tallyEntries[0].count;
@@ -265,7 +265,7 @@ export function VoteResults({ gameState, room }: Props) {
                   )}
                   {Object.keys(gameState.votes).length > 0 && (
                   <div>
-                    <p className="text-text-muted text-xs mb-1.5 uppercase tracking-wider">Quién votó a quién</p>
+                    <p className="text-text-muted text-xs mb-1.5 uppercase tracking-wider">{t("game.results.who_voted")}</p>
                     <div className="flex flex-wrap gap-1.5 justify-center">
                       {Object.entries(gameState.votes).map(([voterId, votedId]) => {
                         const voter = room.players.find((p) => p.id === voterId);

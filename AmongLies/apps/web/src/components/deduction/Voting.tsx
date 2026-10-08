@@ -76,8 +76,8 @@ export function Voting({ gameState, sendAction, room, myId }: Props) {
             ))}
           </div>
           <span className="text-text-muted text-xs">
-            {votesIn}/{votesNeeded} votaron
-            {votesPending > 0 && ` · faltan ${votesPending}`}
+            {t("game.vote.progress", { n: votesIn, total: votesNeeded })}
+            {votesPending > 0 && ` · ${t("game.vote.pending", { n: votesPending })}`}
           </span>
         </div>
       </div>

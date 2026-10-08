@@ -225,6 +225,13 @@ guardan en el navegador; privacidad, en la cuenta. e2e: 12 checks.
 alguien entra, invitación, votación, revelación, victoria, derrota, expulsado) y música de fondo
 suave (acordes y arpegio). Se desbloquea en la primera interacción (regla de los navegadores).
 
+**Idiomas y responsive (hecho):** todos los textos de la interfaz pasan por el traductor
+(es rioplatense / en; quedaban muchos fijos en castellano en las pantallas de juego, chat y
+resultados). En el celular el header va en un menú ☰ y el selector de idioma se abre tocando
+(antes era con hover); en el lobby, "Iniciar juego" queda arriba. Ninguna página tiene scroll
+horizontal a 360 px. El chat corta los mensajes largos (también palabras o links sin espacios)
+en vez de scrollear de costado. e2e: 11 checks (chat en escritorio y celular, menú, inglés).
+
 - **Probado:** 288 tests; e2e de moderación con dos cuentas y un invitado (15 checks), y con el
   token de un usuario común: no puede hacerse admin ni leer reportes. Suites anteriores en verde.
 

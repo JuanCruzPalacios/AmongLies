@@ -52,7 +52,7 @@ export function GameSelector() {
                       {t("lobby.players_min", { min: game.minPlayers })}
                     </span>
                     <span className="text-xs text-text-muted">
-                      {game.supportedModes.join(" / ")}
+                      {game.supportedModes.map((m) => t(`lobby.mode.${m}`)).join(" / ")}
                     </span>
                   </div>
                 </div>

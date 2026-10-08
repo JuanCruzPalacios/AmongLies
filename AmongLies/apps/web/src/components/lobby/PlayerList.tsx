@@ -50,7 +50,7 @@ export function PlayerList() {
               )}
             </span>
             {player.isAdmin && (
-              <span className="text-warning text-xs" title="Admin">
+              <span className="text-warning text-xs" title={t("lobby.admin")}>
                 👑
               </span>
             )}
@@ -69,14 +69,16 @@ export function PlayerList() {
                 <button
                   onClick={() => handleTransferAdmin(player.id)}
                   className="text-text-muted hover:text-warning text-xs cursor-pointer p-1"
-                  title="Transfer admin"
+                  title={t("lobby.transfer_admin")}
+                  aria-label={t("lobby.transfer_admin_to", { name: player.nickname })}
                 >
                   👑
                 </button>
                 <button
                   onClick={() => handleKick(player.id)}
                   className="text-text-muted hover:text-danger text-xs cursor-pointer p-1"
-                  title="Kick"
+                  title={t("lobby.kick")}
+                  aria-label={t("lobby.kick_player", { name: player.nickname })}
                 >
                   ✕
                 </button>

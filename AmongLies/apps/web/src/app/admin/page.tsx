@@ -263,7 +263,7 @@ function Users({ myId }: { myId: string }) {
             <li key={u.userId} className="bg-bg-surface border border-border rounded-2xl p-3 flex flex-wrap items-center gap-3">
               <Avatar avatarId={u.avatarId} size="sm" />
               <span className="font-semibold">@{u.username}</span>
-              {u.isAdmin && <span className="px-2 py-0.5 rounded-md bg-warning/15 text-warning text-xs">Admin</span>}
+              {u.isAdmin && <span className="px-2 py-0.5 rounded-md bg-warning/15 text-warning text-xs">{t("nav.admin")}</span>}
               <SuspendedBadge until={u.suspendedUntil} />
               <span className="flex-1" />
               {u.userId !== myId && (

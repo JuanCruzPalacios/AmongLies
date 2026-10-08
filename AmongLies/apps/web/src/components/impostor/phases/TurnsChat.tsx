@@ -75,12 +75,12 @@ export function TurnsChat({ gameState, sendAction, room, myId }: Props) {
                 }`}
               >
                 <Avatar avatarId={player?.avatarId || "fox"} size="sm" />
-                <span className={`text-sm font-medium flex-1 ${isCurrent ? "text-primary" : ""}`}>
+                <span className={`text-sm font-medium flex-1 min-w-0 truncate ${isCurrent ? "text-primary" : ""}`}>
                   {player?.nickname}
-                  {playerId === myId && " (vos)"}
+                  {playerId === myId && ` ${t("lobby.you")}`}
                 </span>
                 {wordEntry && (
-                  <span className="text-sm font-mono bg-bg-surface-light px-2 py-1 rounded">
+                  <span className="text-sm font-mono bg-bg-surface-light px-2 py-1 rounded min-w-0 max-w-[60%] text-right whitespace-pre-wrap [overflow-wrap:anywhere]">
                     {wordEntry.word}
                   </span>
                 )}

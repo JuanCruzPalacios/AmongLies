@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function PartidaEnd({ gameState, room, sendAction, myId }: Props) {
-  const { locale } = useTranslation();
+  const { t, locale } = useTranslation();
   const [timeLeft, setTimeLeft] = useState(PARTIDA_END_SECONDS);
 
   useEffect(() => {
@@ -63,19 +63,19 @@ export function PartidaEnd({ gameState, room, sendAction, myId }: Props) {
       }`}>
         <div className="text-5xl mb-3">{isPlayersWin ? "🏆" : "🕵️"}</div>
         <p className="text-text-muted text-xs uppercase tracking-widest mb-1">
-          Partida {gameState.partida} terminada
+          {t("game.partida_end.title", { n: gameState.partida })}
         </p>
         <h2 className={`font-display text-3xl font-black mb-4 ${
           isPlayersWin ? "text-success" : "text-accent"
         }`}>
-          {isPlayersWin ? "¡Jugadores ganan!" : "¡El impostor gana!"}
+          {isPlayersWin ? t("game.impostor.players_win") : t("game.impostor.impostor_wins")}
         </h2>
 
         {/* Impostors revealed */}
         {impostors.length > 0 && (
           <div className="mb-4">
             <p className="text-text-muted text-xs mb-2 uppercase tracking-wider">
-              {impostors.length === 1 ? "El impostor era" : "Los impostores eran"}
+              {impostors.length === 1 ? t("game.partida_end.impostor_was") : t("game.partida_end.impostors_were")}
             </p>
             <div className="flex justify-center gap-3 flex-wrap">
               {impostors.map((p) => (
@@ -91,7 +91,7 @@ export function PartidaEnd({ gameState, room, sendAction, myId }: Props) {
         {/* Eliminated players */}
         {eliminated.length > 0 && (
           <div className="mb-4">
-            <p className="text-text-muted text-xs mb-2 uppercase tracking-wider">Eliminados</p>
+            <p className="text-text-muted text-xs mb-2 uppercase tracking-wider">{t("game.partida_end.eliminated")}</p>
             <div className="flex justify-center gap-2 flex-wrap">
               {eliminated.map((p) => (
                 <div key={p!.id} className="flex items-center gap-1.5 bg-bg-surface-light rounded-lg px-2.5 py-1.5">
@@ -105,21 +105,21 @@ export function PartidaEnd({ gameState, room, sendAction, myId }: Props) {
 
         {/* Round history */}
         <div className="space-y-1 mb-4">
-          <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Rondas de esta partida</p>
+          <p className="text-text-muted text-xs uppercase tracking-wider mb-2">{t("game.partida_end.rounds")}</p>
           {partidaResults.map((r, i) => (
             <div key={i} className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-xs ${
               r.winner === "players" ? "bg-success/10"
               : r.winner === "tie" ? "bg-bg-surface-light"
               : "bg-accent/10"
             }`}>
-              <span className="text-text-muted">Ronda {r.ronda}</span>
+              <span className="text-text-muted">{t("game.round_n", { n: r.ronda })}</span>
               <span className="font-mono text-primary">{roundAnswer(r, locale)}</span>
               <span className={
                 r.winner === "players" ? "text-success font-semibold"
                 : r.winner === "tie" ? "text-text-muted"
                 : "text-accent font-semibold"
               }>
-                {r.winner === "players" ? "Impostor atrapado" : r.winner === "tie" ? "Empate" : "Impostor libre"}
+                {r.winner === "players" ? t("game.partida_end.impostor_caught") : r.winner === "tie" ? t("game.tie") : t("game.partida_end.impostor_free")}
               </span>
             </div>
           ))}
@@ -127,7 +127,7 @@ export function PartidaEnd({ gameState, room, sendAction, myId }: Props) {
 
         {/* Next partida info */}
         <p className="text-text-secondary text-sm">
-          Siguiente partida en{" "}
+          {t("game.partida_end.next_in")}{" "}
           <span className={`font-mono font-bold ${timeLeft < 5 ? "text-danger" : "text-warning"}`}>
             {timeLeft}s
           </span>
@@ -151,7 +151,7 @@ export function PartidaEnd({ gameState, room, sendAction, myId }: Props) {
             : "bg-bg-surface-light border-primary/40 text-primary hover:bg-primary/15 hover:border-primary active:scale-95"
         }`}
       >
-        {hasVotedSkip ? "✓ Querés continuar" : "⏭ Continuar ya"}
+        {hasVotedSkip ? t("game.partida_end.want_continue") : t("game.partida_end.continue_now")}
       </button>
 
       <AnimatePresence>
@@ -171,7 +171,7 @@ export function PartidaEnd({ gameState, room, sendAction, myId }: Props) {
                 ))}
             </div>
             <p className="text-text-muted text-xs">
-              {skipVotes.length}/{totalPlayers} quieren continuar
+              {t("game.partida_end.skip_votes", { n: skipVotes.length, total: totalPlayers })}
             </p>
           </motion.div>
         )}

@@ -173,7 +173,7 @@ export default function RoomPage() {
                 {t("landing.join")}
               </h2>
               <p className="text-text-muted text-sm">
-                Sala{" "}
+                {t("room.settings")}{" "}
                 <span className="font-mono text-primary tracking-widest font-bold">
                   {roomCode}
                 </span>
@@ -237,7 +237,7 @@ export default function RoomPage() {
                 className="w-full"
                 onClick={() => router.push("/")}
               >
-                Volver al inicio
+                {t("room.back_home")}
               </Button>
             </div>
           </motion.div>
@@ -308,7 +308,7 @@ export default function RoomPage() {
               </span>
             </div>
             <Button variant="secondary" size="sm" onClick={handleCopyCode}>
-              {codeCopied ? "Copiado!" : "Copiar código"}
+              {codeCopied ? t("lobby.copied") : t("lobby.copy_code")}
             </Button>
             <Button variant="secondary" size="sm" onClick={handleCopyLink}>
               {copied ? t("lobby.copied") : t("lobby.copy")}
@@ -340,7 +340,7 @@ export default function RoomPage() {
             {room.selectedGameId && <GameSettings />}
           </div>
 
-          <div className="lg:col-span-3 space-y-4">
+          <div className="lg:col-span-3 space-y-4 order-first lg:order-none">
             <div className="bg-bg-surface border border-border rounded-2xl p-4">
               {isAdmin ? (
                 <div className="space-y-3">

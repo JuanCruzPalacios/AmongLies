@@ -60,7 +60,7 @@ export default function RegisterPage() {
   return (
     <AuthCard title={t("auth.register")} subtitle={t("auth.register.subtitle")}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input label={t("auth.username")} placeholder="JugadorEpico" autoComplete="username" required maxLength={16} value={username} onChange={(e) => setUsername(e.target.value)} />
+        <Input label={t("auth.username")} placeholder={t("auth.username_placeholder")} autoComplete="username" required maxLength={16} value={username} onChange={(e) => setUsername(e.target.value)} />
         <div>
           <label className="text-sm font-medium text-text-secondary mb-2 block">{t("landing.avatar")}</label>
           <div className="grid grid-cols-8 gap-2">

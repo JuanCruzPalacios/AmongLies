@@ -54,8 +54,8 @@ function CluesList({ gameState, room }: { gameState: ImpostorPlayerView; room: R
           return (
             <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg-surface-light">
               <Avatar avatarId={player?.avatarId || "fox"} size="sm" />
-              <span className="text-sm text-text-secondary flex-1">{player?.nickname}</span>
-              <span className="font-mono text-sm text-primary font-semibold">{entry.word}</span>
+              <span className="text-sm text-text-secondary flex-1 min-w-0 truncate">{player?.nickname}</span>
+              <span className="font-mono text-sm text-primary font-semibold min-w-0 max-w-[60%] text-right whitespace-pre-wrap [overflow-wrap:anywhere]">{entry.word}</span>
             </div>
           );
         })}

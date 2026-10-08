@@ -60,8 +60,8 @@ export function Discussion({ gameState, room, sendAction, myId, summary }: Props
             className="bg-danger/15 border-2 border-danger/50 rounded-2xl px-5 py-4 text-center"
           >
             <div className="text-3xl mb-1">👻</div>
-            <p className="font-display font-bold text-danger text-lg">Fuiste eliminado</p>
-            <p className="text-text-muted text-sm mt-1">Solo podés observar la discusión</p>
+            <p className="font-display font-bold text-danger text-lg">{t("game.eliminated.title")}</p>
+            <p className="text-text-muted text-sm mt-1">{t("game.discussion.spectate")}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -103,7 +103,7 @@ export function Discussion({ gameState, room, sendAction, myId, summary }: Props
                   : "bg-bg-surface-light border-warning/40 text-warning hover:bg-warning/15 hover:border-warning active:scale-95"
               }`}
             >
-              {hasVotedSkip ? "✓ Votaste por saltear" : "⏭ Saltear discusión"}
+              {hasVotedSkip ? t("game.discussion.voted_skip") : t("game.discussion.skip")}
             </button>
             <AnimatePresence>
               {skipVotes.length > 0 && (
@@ -119,7 +119,7 @@ export function Discussion({ gameState, room, sendAction, myId, summary }: Props
                     ))}
                   </div>
                   <p className="text-text-muted text-xs">
-                    {skipVotes.length}/{activePlayers.length} quieren saltear
+                    {t("game.discussion.skip_votes", { n: skipVotes.length, total: activePlayers.length })}
                   </p>
                 </motion.div>
               )}
