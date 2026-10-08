@@ -215,6 +215,16 @@ cupo e idioma. La home lista las públicas (`GET /rooms/public`, cada 5 s) con j
 creador, jugadores/cupo y estado; filtros por juego, idioma y "sólo las que se pueden unir".
 Arreglado de paso el bug #28. e2e: 10 checks.
 
+**Ajustes (hecha):** página `/ajustes` (⚙️ en el header): idioma; efectos y música con volumen;
+avisos en pantalla; privacidad (aparecer desconectado, aceptar invitaciones); cuenta: cambiar
+email y contraseña, cerrar sesión y **borrar la cuenta** (hay que escribir el usuario; la borra
+el servidor con la clave secreta y todo lo suyo se borra en cascada). Sonido y avisos se
+guardan en el navegador; privacidad, en la cuenta. e2e: 12 checks.
+
+**Sonido (hecho):** todo sintetizado con Web Audio, sin archivos: efectos (tu turno, mensaje,
+alguien entra, invitación, votación, revelación, victoria, derrota, expulsado) y música de fondo
+suave (acordes y arpegio). Se desbloquea en la primera interacción (regla de los navegadores).
+
 - **Probado:** 288 tests; e2e de moderación con dos cuentas y un invitado (15 checks), y con el
   token de un usuario común: no puede hacerse admin ni leer reportes. Suites anteriores en verde.
 

@@ -142,6 +142,30 @@ export class AccountService {
     return true;
   }
 
+  /** Borra la cuenta de Supabase Auth: el perfil y todo lo suyo se borra en cascada. */
+  async deleteAccount(
+    userId: string,
+    confirmUsername: unknown,
+  ): Promise<boolean> {
+    if (!UUID.test(userId) || typeof confirmUsername !== 'string') return false;
+    const res = await supabaseRest(`profiles?id=eq.${userId}&select=username`);
+    const [row] = (await res.json()) as { username: string }[];
+    if (
+      !row ||
+      row.username.toLowerCase() !== confirmUsername.trim().toLowerCase()
+    )
+      return false;
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SECRET_KEY!;
+    const deleted = await fetch(`${url}/auth/v1/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!deleted.ok) throw new Error(`No se pudo borrar: ${deleted.status}`);
+    this.forget(userId);
+    return true;
+  }
+
   forget(userId: string): void {
     this.cache.delete(userId);
   }

@@ -7,6 +7,8 @@ import type { FriendProfile, Presence, RoomInvite } from "@amonglies/shared";
 import { connectSocket, getSocket } from "@/lib/socket";
 import { useAuthStore } from "@/stores/authStore";
 import { useSocialStore, type Toast } from "@/stores/socialStore";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { playSfx } from "@/lib/sound";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar } from "@/components/ui";
 
@@ -23,8 +25,18 @@ export function SocialInit() {
     const onState = store().setState;
     const onPresence = ({ userId, presence }: { userId: string; presence: Presence }) =>
       store().setPresence(userId, presence);
-    const onRequest = (from: FriendProfile) => store().pushToast({ id: `request:${from.userId}`, kind: "request", from });
-    const onInvite = (invite: RoomInvite) => store().pushToast({ id: invite.id, kind: "invite", invite });
+    // Si el jugador apagó los avisos, no se muestran (las solicitudes igual quedan en /amigos).
+    const toastsOn = () => useSettingsStore.getState().showToasts;
+    const onRequest = (from: FriendProfile) => {
+      if (!toastsOn()) return;
+      store().pushToast({ id: `request:${from.userId}`, kind: "request", from });
+      playSfx("invite");
+    };
+    const onInvite = (invite: RoomInvite) => {
+      if (!toastsOn()) return;
+      store().pushToast({ id: invite.id, kind: "invite", invite });
+      playSfx("invite");
+    };
     socket.on("social:state", onState);
     socket.on("social:presence", onPresence);
     socket.on("social:request-received", onRequest);

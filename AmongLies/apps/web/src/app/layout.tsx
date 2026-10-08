@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthInit } from "@/components/auth/AuthInit";
 import { SocialInit } from "@/components/social/SocialInit";
+import { SoundManager } from "@/components/sound/SoundManager";
 
 const inter = Inter({
   variable: "--font-body",
@@ -39,6 +40,7 @@ export default function RootLayout({
         <AuthInit />
         {children}
         <SocialInit />
+        <SoundManager />
       </body>
     </html>
   );

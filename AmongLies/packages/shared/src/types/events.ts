@@ -53,6 +53,8 @@ export interface ClientEvents {
   'report:create': (data: ReportInput, ack: ModerationAck) => void;
   /** La cuenta cambió sus ajustes de privacidad: el servidor los vuelve a leer. */
   'account:refresh': () => void;
+  /** Borra la cuenta (y todo lo suyo). Hay que mandar el nombre de usuario para confirmar. */
+  'account:delete': (data: { confirmUsername: string }, ack: ModerationAck) => void;
   'admin:reports': (data: { status: ReportStatus }, ack: ModerationAck<{ reports: ReportView[] }>) => void;
   'admin:resolve': (data: { id: string; status: 'resolved' | 'dismissed'; resolution?: string }, ack: ModerationAck) => void;
   'admin:users': (data: { query: string }, ack: ModerationAck<{ users: AdminUserView[] }>) => void;

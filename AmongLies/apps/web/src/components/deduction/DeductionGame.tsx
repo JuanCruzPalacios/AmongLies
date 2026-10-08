@@ -12,6 +12,7 @@ import { PauseOverlay } from "@/components/game/PauseOverlay";
 import { ReportDialog, type ReportTarget } from "@/components/moderation/ReportDialog";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useRoomStore } from "@/stores/roomStore";
+import { useGameSounds } from "@/hooks/useGameSounds";
 import { getSocket } from "@/lib/socket";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -47,6 +48,7 @@ export function DeductionGame({
   endSummary,
 }: Props) {
   const { t } = useTranslation();
+  useGameSounds(gameState, myId);
   const chatMessages = useRoomStore((s) => s.room?.chat ?? []);
   const listRef = useRef<HTMLDivElement>(null);
   const mobileListRef = useRef<HTMLDivElement>(null);

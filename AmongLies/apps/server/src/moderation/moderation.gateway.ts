@@ -128,6 +128,32 @@ export class ModerationGateway {
     if (userId) await this.accounts.load(userId);
   }
 
+  @SubscribeMessage('account:delete')
+  async deleteAccount(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: Data,
+  ): Promise<ModerationResult> {
+    const session = this.playerService.getSession(client.id);
+    if (!session?.userId) return fail('guest');
+    try {
+      if (
+        !(await this.accounts.deleteAccount(
+          session.userId,
+          data?.confirmUsername,
+        ))
+      )
+        return fail('invalid');
+    } catch {
+      return fail('unavailable');
+    }
+    // Sale de su sala como cualquiera que se va.
+    if (session.roomCode && session.playerId) {
+      void client.leave(session.roomCode);
+      this.gameGateway.removePlayerFromRoom(session.roomCode, session.playerId);
+    }
+    return { ok: true };
+  }
+
   // ─── Panel de admin ──────────────────────────────────────────────────────
 
   private async admin(client: Socket): Promise<string | null> {

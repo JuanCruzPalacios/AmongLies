@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSocket, connectSocket, disconnectSocket, type SessionReady } from "@/lib/socket";
 import { t } from "@/lib/i18n";
+import { playSfx } from "@/lib/sound";
 import { useRoomStore } from "@/stores/roomStore";
 import { usePlayerStore } from "@/stores/playerStore";
 
@@ -30,6 +31,7 @@ export function useSocket() {
 
     socket.on("room:player-joined", ({ player }) => {
       addPlayer(player);
+      playSfx("join");
     });
 
     socket.on("room:player-left", ({ playerId, newAdminId }) => {
@@ -83,6 +85,7 @@ export function useSocket() {
 
     socket.on("chat:message", (message) => {
       addChatMessage(message);
+      if (message.type === "player" && message.playerId !== usePlayerStore.getState().playerId) playSfx("message");
     });
 
     socket.on("player:disconnected", ({ playerId }) => {

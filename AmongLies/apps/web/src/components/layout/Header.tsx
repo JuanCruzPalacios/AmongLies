@@ -23,6 +23,16 @@ export function Header({ showAccount = true }: { showAccount?: boolean }) {
       <div className="flex items-center gap-2">
         {showAccount && (
           <Link
+            href="/ajustes"
+            aria-label={t("settings.title")}
+            title={t("settings.title")}
+            className="px-2 py-1.5 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-bg-surface-light"
+          >
+            ⚙️
+          </Link>
+        )}
+        {showAccount && (
+          <Link
             href="/workshop"
             className="px-2 py-1.5 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-bg-surface-light"
           >
