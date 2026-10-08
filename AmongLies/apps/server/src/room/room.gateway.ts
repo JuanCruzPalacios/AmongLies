@@ -14,7 +14,8 @@ import type { GuestIdentity, Player, SocketAuth } from '@amonglies/shared';
 import {
   RECONNECT_GRACE_PERIOD_MS,
   containsProfanity,
-  getWordListsByLocale,
+  getGameDefinition,
+  getWordListsForGame,
 } from '@amonglies/shared';
 import { RoomStore } from './room.store.js';
 import { parseIdentity, sanitizeRoomSettings } from './room.validation.js';
@@ -260,9 +261,15 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
       room.settings.locale !== previousLocale &&
       WORD_LISTS_KEY in room.gameSettings
     ) {
-      room.gameSettings[WORD_LISTS_KEY] = getWordListsByLocale(
-        room.settings.locale,
-      ).map((list) => list.id);
+      // Las que sirven para el juego elegido (el Dibujo sólo usa las dibujables).
+      const game = room.selectedGameId
+        ? getGameDefinition(room.selectedGameId)
+        : undefined;
+      if (game)
+        room.gameSettings[WORD_LISTS_KEY] = getWordListsForGame(
+          game,
+          room.settings.locale,
+        ).map((list) => list.id);
     }
 
     this.server.to(session.roomCode).emit('room:updated', { room });

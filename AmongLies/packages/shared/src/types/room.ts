@@ -35,10 +35,16 @@ export interface CustomWordListSummary {
   wordCount: number;
 }
 
+/** Lo que se ve de una sala pública en el listado (nada del chat ni de los ajustes). */
 export interface RoomPublicView {
   code: string;
   playerCount: number;
+  /** 0 = sin límite. */
   maxPlayers: number;
   state: RoomState;
   selectedGameId: GameId | null;
+  locale: Locale;
+  adminNickname: string;
+  adminAvatarId: string;
+  createdAt: number;
 }

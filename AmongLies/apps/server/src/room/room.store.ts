@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
-import type { Room, Player, ChatMessage, WordList } from '@amonglies/shared';
+import type {
+  Room,
+  Player,
+  ChatMessage,
+  RoomPublicView,
+  WordList,
+} from '@amonglies/shared';
 import { DEFAULT_ROOM_SETTINGS, ROOM_CODE_LENGTH } from '@amonglies/shared';
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -80,6 +86,32 @@ export class RoomStore {
     this.rooms.delete(code);
     this.customLists.delete(code);
     for (const listener of this.deleteListeners) listener(code);
+  }
+
+  /** Salas públicas para el listado: primero las que están en el lobby, y las más llenas. */
+  listPublic(): RoomPublicView[] {
+    return [...this.rooms.values()]
+      .filter((room) => !room.settings.isPrivate)
+      .map((room) => {
+        const admin = room.players.find((p) => p.id === room.adminId);
+        return {
+          code: room.code,
+          playerCount: room.players.length,
+          maxPlayers: room.settings.maxPlayers,
+          state: room.state,
+          selectedGameId: room.selectedGameId,
+          locale: room.settings.locale,
+          adminNickname: admin?.nickname ?? '',
+          adminAvatarId: admin?.avatarId ?? 'fox',
+          createdAt: room.createdAt,
+        };
+      })
+      .sort(
+        (a, b) =>
+          Number(a.state !== 'lobby') - Number(b.state !== 'lobby') ||
+          b.playerCount - a.playerCount ||
+          b.createdAt - a.createdAt,
+      );
   }
 
   getRoom(code: string): Room | undefined {

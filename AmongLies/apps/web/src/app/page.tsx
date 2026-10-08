@@ -13,6 +13,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useTranslation } from "@/hooks/useTranslation";
 import { connectSocket, whenSessionReady } from "@/lib/socket";
 import { CONNECT_TIMEOUT_MS, useWakeNotice } from "@/lib/keepAlive";
+import { PublicRooms } from "@/components/lobby/PublicRooms";
 
 export default function Home() {
   const router = useRouter();
@@ -74,9 +75,9 @@ export default function Home() {
     whenSessionReady(() => socket.emit("room:create", { nickname, avatarId, locale }));
   }
 
-  function handleJoinRoom() {
+  function handleJoinRoom(code: string = joinCode) {
     if (!validateNickname()) return;
-    if (joinCode.length !== ROOM_CODE_LENGTH) {
+    if (code.length !== ROOM_CODE_LENGTH) {
       setError(t("landing.error.code"));
       return;
     }
@@ -110,7 +111,7 @@ export default function Home() {
     socket.once("room:joined", onJoined);
     socket.once("room:error", onRoomError);
 
-    whenSessionReady(() => socket.emit("room:join", { code: joinCode.toUpperCase(), nickname, avatarId, locale }));
+    whenSessionReady(() => socket.emit("room:join", { code: code.toUpperCase(), nickname, avatarId, locale }));
   }
 
   return (
@@ -221,13 +222,16 @@ export default function Home() {
                   maxLength={ROOM_CODE_LENGTH}
                   className="flex-1 font-mono text-center tracking-widest text-lg uppercase"
                 />
-                <Button onClick={handleJoinRoom} isLoading={isConnecting} disabled={isConnecting}>
+                <Button onClick={() => handleJoinRoom()} isLoading={isConnecting} disabled={isConnecting}>
                   {t("landing.join.button")}
                 </Button>
               </motion.div>
             )}
           </div>
         </motion.div>
+        <div className="mt-10 w-full flex justify-center">
+          <PublicRooms onJoin={(code) => handleJoinRoom(code)} disabled={isConnecting} />
+        </div>
       </main>
 
       <footer className="text-center py-4 text-text-muted text-xs">

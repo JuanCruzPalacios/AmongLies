@@ -16,6 +16,7 @@ import { Chat } from "@/components/lobby/Chat";
 import { GameSelector } from "@/components/lobby/GameSelector";
 import { GameSettings } from "@/components/lobby/GameSettings";
 import { InviteFriends } from "@/components/social/InviteFriends";
+import { RoomSettingsCard } from "@/components/lobby/RoomSettingsCard";
 import { ImpostorGame } from "@/components/impostor/ImpostorGame";
 import { TimeGame } from "@/components/time/TimeGame";
 import { DrawingGame } from "@/components/drawing/DrawingGame";
@@ -371,6 +372,7 @@ export default function RoomPage() {
                 </div>
               )}
             </div>
+            <RoomSettingsCard room={room} isAdmin={isAdmin} />
             <InviteFriends roomCode={room.code} />
           </div>
         </div>

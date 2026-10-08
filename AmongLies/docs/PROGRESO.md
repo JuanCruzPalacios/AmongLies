@@ -210,6 +210,11 @@ Chromium con `--proxy-server=https=<host:puerto de HTTPS_PROXY>`. En Railway no 
 - Suspendido: se lo saca de su sala con un aviso y no puede crear/entrar a salas ni publicar.
 - Privacidad (la usa el servidor; la pantalla de ajustes llega en esta misma fase): aparecer
   desconectado y no aceptar invitaciones.
+**Salas públicas (hecha):** privadas por defecto; en el lobby el admin las hace públicas, pone
+cupo e idioma. La home lista las públicas (`GET /rooms/public`, cada 5 s) con juego, idioma,
+creador, jugadores/cupo y estado; filtros por juego, idioma y "sólo las que se pueden unir".
+Arreglado de paso el bug #28. e2e: 10 checks.
+
 - **Probado:** 288 tests; e2e de moderación con dos cuentas y un invitado (15 checks), y con el
   token de un usuario común: no puede hacerse admin ni leer reportes. Suites anteriores en verde.
 
