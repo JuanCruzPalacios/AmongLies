@@ -2,12 +2,13 @@
 
 Este documento junta lo que piden las clases de **TDD** y **Testing en la era Gen AI**:
 el ciclo TDD aplicado a una función del proyecto, la suite de tests con sus casos borde,
-la prueba de mutación manual, los guardrails automáticos (hook pre-commit y CI) y la lista
-de bugs que encontramos en nuestro propio código.
+la prueba de mutación manual, las pruebas de punta a punta, los guardrails automáticos
+(hook pre-commit y CI) y la lista de bugs que encontramos en nuestro propio código.
 
 ```bash
 npm test                                         # todos los tests (desde AmongLies/)
 npm run test:cov --workspace @amonglies/server   # con cobertura y umbral de ramas
+node e2e/run.cjs                                 # pruebas de punta a punta (ver e2e/README.md)
 ```
 
 ---
@@ -99,7 +100,33 @@ Cambiamos un operador a propósito y corrimos la suite: si sigue en verde, falta
 | `rules.ts` | `maxRounds > 0` → `>= 0` | 6 |
 | `rules.ts` | `(jugadores - 1) / 2` → `jugadores / 2` | 5 |
 
-## 4. Guardrails
+## 4. Pruebas de punta a punta (`e2e/`)
+
+Los tests unitarios prueban las reglas sin red; estas pruebas juegan **partidas reales**:
+Playwright maneja Chromium como un jugador (en escritorio y en un celular táctil) y el resto
+de los jugadores son bots que se conectan por Socket.io, igual que un navegador. Cada suite
+verifica valores concretos (fases recorridas, puntaje, lo que guardó la base) y termina con
+`N/M checks OK`; `node e2e/run.cjs` corre todas y muestra un resumen.
+
+| Grupo | Suites | Checks |
+|---|---|---|
+| Invitados (no tocan la base; **las corre el CI**) | `impostor`, `tiempo`, `dibujo`, `dibujo-celular`, `recarga`, `reconexion`, `servidor`, `salas-publicas`, `chat`, `carrera-al-entrar`, `sala-perdida` | ≈117 |
+| Cuentas (crean cuentas temporales en Supabase y las borran al terminar) | `cuenta-y-estadisticas`, `amigos`, `workshop`, `moderacion`, `ajustes` | 81 |
+
+- `servidor` le manda al servidor lo que un cliente modificado podría mandar (votar dos veces,
+  jugar fuera de turno, ajustes fuera de rango, acciones de admin sin serlo) y verifica que
+  lo rechace.
+- `sala-perdida` apaga y prende el servidor de verdad (`E2E_SERVER_STOP` / `E2E_SERVER_START`)
+  para probar el aviso de sala perdida y la espera mientras el servidor despierta.
+- `moderacion` además usa la API de Supabase con el token de un usuario común: no puede
+  hacerse admin, ni tocar su suspensión, ni leer reportes, y sí cambiar su avatar.
+- Las cuentas de prueba se borran siempre (con reintentos); si una no se puede borrar, la
+  suite falla. Después de cada corrida se verificó en la base que no quedaran usuarios de prueba.
+
+Las 16 suites (≈198 checks: algunos dependen de a quién le toque ser impostor) pasan contra el build de producción local; las de invitados también
+pasan con el servidor **sin** credenciales de Supabase, que es como corren en el CI.
+
+## 5. Guardrails
 
 ### Análisis estático
 - **ESLint** en web y server (el server incluye Prettier como regla). Al empezar había
@@ -128,10 +155,12 @@ OpenAI, URLs de Postgres con contraseña y archivos `.env` versionados. Las clav
 
 ### CI (`.github/workflows/ci.yml`)
 En cada push a `main` y en cada pull request:
-secretos → lint → type check + build → tests con umbral de ramas → `npm audit` de producción.
+secretos → lint → type check + build → tests con umbral de ramas → `npm audit` de producción
+(job `verificar`), y después las **pruebas de punta a punta de invitados** contra el servidor
+y la web recién compilados (job `e2e`; si fallan, sube las capturas y los logs).
 
 > Para que el CI bloquee merges hay que activarlo en GitHub:
-> *Settings → Branches → Add rule → Require status checks to pass before merging* → `verificar`.
+> *Settings → Branches → Add rule → Require status checks to pass before merging* → `verificar` y `e2e`.
 
 **Auditoría de dependencias:** al configurar el CI, `npm audit` encontró 30 vulnerabilidades
 (2 críticas, entre ellas RCE en Next.js < 16.3.6). Se actualizó Next a 16.3.6 y se corrió
@@ -139,7 +168,7 @@ secretos → lint → type check + build → tests con umbral de ramas → `npm 
 herramientas de desarrollo (el linter) y no tienen arreglo publicado, por eso el CI audita
 con `--omit=dev`.
 
-## 5. Bugs encontrados en nuestro código
+## 6. Bugs encontrados en nuestro código
 
 Todos estaban en el MVP; ninguno rompía la compilación del servidor.
 
@@ -176,6 +205,7 @@ Todos estaban en el MVP; ninguno rompía la compilación del servidor.
 | 28 | Al cambiar el idioma de la sala con el Dibujo elegido se marcaban todas las listas del idioma nuevo, también las que no se pueden dibujar | e2e de salas públicas | se eligen las listas que sirven para el juego (`getWordListsForGame`) |
 | 29 | Un mensaje del chat (o "entró un jugador") que llegaba mientras el navegador iba a la sala después de unirse se perdía: los listeners vivían sólo en la página de la sala | prueba en producción (el mensaje no le llegó al que recién entraba) | los eventos de la sala se escuchan en un componente global (`RoomEvents` en el layout); test que manda el mensaje justo al entrar: 0/5 antes, 5/5 después |
 
-**Pendiente de observar:** en una corrida de todas las suites seguidas, los avisos de "la sala
-ya no existe" y "tu cuenta está suspendida" no aparecieron una vez cada uno; no se pudo
-reproducir en 7 corridas posteriores (también en el mismo orden).
+**Observado y no reproducido:** en una corrida de la Fase 7, los avisos de "la sala ya no
+existe" y "tu cuenta está suspendida" no aparecieron una vez cada uno. No volvió a pasar en 7
+corridas posteriores ni en las corridas completas de la Fase 8 (suites `sala-perdida` y
+`moderacion`, también en el CI).

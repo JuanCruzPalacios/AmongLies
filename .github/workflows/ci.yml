@@ -41,3 +41,61 @@ jobs:
       # herramientas de desarrollo (linter) no tienen arreglo publicado.
       - name: Auditoría de dependencias
         run: npm audit --omit=dev --audit-level=high
+
+  # Partidas reales en Chromium contra el servidor y la web recién compilados
+  # (sólo suites de invitados: no tocan la base de datos).
+  e2e:
+    runs-on: ubuntu-latest
+    needs: verificar
+    defaults:
+      run:
+        working-directory: AmongLies
+    env:
+      TURBO_TELEMETRY_DISABLED: 1
+      NEXT_TELEMETRY_DISABLED: 1
+      CLIENT_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: AmongLies/package-lock.json
+
+      - run: npm ci
+
+      - name: Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+
+      - run: npm run build
+
+      - name: Levantar servidor y web
+        run: |
+          cat > /tmp/start-server.sh <<EOF
+          cd $PWD/apps/server
+          nohup node dist/main.js > /tmp/server.log 2>&1 &
+          echo \$! > /tmp/server.pid
+          until curl -s localhost:3001/health > /dev/null; do sleep 1; done
+          EOF
+          echo 'kill $(cat /tmp/server.pid) 2>/dev/null; true' > /tmp/stop-server.sh
+          chmod +x /tmp/start-server.sh /tmp/stop-server.sh
+          /tmp/start-server.sh
+          (cd apps/web && nohup npx next start -p 3000 > /tmp/web.log 2>&1 &)
+          until curl -s localhost:3000 > /dev/null; do sleep 1; done
+
+      - name: Pruebas de punta a punta
+        env:
+          E2E_SERVER_STOP: /tmp/stop-server.sh
+          E2E_SERVER_START: /tmp/start-server.sh
+        run: node e2e/run.cjs invitados
+
+      - name: Capturas y logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e
+          path: |
+            AmongLies/e2e/output
+            /tmp/server.log
+            /tmp/web.log

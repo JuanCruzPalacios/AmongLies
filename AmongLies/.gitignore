@@ -33,3 +33,6 @@ Thumbs.db
 
 # Coverage
 coverage
+
+# Pruebas de punta a punta (capturas)
+e2e/output

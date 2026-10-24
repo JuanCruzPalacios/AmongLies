@@ -1,0 +1,47 @@
+# Despliegue en Render (plan gratis, auto-deploy desde main).
+# Describe los dos servicios tal como están configurados en producción:
+#   web    → https://amonglies-web.onrender.com
+#   server → https://amonglies-server.onrender.com
+# Las claves secretas (sync: false) se cargan a mano en el dashboard de Render.
+services:
+  - type: web
+    name: amonglies-server
+    runtime: node
+    plan: free
+    region: virginia
+    branch: main
+    autoDeploy: true
+    buildCommand: cd AmongLies && npm ci && npx turbo run build --filter=@amonglies/server...
+    startCommand: cd AmongLies && node apps/server/dist/main
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: CLIENT_URL
+        value: https://amonglies-web.onrender.com
+      - key: SUPABASE_URL
+        value: https://pyamkqingktpeexkgryb.supabase.co
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+
+  - type: web
+    name: amonglies-web
+    runtime: node
+    plan: free
+    region: virginia
+    branch: main
+    autoDeploy: true
+    buildCommand: >-
+      cd AmongLies && npm ci && npx turbo run build --filter=@amonglies/web...
+      && cp -r apps/web/public apps/web/.next/standalone/apps/web/public
+      && cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
+    startCommand: cd AmongLies && node apps/web/.next/standalone/apps/web/server.js
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NEXT_PUBLIC_SERVER_URL
+        value: https://amonglies-server.onrender.com
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://pyamkqingktpeexkgryb.supabase.co
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        value: sb_publishable_XowZg_fp4JzC3aaUEbQqyQ_scBwh4y8

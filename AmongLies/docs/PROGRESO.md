@@ -23,8 +23,8 @@ tomó: no hace falta volver a preguntarlas.
 | 4 — Juego Dibujo | ✅ hecha |
 | 5 — Social: amigos, invitaciones, notificaciones, presencia | ✅ hecha |
 | 6 — Workshop (listas de palabras y presets de reglas) | ✅ hecha |
-| 7 — Ajustes, salas públicas, moderación con panel de admin, i18n, sonido, responsive | pendiente |
-| 8 — Tests, deploy, actualizar la documentación del TP | pendiente |
+| 7 — Ajustes, salas públicas, moderación con panel de admin, i18n, sonido, responsive | ✅ hecha |
+| 8 — Tests, deploy, actualizar la documentación del TP | en curso |
 
 ## Decisiones de producto (definitivas)
 
@@ -190,7 +190,7 @@ Chromium con `--proxy-server=https=<host:puerto de HTTPS_PROXY>`. En Railway no 
   filtros, like, copia, versión nueva y actualizar, copia editada, lista propia en el lobby,
   presets, la palabra sale de la lista). Las suites anteriores en verde.
 
-## Fase 7 — en curso
+## Fase 7 — qué quedó hecho
 **Moderación (hecha):**
 - Decisiones de Juan: admins con una marca en la base (`profiles.is_admin`, arranca @Pipita;
   desde el panel se nombran otros); se reportan jugadores y contenido del workshop; el admin
@@ -234,6 +234,16 @@ en vez de scrollear de costado. e2e: 11 checks (chat en escritorio y celular, me
 
 - **Probado:** 288 tests; e2e de moderación con dos cuentas y un invitado (15 checks), y con el
   token de un usuario común: no puede hacerse admin ni leer reportes. Suites anteriores en verde.
+
+## Fase 8 — en curso
+- **Pruebas de punta a punta en el repo** (`e2e/`, ver `e2e/README.md`): las pruebas que se
+  venían haciendo en cada fase quedaron como 16 suites con un runner (`node e2e/run.cjs`).
+  Las de invitados corren en el CI (job `e2e`) contra el build recién compilado; las de
+  cuentas crean y borran cuentas temporales en Supabase. Todas en verde (≈198 checks).
+- **Deploy documentado:** `render.yaml` en la raíz describe los dos servicios de Render tal
+  como están; `.env.example` y README actualizados (el README describe el producto final).
+- **Supabase pausó el proyecto** por inactividad (plan gratis: 7 días sin uso) y se restauró
+  el 24/10. Mientras está pausado, en producción no andan las cuentas (los invitados sí).
 
 ## Deploy
 - **Producción en Render** (plan gratis, Virginia, auto-deploy desde `main`):

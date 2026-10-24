@@ -1,242 +1,158 @@
 # AmongLies
 
-Plataforma de minijuegos sociales en tiempo real, inspirada en juegos como Among Us y Gartic Phone.
+Plataforma de minijuegos sociales de deducción en tiempo real, para jugar con amigos desde el
+navegador (escritorio o celular). En todos los juegos hay uno o más **impostores** escondidos
+entre los jugadores y el grupo tiene que descubrirlos votando.
 
-El MVP incluye el juego **El Impostor**: un jugador conoce la palabra secreta del grupo pero uno o más impostores deben descubrirla sin que los demás los descubran.
+- **Jugar:** https://amonglies-web.onrender.com
+- Servidor: https://amonglies-server.onrender.com (plan gratis de Render: si estuvo un rato sin
+  uso, tarda alrededor de un minuto en despertar)
 
 ---
 
-## Estado actual — MVP
+## Juegos
 
-### Funcionalidades implementadas
+| Juego | Cómo se juega |
+|---|---|
+| **El Impostor** | Los inocentes ven una palabra secreta; el impostor no. Por turnos, cada uno escribe una palabra relacionada; después se discute y se vota a quién expulsar. |
+| **Impostor por tiempo** | Cada ronda hay un tiempo objetivo que sólo ven los inocentes. En su turno, cada uno toca EMPEZAR y PARAR sin ver el reloj; el impostor tiene que adivinar cuánto esperar. |
+| **Impostor dibujo** | Todos dibujan la misma palabra en un lienzo compartido, con poca tinta por turno; el impostor no conoce la palabra y tiene que disimular. Se puede dibujar con el dedo. |
 
-#### Sala y lobby
-- Crear sala con código único de 6 caracteres
-- Unirse a una sala por código o por link compartido
-- Botón para copiar código y link de la sala
-- Chat en tiempo real dentro del lobby
-- Configuración de partida ajustable por el host (modos, rondas, listas de palabras)
-- Avatares seleccionables por cada jugador
+Los tres comparten las reglas de deducción: un juego tiene varias **partidas**; en cada partida
+se eligen los impostores, que siguen en todas sus **rondas**. La partida termina cuando se expulsa
+a todos los impostores (ganan los inocentes) o cuando quedan tantos impostores como inocentes.
+Mínimo 4 jugadores, sin máximo.
 
-#### El Impostor — flujo completo de partida
-- **Partidas y rondas**: una partida contiene varias rondas. El impostor es el mismo durante toda la partida y cambia entre partidas. El número total de partidas es configurable.
-- **Asignación de roles**: uno o más impostores (configurable) y el resto inocentes. Los impostores conocen a sus cómplices.
-- **Palabra secreta**: los inocentes ven la palabra, el impostor debe deducirla escuchando al grupo.
-- **Fase de turnos** (modo chat): cada jugador envía una palabra relacionada con el tema. Validación anti-repetición y anti-trampa (no se puede poner la palabra secreta si sos inocente).
-- **Fase de discusión**: chat libre para debatir. Botón de votación para saltear la discusión (requiere consenso de todos).
-- **Fase de votación**: cada jugador vota a quien cree que es el impostor. Los jugadores eliminados pueden ver pero no votar. Indicador en tiempo real de cuántos faltan votar.
-- **Resultados de votación**: reveal escalonado con suspenso (quién fue expulsado → ¿era impostor? → detalle completo). Gráfico de votos con barra por jugador y sección "quién votó a quién".
-- **Empate**: nadie es expulsado, la partida continúa en la siguiente ronda.
-- **Fin de partida**: la partida termina cuando todos los impostores son eliminados, o cuando quedan tantos impostores como inocentes (los impostores ganan).
-- **Tope de rondas (opcional)**: por defecto no hay límite. Si el host pone un tope y se llega a él sin que gane nadie, ganan los impostores.
-- **Fin de juego**: pantalla resumen con historial por partida y ganador general.
-- **Pantalla entre partidas**: pantalla de espera con countdown de 15 segundos (salteable por consenso) que revela quiénes eran los impostores antes de empezar la siguiente partida.
+**Reglas configurables por el admin de la sala:** cantidad de partidas e impostores, tope de
+rondas, tiempos de turno, discusión y votación, pista de categoría para el impostor, voto
+secreto, voto "saltear", desempate (nadie sale / re-votar / al azar), listas de palabras y los
+ajustes propios de cada juego (tinta, colores, rango de tiempos…).
 
-#### UI y experiencia
-- Chat lateral persistente durante la partida (escritorio) con burbujas, separadores de ronda y scroll automático.
-- Chat flotante en mobile: botón 💬 con badge de mensajes no leídos que despliega un panel inferior.
-- Strip de jugadores eliminados (👻) visible en todo momento durante la partida.
-- Badge "🕵️ IMPOSTOR" visible solo para quienes tienen ese rol.
-- Indicador de "Partida X/Y · Ronda Z" en el header.
-- Historial de expulsados en la pantalla de reveal de palabra (rondas anteriores de la misma partida).
-- Jugadores eliminados con avatar tachado en la fase de votación.
-- Soporte para unirse a una sala via link directo (incluso si ya hay una partida en curso, se puede unir al lobby para la siguiente).
-- Diseño responsive con soporte mobile/desktop.
-- Interfaz en español (por defecto) e inglés; las listas de palabras se filtran por el idioma de la sala.
+**Puntaje:** inocente que vota a un impostor +2, impostor que sobrevive la ronda +2, y al
+terminar cada partida +1 a cada inocente o +3 a cada impostor del equipo ganador.
+
+## Funcionalidades
+
+- **Salas:** código de 6 caracteres o link; privadas por defecto, o **públicas** con cupo e
+  idioma (la home lista las públicas con filtros). Chat con censura de insultos.
+- **Reconexión:** si alguien se desconecta, la partida se pausa y al volver recupera su lugar
+  (también al recargar la página). Si el admin se va, decide el jugador conectado más antiguo.
+- **Cuentas (opcionales):** registro con usuario, login, recuperar contraseña. Sin cuenta se
+  juega como invitado.
+- **Perfil y estadísticas** por juego: partidas, victorias por rol, votos acertados y puntos.
+- **Amigos:** solicitudes, presencia en vivo (en línea / en una sala / jugando), invitaciones a
+  la sala y avisos en pantalla.
+- **Workshop:** listas de palabras y presets de reglas creados por los usuarios. Se publican, se
+  filtran (tipo, idioma, juego, categoría, nombre), se les da like y se guardan como copia
+  editable que avisa cuando el autor saca una versión nueva. Se usan desde el lobby.
+- **Moderación:** filtro de insultos, reportes de jugadores y de contenido del workshop, y panel
+  de admin para resolver reportes, ocultar o borrar contenido y suspender cuentas.
+- **Ajustes:** idioma, efectos y música (sintetizados con Web Audio), avisos, privacidad
+  (aparecer desconectado, aceptar invitaciones), cambio de email y contraseña, borrar la cuenta.
+- **Idiomas:** español (rioplatense) e inglés; las listas de palabras siguen el idioma de la sala.
+- **Responsive:** pensado también para celular (menú ☰, chat flotante, dibujo táctil).
 
 ---
 
 ## Arquitectura
 
-El proyecto es un **monorepo Turborepo** con tres paquetes:
+Monorepo **Turborepo**:
 
 ```
 AmongLies/
 ├── apps/
-│   ├── web/          # Frontend — Next.js 16 (App Router)
-│   └── server/       # Backend  — NestJS 11
-└── packages/
-    └── shared/       # Tipos TypeScript compartidos (compilado a CommonJS)
+│   ├── web/        # Frontend — Next.js 16 (App Router), React 19, Tailwind 4, Zustand
+│   └── server/     # Backend  — NestJS 11 + Socket.io (estado de las partidas en memoria)
+├── packages/
+│   └── shared/     # Tipos, constantes, listas de palabras y utilidades compartidas
+├── supabase/
+│   └── migrations/ # Esquema de la base (Postgres con RLS)
+└── e2e/            # Pruebas de punta a punta (Playwright + bots por socket)
 ```
 
-### Comunicación
-- El frontend y el backend se comunican exclusivamente via **WebSockets con Socket.io**.
-- No hay REST API: toda la lógica de sala y juego es event-driven.
-
-### Estado en el cliente
-- **Zustand** maneja el estado global: `playerStore` (jugador local) y `roomStore` (sala y chat).
-
-### Lógica de juego en el servidor
-- `ImpostorEngine`: clase con máquina de estados por fases (`word-reveal` → `turns` → `discussion` → `voting` → `vote-results` → `partida-end` / `game-end`).
-- El servidor filtra la información enviada a cada jugador (los impostores no revelan la palabra secreta, los cómplices solo se revelan al finalizar la partida).
-
----
-
-## Requisitos del sistema
-
-Ver [requirements.txt](./requirements.txt) para el listado completo de dependencias.
-
-- **Node.js** >= 20
-- **npm** >= 10
-- El paquete `packages/shared` debe compilarse antes de levantar las apps: `npm run build` dentro de `packages/shared`, o usar `npx turbo build` desde la raíz.
+- **Tiempo real:** toda la lógica de sala, juego, chat, amigos y workshop va por **Socket.io**.
+  HTTP sólo para `GET /health` y `GET /rooms/public`.
+- **El servidor manda:** valida cada acción (turnos, votos, tinta, ajustes) y le envía a cada
+  jugador sólo lo que puede ver (el impostor nunca recibe la palabra).
+- **Motores de juego:** `DeductionEngine` tiene todo lo común (partidas, rondas, votación,
+  desempates, puntaje, pausa) y `ImpostorEngine`, `TimeEngine` y `DrawingEngine` sólo definen
+  la actividad de cada ronda. Se registran en un registry de juegos.
+- **Supabase:** autenticación (el servidor verifica los JWT con el JWKS público) y base de datos
+  — `profiles`, `player_stats`, `friendships`, `workshop_items`, `workshop_likes`, `reports` —
+  con **RLS en todas las tablas**. El navegador sólo lee lo público o lo propio; escribe el
+  servidor con la clave secreta. Sin Redis: una sola instancia.
 
 ---
 
 ## Desarrollo local
 
-```bash
-# 1. Instalar dependencias desde la raíz del monorepo
-npm install
-
-# 2. Crear los archivos de variables de entorno (ver sección siguiente)
-
-# 3. Levantar todo en paralelo (Turbo compila el paquete shared automáticamente)
-npm run dev:all
-```
-
-Por defecto:
-- Frontend: `http://localhost:3000`
-- Backend (WebSocket): `http://localhost:3001`
-
-Para correr solo el frontend o solo el backend:
-```bash
-npm run dev:web     # solo Next.js
-npm run dev:server  # solo NestJS
-```
-
-> **Nota:** `npm run dev:all` es el único comando necesario. Turbo se encarga de compilar `packages/shared` antes de levantar las apps gracias a la dependencia declarada en `turbo.json`. No hace falta compilar shared manualmente.
-
-### Variables de entorno
-
-Cada app tiene un archivo `.env.example` con los valores de referencia. Copiarlo y completarlo:
+Requisitos: **Node.js ≥ 20.9** (recomendado 22) y **npm ≥ 10**. Dependencias en
+[`requirements.txt`](./requirements.txt).
 
 ```bash
+npm install                     # también activa el hook pre-commit
 cp apps/web/.env.example    apps/web/.env.local
-cp apps/server/.env.example apps/server/.env
+cp apps/server/.env.example apps/server/.env    # completar SUPABASE_SECRET_KEY
+npm run dev:all                 # web en :3000, servidor en :3001
 ```
 
-**Frontend** (`apps/web/.env.local`):
-```
-# URL completa del servidor backend
-NEXT_PUBLIC_SERVER_URL=http://localhost:3001
+Sin `SUPABASE_SECRET_KEY` el servidor funciona igual para invitados (sin cuentas, amigos,
+workshop ni estadísticas).
 
-# Supabase (públicas: la seguridad la dan las políticas RLS)
-NEXT_PUBLIC_SUPABASE_URL=https://pyamkqingktpeexkgryb.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
-```
-
-**Backend** (`apps/server/.env`):
-```
-# Puerto en el que escucha NestJS
-PORT=3001
-
-# URL del frontend — usada para la política CORS
-# Sin este valor el frontend no puede conectarse al backend desde otro origen
-CLIENT_URL=http://localhost:3000
-
-# Supabase: la URL es pública; la clave secreta nunca se commitea
-SUPABASE_URL=https://pyamkqingktpeexkgryb.supabase.co
-SUPABASE_SECRET_KEY=
-```
+| Archivo | Variables |
+|---|---|
+| `apps/web/.env.local` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (públicas por diseño) |
+| `apps/server/.env` | `PORT`, `CLIENT_URL` (CORS), `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (nunca se commitea) |
 
 ---
 
 ## Calidad: tests, hook pre-commit y CI
 
 ```bash
-npm test                 # tests unitarios del servidor (lógica del juego)
+npm test                 # tests unitarios del servidor (Jest)
 npm run lint             # ESLint en web y server, tsc en shared
 npm run check-secrets    # busca credenciales en los archivos versionados
+node e2e/run.cjs         # pruebas de punta a punta (ver e2e/README.md)
 ```
 
-**Hook pre-commit:** `npm install` lo activa solo (configura `git config core.hooksPath .githooks`).
-Antes de cada commit busca secretos en el diff y corre el linter y los tests; si algo falla,
-el commit se aborta. Si clonaste el repo antes de que existiera el hook, corré
-`npm install` otra vez (o `git config core.hooksPath .githooks` desde la raíz del repo).
+- **Tests unitarios** de las reglas de los tres juegos, sala, validación, amigos, workshop y
+  moderación, con umbral mínimo de cobertura de ramas.
+- **Pruebas de punta a punta:** partidas reales en Chromium con bots, en escritorio y celular,
+  más cuentas temporales para amigos, workshop, moderación y ajustes.
+- **Hook pre-commit:** secretos, lint y tests; si algo falla, el commit se aborta.
+- **CI** (GitHub Actions): secretos, lint, build, tests con cobertura, `npm audit` y las
+  pruebas de punta a punta de invitados contra el build recién compilado.
 
-**CI:** GitHub Actions (`.github/workflows/ci.yml`) repite esos chequeos en cada push y PR,
-más el build completo, el umbral de cobertura de ramas y `npm audit`.
-
-Detalle del ciclo TDD, los casos borde, la prueba de mutación y los bugs encontrados:
-[`docs/TESTING.md`](docs/TESTING.md).
+Detalle del ciclo TDD, los casos borde y los bugs encontrados: [`docs/TESTING.md`](docs/TESTING.md).
 
 ---
 
-## Deploy en producción
+## Deploy
 
-El proyecto está configurado para deployarse en **Railway** (recomendado) o **Render**, con dos servicios separados: uno para el frontend y otro para el backend.
-
-### Railway
-
-Un proyecto con dos servicios conectados al repo de GitHub (rama `main`), cada uno con
-**Root Directory** `/AmongLies` y su archivo de configuración:
-
-| Servicio | Config file | Variables |
-|---|---|---|
-| `server` | `/AmongLies/railway.server.json` | `CLIENT_URL` (URL del web), `SUPABASE_URL`, `SUPABASE_SECRET_KEY` |
-| `web` | `/AmongLies/railway.web.json` | `NEXT_PUBLIC_SERVER_URL` (URL del server), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `HOSTNAME=0.0.0.0` |
-
-`PORT` lo pone Railway. Las variables `NEXT_PUBLIC_*` se fijan en el build: si cambian, hay
-que volver a deployar el web. Cada servicio sólo se redeploya cuando cambian sus archivos
-(`watchPatterns`).
-
-### Render (producción actual)
-
-- Web: https://amonglies-web.onrender.com
-- Server: https://amonglies-server.onrender.com
-
-Dos *Web Services* gratis (región Virginia) conectados a `main` con auto-deploy. Root Directory en
-**blanco** (el monorepo está en la subcarpeta `AmongLies/`):
+**Producción en Render** (plan gratis, región Virginia, auto-deploy desde `main`). Los dos
+servicios están descritos en [`render.yaml`](../render.yaml) en la raíz del repositorio:
 
 | Servicio | Build | Start |
 |---|---|---|
 | `amonglies-server` | `cd AmongLies && npm ci && npx turbo run build --filter=@amonglies/server...` | `cd AmongLies && node apps/server/dist/main` |
-| `amonglies-web` | `cd AmongLies && npm ci && npx turbo run build --filter=@amonglies/web... && cp -r apps/web/public apps/web/.next/standalone/apps/web/public && cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static` | `cd AmongLies && node apps/web/.next/standalone/apps/web/server.js` |
+| `amonglies-web` | `cd AmongLies && npm ci && npx turbo run build --filter=@amonglies/web...` + copiar `public` y `.next/static` al build standalone | `cd AmongLies && node apps/web/.next/standalone/apps/web/server.js` |
 
-Variables: las mismas que en Railway (tabla de arriba), más `NODE_VERSION=22`. En el plan gratis
-cada servicio se duerme a los 15 minutos sin uso y tarda 30–60 s en despertar.
+Las variables `NEXT_PUBLIC_*` se fijan en el build del web. `SUPABASE_SECRET_KEY` se carga a
+mano en el dashboard de Render.
+
+En el plan gratis el servidor se duerme a los 15 minutos sin tráfico y al despertar se pierden
+las salas (viven en memoria). Para que no pase en medio de una partida, los clientes que están en
+una sala hacen `GET /health` cada 4 minutos; si igual se pierde, la app lo avisa, y al crear o
+unirse espera a que el servidor despierte.
+
+Quedaron en el repo las configuraciones de entregas anteriores (`vercel.json`,
+`railway.*.json`); no se usan en producción.
 
 ---
 
-## Estructura de carpetas relevante
+## Documentación
 
-```
-apps/web/src/
-├── app/
-│   ├── page.tsx                    # Pantalla de inicio (crear/unirse a sala)
-│   └── room/[code]/page.tsx        # Sala: lobby + juego
-├── components/
-│   ├── impostor/
-│   │   ├── ImpostorGame.tsx        # Contenedor principal del juego
-│   │   └── phases/
-│   │       ├── WordReveal.tsx      # Reveal de palabra/rol
-│   │       ├── TurnsChat.tsx       # Fase de turnos (modo chat)
-│   │       ├── Discussion.tsx      # Fase de discusión
-│   │       ├── Voting.tsx          # Fase de votación
-│   │       ├── VoteResults.tsx     # Resultados de votación
-│   │       ├── PartidaEnd.tsx      # Pantalla entre partidas
-│   │       └── GameEnd.tsx         # Pantalla final del juego
-│   ├── lobby/
-│   │   ├── Chat.tsx                # Chat del lobby
-│   │   └── GameSettings.tsx        # Configuración de partida
-│   └── ui/
-│       └── Avatar.tsx
-├── stores/
-│   ├── playerStore.ts
-│   └── roomStore.ts
-└── lib/
-    ├── socket.ts                   # Singleton de Socket.io
-    └── i18n.ts                     # Traducciones
-
-apps/server/src/
-├── game/
-│   ├── game.gateway.ts             # WebSocket gateway (eventos)
-│   ├── game.service.ts             # Lógica de sala y partida
-│   └── engines/impostor/
-│       └── impostor.engine.ts      # Máquina de estados del juego
-
-packages/shared/src/
-└── types/
-    ├── impostor.ts                 # Tipos del juego compartidos
-    └── room.ts                     # Tipos de sala
-```
+- [`docs/PROGRESO.md`](docs/PROGRESO.md): fases del desarrollo y decisiones de producto.
+- [`docs/TESTING.md`](docs/TESTING.md): estrategia de testing, TDD y bugs encontrados.
+- [`docs/AmongLies_TP3_Documentacion_Final.docx`](docs/AmongLies_TP3_Documentacion_Final.docx): documentación del TP.
+- [`PLAN_MVP.md`](PLAN_MVP.md): plan del MVP original.
