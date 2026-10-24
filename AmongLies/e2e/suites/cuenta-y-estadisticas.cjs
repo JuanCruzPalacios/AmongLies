@@ -52,7 +52,7 @@ withAccounts([{ username: 'StatsE2E' }], async ([account]) => {
   let voted = false;
   const deadline = Date.now() + 150000;
   while (Date.now() < deadline) {
-    const input = page.getByPlaceholder('Escribe una palabra...');
+    const input = page.getByPlaceholder(/Escrib[eí] una palabra/);
     if (await input.isVisible().catch(() => false) && await input.isEnabled().catch(() => false)) {
       await input.fill(`admin-${Date.now()}`);
       await page.getByRole('button', { name: /Enviar palabra/i }).click().catch(() => {});

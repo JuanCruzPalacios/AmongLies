@@ -18,7 +18,7 @@ const { log, check, done } = suite('carrera-al-entrar');
     });
     a.s.on('room:player-joined', () => a.s.emit('chat:send', { message: `hola-${i}` }));
     await page.goto(WEB);
-    await page.getByPlaceholder('Ingresa tu apodo...').fill('Lento');
+    await page.getByPlaceholder(/Ingres[aá] tu apodo/).fill('Lento');
     await page.getByRole('button', { name: 'Unirse a Sala' }).click();
     await page.getByPlaceholder(/C[oó]digo de sala/).fill(code);
     await page.getByRole('button', { name: /^Unirse$/ }).click();

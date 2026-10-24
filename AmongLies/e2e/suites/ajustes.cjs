@@ -37,7 +37,7 @@ withAccounts([{ username: USER }], async ([account]) => {
 
   // Efectos: alguien entra a la sala → "join". Con los efectos apagados, nada.
   await page.goto(WEB);
-  await page.getByPlaceholder('Ingresa tu apodo...').fill('Oyente');
+  await page.getByPlaceholder(/Ingres[aá] tu apodo/).fill('Oyente');
   await page.getByRole('button', { name: /Crear Sala/i }).click();
   await page.waitForURL(/\/room\/[A-Z0-9]{6}/);
   const code = page.url().split('/').pop();

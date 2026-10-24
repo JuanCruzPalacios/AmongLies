@@ -34,7 +34,7 @@ withAccounts([{ username: 'E2eAdmin', admin: true }, { username: USER_V }], asyn
   // Invitado con apodo insultante.
   const guest = await newPage(browser);
   await guest.goto(WEB);
-  await guest.getByPlaceholder('Ingresa tu apodo...').fill('Pelotud0');
+  await guest.getByPlaceholder(/Ingres[aá] tu apodo/).fill('Pelotud0');
   await guest.getByRole('button', { name: /Crear Sala/i }).click();
   check('un apodo con insultos no se acepta', await visible(guest.getByText('Ese apodo no está permitido.')));
 

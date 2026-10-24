@@ -23,7 +23,7 @@ function bot(name, code) {
   const page = async (nick) => {
     const p = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'es-AR' })).newPage();
     await p.goto(WEB);
-    await p.getByPlaceholder('Ingresa tu apodo...').fill(nick);
+    await p.getByPlaceholder(/Ingres[aá] tu apodo/).fill(nick);
     return p;
   };
   const a = await page('Anfitrion');

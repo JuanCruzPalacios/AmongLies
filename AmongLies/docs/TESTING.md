@@ -168,6 +168,12 @@ y la web recién compilados (job `e2e`; si fallan, sube las capturas y los logs)
 herramientas de desarrollo (el linter) y no tienen arreglo publicado, por eso el CI audita
 con `--omit=dev`.
 
+En la Fase 8 el mismo paso **frenó el CI** por avisos publicados después de la Fase 7: una
+vulnerabilidad crítica en Next.js ≤ 16.4.0 (RCE) y dos altas en `multer` y `body-parser`
+(dependencias de NestJS). Se pasó a Next 16.4.3, se forzó `multer` 2.5.0 con `overrides`
+(NestJS lo fija en 2.4.0) y `npm audit fix` actualizó `body-parser`; producción volvió a 0 y
+todas las suites (unitarias y de punta a punta) siguieron en verde.
+
 ## 6. Bugs encontrados en nuestro código
 
 Todos estaban en el MVP; ninguno rompía la compilación del servidor.

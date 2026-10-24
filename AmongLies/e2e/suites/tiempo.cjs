@@ -37,7 +37,7 @@ function bot(name, code) {
   page.on('pageerror', (e) => log('PAGE ERROR', e.message));
 
   await page.goto(WEB);
-  await page.getByPlaceholder('Ingresa tu apodo...').fill('Admin');
+  await page.getByPlaceholder(/Ingres[aá] tu apodo/).fill('Admin');
   await page.getByRole('button', { name: /Crear Sala/i }).click();
   await page.waitForURL(/\/room\/[A-Z0-9]{6}/);
   const code = page.url().split('/').pop();

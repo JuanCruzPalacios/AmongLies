@@ -22,7 +22,7 @@ async function noHorizontalScroll(page) {
   for (const [label, viewport] of [['escritorio', { width: 1280, height: 900 }], ['celular', { width: 360, height: 740 }]]) {
     const page = await (await browser.newContext({ viewport, locale: 'es-AR', hasTouch: label === 'celular' })).newPage();
     await page.goto(WEB);
-    await page.getByPlaceholder('Ingresa tu apodo...').fill('Largo');
+    await page.getByPlaceholder(/Ingres[aá] tu apodo/).fill('Largo');
     await page.getByRole('button', { name: /Crear Sala/i }).click();
     await page.waitForURL(/\/room\//);
     const code = page.url().split('/').pop();

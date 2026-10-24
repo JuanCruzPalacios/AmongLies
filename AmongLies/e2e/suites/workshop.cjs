@@ -83,7 +83,7 @@ withAccounts([{ username: USER_A }, { username: 'E2eLector' }], async ([A, B]) =
   check('el lobby ofrece "Tus listas del workshop"', await visible(a.getByText('Tus listas del workshop')) && await visible(mine));
   await mine.click();
   await a.waitForTimeout(1200);
-  for (const name of ['Animales', 'Comida', 'Paises', 'Deportes', 'Profesiones', 'Peliculas', 'Objetos', 'Marcas']) {
+  for (const name of ['Animales', 'Comida', 'Países', 'Deportes', 'Profesiones', 'Películas', 'Objetos', 'Marcas']) {
     const btn = a.getByRole('button', { name: new RegExp('^' + name) });
     if (await btn.isVisible().catch(() => false)) { await btn.click(); await a.waitForTimeout(300); }
   }

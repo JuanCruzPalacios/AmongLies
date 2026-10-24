@@ -4,7 +4,7 @@ export const COUNTRIES: WordList = {
   id: 'en-countries',
   locale: 'en',
   drawable: false,
-  category: { es: 'Paises y Ciudades', en: 'Countries & Cities' },
+  category: { es: 'Países y Ciudades', en: 'Countries & Cities' },
   words: [
     'Argentina', 'Brazil', 'Mexico', 'Spain', 'France', 'Italy', 'Germany',
     'Japan', 'China', 'India', 'Australia', 'Canada', 'United States', 'Russia',

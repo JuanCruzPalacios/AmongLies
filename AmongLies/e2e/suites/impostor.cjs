@@ -26,7 +26,7 @@ function player(name, code) {
   page.on('pageerror', () => pageErrors++);
 
   await page.goto(WEB);
-  await page.getByPlaceholder('Ingresa tu apodo...').fill('Admin');
+  await page.getByPlaceholder(/Ingres[aá] tu apodo/).fill('Admin');
   await page.getByRole('button', { name: /Crear Sala/i }).click();
   await page.waitForURL(/\/room\/[A-Z0-9]{6}/);
   const code = page.url().split('/').pop();
@@ -52,7 +52,7 @@ function player(name, code) {
     const phase = bots[0].view?.phase;
     if (phase) phases.add(phase);
     if (phase === 'game-end') break;
-    const input = page.getByPlaceholder('Escribe una palabra...');
+    const input = page.getByPlaceholder(/Escrib[eí] una palabra/);
     if (await input.isVisible().catch(() => false) && await input.isEnabled().catch(() => false)) {
       await input.fill(`admin-pista-${++clue}`);
       await page.getByRole('button', { name: /Enviar palabra/i }).click().catch(() => {});

@@ -22,7 +22,7 @@ const startServer = () => execSync(START, { stdio: 'inherit' });
 
   // 1) Sala abierta + el servidor se reinicia → aviso claro, no sala fantasma.
   await page.goto(WEB);
-  await page.getByPlaceholder('Ingresa tu apodo...').fill('Juan');
+  await page.getByPlaceholder(/Ingres[aá] tu apodo/).fill('Juan');
   await page.getByRole('button', { name: /Crear Sala/i }).click();
   await page.waitForURL(/\/room\/[A-Z0-9]{6}/);
   await sleep(1000);
@@ -41,7 +41,7 @@ const startServer = () => execSync(START, { stdio: 'inherit' });
   await sleep(2000);
   stopServer();
   await page.reload();
-  await page.getByPlaceholder('Ingresa tu apodo...').fill('Juan');
+  await page.getByPlaceholder(/Ingres[aá] tu apodo/).fill('Juan');
   await page.getByRole('button', { name: /Crear Sala/i }).click();
   check('muestra "Despertando el servidor…"', await visible(page.getByText(/Despertando el servidor/)));
   await sleep(8000); // más que el viejo límite de 10 s
