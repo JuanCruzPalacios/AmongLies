@@ -1,0 +1,14 @@
+flowchart LR
+  subgraph Clientes["Clientes (navegadores)"]
+    c1["Jugador A<br/><small>sólo emite intenciones</small>"]
+    c2["Jugador B"]
+    c3["Jugador C"]
+  end
+  subgraph Server["Game Server — única fuente de verdad"]
+    v["Valida<br/><small>turno, rol, permisos,<br/>reglas del juego</small>"] --> a["Aplica al estado<br/><small>motor de juego</small>"] --> f["Filtra por jugador<br/><small>getStateForPlayer</small>"]
+  end
+  c1 -- "evento: game:action" --> v
+  f -- "vista A" --> c1
+  f -- "vista B" --> c2
+  f -- "vista C" --> c3
+  style Server fill:#F5F3FF,stroke:#8B5CF6

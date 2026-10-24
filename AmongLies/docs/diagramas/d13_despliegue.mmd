@@ -1,0 +1,23 @@
+flowchart LR
+  subgraph Cliente["Dispositivo del jugador"]
+    br["Navegador moderno<br/><small>Chrome, Edge, Firefox, Safari<br/>desktop y móvil</small>"]:::ext
+  end
+  subgraph GH["GitHub"]
+    repo["Repositorio monorepo<br/><small>main → deploy automático</small>"]:::ext
+    ci["GitHub Actions<br/><small>secretos · lint · build · tests ·<br/>audit · pruebas e2e</small>"]:::ext
+  end
+  subgraph RD["Render (plan gratis, Virginia)"]
+    websvc["amonglies-web<br/><small>Node 22 · Next.js standalone</small>"]:::container
+    gs1["amonglies-server<br/><small>Node 22 · NestJS · 1 instancia<br/>estado vivo en memoria</small>"]:::container
+  end
+  subgraph SB["Supabase (región sa-east-1)"]
+    sauth["Auth"]:::ext
+    spg[("PostgreSQL 17")]:::db
+  end
+  br -- "HTTPS 443" --> websvc
+  br -- "WSS / HTTPS 443" --> gs1
+  gs1 -- "HTTPS (REST, clave secreta)" --> spg
+  br -- "HTTPS (login)" --> sauth
+  br -- "HTTPS (lecturas con RLS)" --> spg
+  repo --> ci
+  repo -- "push a main" --> RD

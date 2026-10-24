@@ -1,0 +1,20 @@
+stateDiagram-v2
+  direction TB
+  [*] --> WordReveal : game:start (host, ≥4 jugadores)
+  WordReveal --> Turns : timer (5–30 s)
+  Turns --> Turns : pista enviada / timeout / Listo (voz)
+  Turns --> Discussion : todos dieron su pista
+  Discussion --> Voting : timer o consenso "Saltear"
+  Voting --> VoteResults : todos votaron o timer
+  VoteResults --> WordReveal : partida sigue (nueva ronda)
+  VoteResults --> PartidaEnd : impostores eliminados o igualan a inocentes
+  VoteResults --> GameEnd : última partida terminada
+  PartidaEnd --> WordReveal : 15 s o consenso "Continuar"
+  GameEnd --> [*] : Volver al lobby
+  WordReveal : Revelación de palabra
+  Turns : Turnos de pistas
+  Discussion : Discusión
+  Voting : Votación
+  VoteResults : Resultados
+  PartidaEnd : Fin de partida
+  GameEnd : Fin del juego

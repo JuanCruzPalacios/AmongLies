@@ -1,0 +1,19 @@
+sequenceDiagram
+  autonumber
+  participant W as Web
+  participant GS as Game Server
+  participant E as Motor de juego
+  W--xGS: Se corta la conexión
+  GS-->>W: player:disconnected (a la sala)
+  alt Partida en curso
+    GS->>E: pause() (los timers se congelan)
+  end
+  alt Vuelve (misma pestaña o recarga)
+    W->>GS: reconecta con el mismo sessionToken / cuenta
+    GS->>E: resume()
+    GS-->>W: session:ready + sala + game:state-update actual
+  else En el lobby y pasan 30 s
+    GS-->>W: room:player-left {playerId, newAdminId?}
+  else En partida: quien decide toca "Seguir sin esperar"
+    GS->>E: removePlayer(playerId) y resume()
+  end

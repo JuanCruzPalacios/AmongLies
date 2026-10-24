@@ -1,0 +1,25 @@
+sequenceDiagram
+  autonumber
+  participant H as Anfitrión
+  participant W1 as Web (anfitrión)
+  participant GS as Game Server
+  participant RS as RoomStore (memoria)
+  participant J as Jugador
+  participant W2 as Web (jugador)
+  H->>W1: Ingresa apodo + avatar, "Crear Sala"
+  W1->>GS: room:create {nickname, avatarId, locale}
+  GS->>GS: Genera código de 6 caracteres único
+  GS->>RS: Guarda la sala (privada por defecto)
+  GS-->>W1: room:created {room, playerId}
+  W1->>H: Redirige a /room/{code}
+  H-->>J: Comparte código, link o invitación a un amigo
+  J->>W2: Abre link / ingresa código
+  W2->>GS: room:join {code, nickname, avatarId}
+  GS->>RS: Busca la sala
+  alt Sala inexistente, en juego o llena
+    GS-->>W2: room:error {ROOM_NOT_FOUND | GAME_IN_PROGRESS | ROOM_FULL}
+  else Sala válida
+    GS->>RS: Agrega jugador
+    GS-->>W2: room:joined {room, playerId}
+    GS-->>W1: room:player-joined {player}
+  end

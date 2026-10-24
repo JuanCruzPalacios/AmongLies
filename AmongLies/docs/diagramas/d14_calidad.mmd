@@ -1,0 +1,18 @@
+flowchart LR
+  Q((Calidad<br/>AmongLies)):::root
+  Q --> P[Rendimiento]:::a
+  Q --> I[Integridad del juego]:::a
+  Q --> U[Usabilidad]:::a
+  Q --> X[Extensibilidad]:::a
+  Q --> D[Disponibilidad]:::a
+  Q --> M[Mantenibilidad]:::a
+  P --> P1["QS-1 Latencia de evento p95 < 150 ms"]:::s
+  P --> P2["QS-2 Inicio carga en < 2,5 s (4G)"]:::s
+  I --> I1["QS-3 Ningún cliente recibe la palabra<br/>si es impostor"]:::s
+  I --> I2["QS-4 Acciones fuera de turno o de<br/>no anfitrión son rechazadas"]:::s
+  U --> U1["QS-5 De la portada a jugar en < 30 s<br/>sin registrarse"]:::s
+  U --> U2["QS-6 Usable desde 360 px de ancho"]:::s
+  X --> X1["QS-7 Nuevo minijuego sin tocar<br/>salas, chat ni transporte"]:::s
+  D --> D1["QS-8 Un corte breve de conexión<br/>no saca al jugador de la partida"]:::s
+  D --> D2["QS-9 Si el servidor se reinicia,<br/>los jugadores se enteran y pueden seguir"]:::s
+  M --> M1["QS-10 Cambio de contrato de evento<br/>detectado en compilación o CI"]:::s

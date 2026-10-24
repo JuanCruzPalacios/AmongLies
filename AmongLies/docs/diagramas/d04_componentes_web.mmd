@@ -1,0 +1,32 @@
+flowchart TB
+  user["👤 Jugador"]:::person
+  subgraph W["Aplicación Web (Next.js App Router)"]
+    direction TB
+    subgraph P["Páginas (rutas)"]
+      home["/ · Inicio<br/><small>apodo, avatar, crear/unirse,<br/>salas públicas</small>"]:::comp
+      room["/room/[code] · Sala<br/><small>lobby + juego</small>"]:::comp
+      acc["/login · /registro · /recuperar<br/>/perfil · /ajustes"]:::comp
+      soc["/amigos · /workshop · /admin"]:::comp
+    end
+    subgraph C["Componentes de UI"]
+      lobby["Lobby<br/><small>PlayerList, Chat, GameSelector, GameSettings,<br/>RoomSettingsCard, WorkshopLobbyTools</small>"]:::comp
+      games["Juegos<br/><small>ImpostorGame, TimeGame, DrawingGame<br/>+ fases comunes (deduction/)</small>"]:::comp
+      glob["Globales del layout<br/><small>Header, RoomEvents, SocialInit,<br/>SoundManager</small>"]:::comp
+    end
+    subgraph S["Estado y servicios"]
+      stores["Stores Zustand<br/><small>player, room, auth,<br/>social, settings</small>"]:::comp
+      hooks["Hooks<br/><small>useSocket, useGame,<br/>useTranslation, useGameSounds</small>"]:::comp
+      sock["lib/socket<br/><small>Socket.io tipado</small>"]:::comp
+      sb["lib/supabase<br/><small>Auth + lecturas con RLS</small>"]:::comp
+      i18n["lib/i18n<br/><small>es · en</small>"]:::comp
+    end
+  end
+  gs["Game Server"]:::container
+  sup["Supabase"]:::ext
+  user --> home & room & acc & soc
+  room --> lobby & games
+  home & room --> stores
+  glob --> hooks --> sock --> gs
+  games --> hooks
+  acc & soc --> sb --> sup
+  C --> i18n

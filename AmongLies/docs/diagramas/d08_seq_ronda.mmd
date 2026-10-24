@@ -1,0 +1,27 @@
+sequenceDiagram
+  autonumber
+  participant W as Web (cada jugador)
+  participant GG as GameGateway
+  participant E as ImpostorEngine
+  participant T as Timers pausables
+  W->>GG: game:start (sólo anfitrión)
+  GG->>E: start()
+  E->>E: Elige impostor(es) y palabra al azar
+  E-->>GG: onPhaseChange("word-reveal")
+  loop Por cada socket de la sala
+    GG->>E: getStateForPlayer(playerId)
+    GG-->>W: game:state-update (vista personalizada)
+  end
+  Note over W,GG: El inocente recibe la palabra.<br/>El impostor recibe secretWord = null.
+  T-->>E: fin de "word-reveal" → "turns"
+  W->>GG: game:action {submit-word, "fruta"}
+  GG->>E: handleAction()
+  alt Palabra repetida o igual a la secreta
+    E-->>W: game:error {word_already_used | word_is_secret}
+  else Válida
+    E-->>GG: estado actualizado → vistas
+  end
+  Note over E: Discusión → Votación
+  W->>GG: game:action {vote, targetId | "skip"}
+  E->>E: decideVoteOutcome(): mayoría, empate, condición de fin, puntaje
+  GG-->>W: game:state-update (fase vote-results)

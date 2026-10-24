@@ -1,0 +1,15 @@
+flowchart LR
+  inv["👤 Jugador invitado<br/><small>Juega sin cuenta, con apodo y avatar</small>"]:::person
+  reg["👤 Usuario registrado<br/><small>Estadísticas, amigos y workshop</small>"]:::person
+  host["👑 Anfitrión de sala<br/><small>Crea y configura la sala; modera</small>"]:::person
+  adm["🛡️ Administrador<br/><small>Revisa reportes y suspende cuentas</small>"]:::person
+  sys["AmongLies<br/><small>Plataforma web de minijuegos sociales<br/>multijugador en tiempo real</small>"]:::system
+  sb["Supabase<br/><small>Auth (registro, login, JWT)<br/>y base PostgreSQL</small>"]:::ext
+  voice["Apps de voz externas<br/><small>Discord / Meet / presencial</small>"]:::ext
+  inv -- "Crea/une salas, juega, chatea<br/>[HTTPS + WSS]" --> sys
+  reg -- "Juega, perfil, amigos,<br/>workshop, ajustes" --> sys
+  host -- "Configura, inicia, expulsa" --> sys
+  adm -- "Panel de moderación" --> sys
+  sys -- "Verifica JWT; guarda estadísticas,<br/>amigos, workshop y reportes" --> sb
+  reg -- "Login / registro" --> sb
+  inv -. "Hablan en modo voz<br/>(fuera del sistema)" .- voice

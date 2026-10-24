@@ -154,5 +154,6 @@ Quedaron en el repo las configuraciones de entregas anteriores (`vercel.json`,
 
 - [`docs/PROGRESO.md`](docs/PROGRESO.md): fases del desarrollo y decisiones de producto.
 - [`docs/TESTING.md`](docs/TESTING.md): estrategia de testing, TDD y bugs encontrados.
-- [`docs/AmongLies_TP3_Documentacion_Final.docx`](docs/AmongLies_TP3_Documentacion_Final.docx): documentación del TP.
+- [`docs/AmongLies_TP3_Documentacion_Final.docx`](docs/AmongLies_TP3_Documentacion_Final.docx) (y [PDF](docs/AmongLies_TP3_Documentacion_Final.pdf)): documentación del TP — arquitectura (arc42 + C4) y manual de usuario.
+- [`docs/diagramas/`](docs/diagramas): fuentes Mermaid de los diagramas de la documentación.
 - [`PLAN_MVP.md`](PLAN_MVP.md): plan del MVP original.

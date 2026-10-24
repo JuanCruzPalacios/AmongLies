@@ -1,0 +1,41 @@
+flowchart TB
+  web["Aplicación Web"]:::container
+  subgraph GS["Game Server (NestJS)"]
+    direction TB
+    subgraph T["Capa de transporte"]
+      rg["RoomGateway<br/><small>handshake (JWT opcional), room:create/join/<br/>leave/kick/transfer-admin/update-settings</small>"]:::comp
+      cg["ChatGateway<br/><small>chat:send · filtro de insultos</small>"]:::comp
+      gg["GameGateway<br/><small>game:select/start/action/draw ·<br/>vistas por jugador</small>"]:::comp
+      sg["SocialGateway<br/><small>social:* amigos, presencia,<br/>invitaciones</small>"]:::comp
+      wg["WorkshopGateway<br/><small>workshop:* listas y presets</small>"]:::comp
+      mg["ModerationGateway<br/><small>report:create, admin:*,<br/>account:*</small>"]:::comp
+      http["RoomsController · HealthController<br/><small>GET /rooms/public · GET /health</small>"]:::comp
+    end
+    subgraph D["Capa de dominio"]
+      ps["PlayerService + AuthService<br/><small>identidad (invitado o cuenta),<br/>reconexión y pausa</small>"]:::comp
+      rs["RoomStore<br/><small>salas en memoria, salas públicas,<br/>listas del workshop por sala</small>"]:::comp
+      gsvc["GameService + registro<br/><small>crea el motor del juego elegido</small>"]:::comp
+      subgraph E["Motores de juego (GameEngine)"]
+        de["DeductionEngine<br/><small>partidas, rondas, votos, puntaje,<br/>timers pausables</small>"]:::comp
+        ie["ImpostorEngine"]:::comp
+        te["TimeEngine"]:::comp
+        dr["DrawingEngine"]:::comp
+      end
+      soc["SocialService"]:::comp
+      ws["WorkshopService"]:::comp
+      mod["ModerationService +<br/>AccountService"]:::comp
+      ss["StatsService"]:::comp
+    end
+  end
+  pg[("Supabase<br/>PostgreSQL")]:::db
+  web --> rg & cg & gg & sg & wg & mg & http
+  rg --> ps & rs
+  cg --> rs
+  http --> rs
+  gg --> gsvc --> de
+  de --> ie & te & dr
+  gsvc --> ss
+  sg --> soc
+  wg --> ws
+  mg --> mod
+  ss & soc & ws & mod --> pg

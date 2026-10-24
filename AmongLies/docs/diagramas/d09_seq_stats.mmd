@@ -1,0 +1,18 @@
+sequenceDiagram
+  autonumber
+  participant E as Motor de juego
+  participant GS as GameService
+  participant S as StatsService
+  participant PG as Supabase (PostgreSQL)
+  participant W as Web
+  E-->>GS: onGameEnd()
+  GS-->>W: game:state-update (fase game-end, puntajes)
+  GS->>E: getPlayerStats()
+  GS->>S: record(gameId, sólo jugadores con cuenta)
+  S->>PG: rpc record_game_stats(entries) con la clave secreta
+  alt Supabase no responde
+    S->>S: Registra el error en el log y el juego sigue igual
+  end
+  Note over S,PG: Los invitados no se guardan:<br/>no tienen cuenta donde sumar estadísticas
+  W->>PG: SELECT player_stats WHERE user_id = … (lectura pública)
+  PG-->>W: Estadísticas actualizadas en /perfil

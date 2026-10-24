@@ -1,0 +1,18 @@
+flowchart TB
+  A([Entrar a AmongLies]) --> B{¿Tiene cuenta?}
+  B -- "No / no quiere" --> C[Elegir apodo<br/>y avatar]
+  B -- "Sí" --> L[Iniciar sesión]
+  L --> C
+  C --> D{¿Qué quiere hacer?}
+  D -- "Crear sala" --> E[Lobby como anfitrión]
+  D -- "Tengo código, link<br/>o invitación" --> F[Lobby como jugador]
+  D -- "Buscar sala" --> G[Salas públicas] --> F
+  E --> H[Elegir minijuego<br/>y configurar]
+  H --> I[Iniciar juego]
+  F --> J[Esperar al anfitrión] --> K
+  I --> K[Jugar partidas]
+  K --> M[Fin del juego]
+  M --> N[Volver al lobby] --> H
+  M --> O[Ver perfil y<br/>estadísticas]
+  style A fill:#8B5CF6,color:#fff,stroke:#6D28D9
+  style M fill:#10B981,color:#fff,stroke:#047857

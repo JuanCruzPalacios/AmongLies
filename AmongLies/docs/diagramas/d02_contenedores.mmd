@@ -1,0 +1,18 @@
+flowchart TB
+  user["👤 Jugador<br/><small>Invitado o registrado</small>"]:::person
+  subgraph B["Sistema AmongLies"]
+    direction TB
+    web["Aplicación Web<br/><small>Next.js 16 · React 19 · Zustand<br/>UI, estado local, i18n, sonido</small>"]:::container
+    gs["Game Server<br/><small>NestJS 11 · Socket.io 4<br/>Salas, chat, motores de juego,<br/>amigos, workshop, moderación<br/>Estado vivo en memoria</small>"]:::container
+    pg[("PostgreSQL (Supabase)<br/><small>Perfiles, estadísticas, amistades,<br/>workshop, reportes · RLS</small>")]:::db
+    shared["Paquete shared<br/><small>Tipos, eventos, constantes,<br/>listas de palabras, filtro de insultos</small>"]:::comp
+  end
+  auth["Supabase Auth"]:::ext
+  user -- "HTTPS" --> web
+  web -- "Eventos en tiempo real [WSS · Socket.io]<br/>+ GET /rooms/public, /health [HTTPS]" --> gs
+  web -- "Login / registro<br/>[HTTPS]" --> auth
+  web -- "Lee perfil, estadísticas<br/>y workshop [HTTPS · RLS]" --> pg
+  gs -- "Escribe estadísticas, amistades,<br/>workshop y reportes<br/>[HTTPS · clave secreta]" --> pg
+  gs -- "Verifica JWT (JWKS)" --> auth
+  shared -. "importado en build" .-> web
+  shared -. "importado en build" .-> gs

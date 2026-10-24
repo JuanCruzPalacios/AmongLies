@@ -24,7 +24,7 @@ tomó: no hace falta volver a preguntarlas.
 | 5 — Social: amigos, invitaciones, notificaciones, presencia | ✅ hecha |
 | 6 — Workshop (listas de palabras y presets de reglas) | ✅ hecha |
 | 7 — Ajustes, salas públicas, moderación con panel de admin, i18n, sonido, responsive | ✅ hecha |
-| 8 — Tests, deploy, actualizar la documentación del TP | en curso |
+| 8 — Tests, deploy, actualizar la documentación del TP | ✅ hecha |
 
 ## Decisiones de producto (definitivas)
 
@@ -235,13 +235,22 @@ en vez de scrollear de costado. e2e: 11 checks (chat en escritorio y celular, me
 - **Probado:** 288 tests; e2e de moderación con dos cuentas y un invitado (15 checks), y con el
   token de un usuario común: no puede hacerse admin ni leer reportes. Suites anteriores en verde.
 
-## Fase 8 — en curso
-- **Pruebas de punta a punta en el repo** (`e2e/`, ver `e2e/README.md`): las pruebas que se
-  venían haciendo en cada fase quedaron como 16 suites con un runner (`node e2e/run.cjs`).
-  Las de invitados corren en el CI (job `e2e`) contra el build recién compilado; las de
+## Fase 8 — qué quedó hecho
+- **Pruebas de punta a punta en el repo** (`e2e/`, ver `e2e/README.md`): 16 suites con un runner
+  (`node e2e/run.cjs`). Las de invitados corren en el CI (job `e2e`, en `ubuntu-24.04` porque
+  Playwright 1.56 todavía no soporta `ubuntu-latest`) contra el build recién compilado; las de
   cuentas crean y borran cuentas temporales en Supabase. Todas en verde (≈198 checks).
+- **Dependencias:** `npm audit` frenó el CI por avisos nuevos (Next ≤ 16.4.0 crítica, multer,
+  body-parser): Next 16.4.3, `overrides` de multer 2.5.0 y `npm audit fix`. Producción en 0.
+- **Textos:** acentos y voseo que faltaban ("Ingresá tu apodo", "Código de sala", "¡Sos el
+  impostor!", "Países y Ciudades", "Películas y Series").
 - **Deploy documentado:** `render.yaml` en la raíz describe los dos servicios de Render tal
   como están; `.env.example` y README actualizados (el README describe el producto final).
+- **Documentación del TP (v3.0):** `docs/AmongLies_TP3_Documentacion_Final.docx` (y su PDF):
+  describe el producto terminado (tres juegos de la familia Impostor, sin Redis, Render, amigos,
+  workshop, moderación, ajustes, testing), con 17 diagramas Mermaid actualizados (fuentes en
+  `docs/diagramas/`) y más de 60 capturas reales tomadas jugando con 4 navegadores. Se generó
+  editando el .docx original (mismo formato); 17 ADRs, índice con páginas.
 - **Supabase pausó el proyecto** por inactividad (plan gratis: 7 días sin uso) y se restauró
   el 24/10. Mientras está pausado, en producción no andan las cuentas (los invitados sí).
 
@@ -258,6 +267,10 @@ en vez de scrollear de costado. e2e: 11 checks (chat en escritorio y celular, me
   vencida: no se usa.
 
 ## Pendientes de Juan (no los puede hacer Claude)
+- [ ] En Supabase, *Authentication → Sign In / Providers → Email*: desactivar **Confirm email**
+  (pedido en la Fase 7) y, si querés, activar **Leaked password protection**.
+- [ ] Evitar que Supabase vuelva a pausar el proyecto: entrar al panel al menos una vez por
+  semana, jugar con una cuenta, o pasar al plan pago.
 - [ ] Habilitar `pyamkqingktpeexkgryb.supabase.co` en *Network access → Allowed domains* del
   environment de Claude Code (dejando "Allow package managers") y cargar `SUPABASE_SECRET_KEY`
   como variable de entorno. Aplica a sesiones nuevas.
@@ -267,7 +280,7 @@ en vez de scrollear de costado. e2e: 11 checks (chat en escritorio y celular, me
 - [ ] En Supabase, *Authentication → URL Configuration*: Site URL `https://amonglies-web.onrender.com`
   y redirect URLs `https://amonglies-web.onrender.com/**` y `http://localhost:3000/**`
   (sin esto los links de confirmación y de recuperación de contraseña no vuelven a la app).
-- [ ] Activar la protección de `main` en GitHub: *Settings → Branches → Require status checks* → `verificar`.
+- [ ] Activar la protección de `main` en GitHub: *Settings → Branches → Require status checks* → `verificar` y `e2e`.
 - [ ] Definir dominio propio (hoy: subdominios de onrender.com).
 - [ ] Borrar desde el dashboard de Railway los proyectos viejos `magnificent-integrity`,
   `carefree-smile` y `sparkling-forgiveness` (el conector no puede borrar proyectos).

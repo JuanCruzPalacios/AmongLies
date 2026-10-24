@@ -1,0 +1,61 @@
+erDiagram
+  AUTH_USERS ||--|| PROFILES : "1 a 1"
+  PROFILES ||--o{ PLAYER_STATS : "acumula"
+  PROFILES ||--o{ FRIENDSHIPS : "pide / recibe"
+  PROFILES ||--o{ WORKSHOP_ITEMS : "es dueño"
+  WORKSHOP_ITEMS ||--o{ WORKSHOP_ITEMS : "copia de"
+  PROFILES ||--o{ WORKSHOP_LIKES : "da"
+  WORKSHOP_ITEMS ||--o{ WORKSHOP_LIKES : "recibe"
+  PROFILES ||--o{ REPORTS : "reporta / es reportado"
+  AUTH_USERS {
+    uuid id PK
+    text email
+  }
+  PROFILES {
+    uuid id PK "FK auth.users"
+    citext username UK
+    text avatar_id
+    text locale "es | en"
+    bool is_admin
+    timestamptz suspended_until
+    bool appear_offline
+    bool allow_invites
+  }
+  PLAYER_STATS {
+    uuid user_id PK
+    text game_id PK
+    int games_played
+    int partidas_as_impostor
+    int partidas_won_as_impostor
+    int correct_votes
+    int total_points
+  }
+  FRIENDSHIPS {
+    uuid requester_id PK
+    uuid addressee_id PK
+    text status "pending | accepted"
+  }
+  WORKSHOP_ITEMS {
+    uuid id PK
+    uuid owner_id FK
+    text kind "word_list | preset"
+    text title
+    jsonb content
+    int version
+    bool published
+    uuid source_id FK "copia"
+    int likes_count
+  }
+  WORKSHOP_LIKES {
+    uuid user_id PK
+    uuid item_id PK
+  }
+  REPORTS {
+    uuid id PK
+    text kind "player | workshop_item"
+    uuid reporter_id FK
+    uuid target_user_id FK
+    text reason
+    jsonb evidence
+    text status "open | resolved | dismissed"
+  }

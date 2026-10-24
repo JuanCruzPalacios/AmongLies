@@ -1,0 +1,48 @@
+classDiagram
+  direction LR
+  class GameEngine {
+    <<interface>>
+    +start() void
+    +handleAction(playerId, action, ctx) string|null
+    +getStateForPlayer(playerId) GameView
+    +canChat(playerId) boolean
+    +pause() void
+    +resume() void
+    +removePlayer(playerId) void
+    +getPlayerStats() PlayerGameStats[]
+    +destroy() void
+  }
+  class GameRegistration {
+    <<interface>>
+    +validateStart(players, settings, wordLists) string|null
+    +create(players, settings, callbacks, wordLists) GameEngine
+  }
+  class DeductionEngine {
+    <<abstract>>
+    #partidas, rondas, turnos, votos, puntaje
+    #startRoundActivity()*
+    #beginTurn()*
+    #handleActivityAction()*
+    #buildView()*
+  }
+  class ImpostorEngine {
+    pistas por turno (chat o voz)
+  }
+  class TimeEngine {
+    EMPEZAR / PARAR contra un tiempo oculto
+  }
+  class DrawingEngine {
+    lienzo compartido con tinta limitada
+  }
+  class GameDefinition {
+    +id: GameId
+    +minPlayers: number
+    +supportedModes
+    +settingsSchema
+  }
+  GameEngine <|.. DeductionEngine
+  DeductionEngine <|-- ImpostorEngine
+  DeductionEngine <|-- TimeEngine
+  DeductionEngine <|-- DrawingEngine
+  GameRegistration ..> GameEngine : crea
+  GameRegistration ..> GameDefinition : usa

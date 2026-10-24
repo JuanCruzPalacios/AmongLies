@@ -1,0 +1,18 @@
+sequenceDiagram
+  autonumber
+  participant U as Usuario
+  participant W as Web
+  participant A as Supabase Auth
+  participant GS as Game Server
+  U->>W: "Iniciar sesión" (email y contraseña)
+  W->>A: signInWithPassword
+  A-->>W: access_token (JWT) + refresh_token
+  W->>W: authStore guarda la sesión y carga el perfil
+  W->>GS: Conexión Socket.io con auth: {sessionToken, accessToken}
+  GS->>GS: Verifica firma, emisor y vencimiento (JWKS público)
+  alt Token válido
+    GS->>GS: La identidad es el id de la cuenta<br/>y se leen sus marcas (admin, suspensión, privacidad)
+  else Sin token o inválido
+    GS->>GS: Invitado identificado por su sessionToken
+  end
+  GS-->>W: session:ready (y la sala, si estaba en una)

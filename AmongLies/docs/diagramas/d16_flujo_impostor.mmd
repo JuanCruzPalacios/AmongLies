@@ -1,0 +1,10 @@
+flowchart TB
+  A["1 · Ver tu palabra<br/><small>o descubrir que sos<br/>el impostor</small>"] --> B["2 · Dar una pista<br/><small>por turnos, en chat<br/>o en voz alta</small>"]
+  B --> C["3 · Discutir<br/><small>chat libre con<br/>tiempo límite</small>"]
+  C --> D["4 · Votar<br/><small>a quien creés que<br/>es el impostor</small>"]
+  D --> E["5 · Resultados<br/><small>¿era o no era?</small>"]
+  E -- "Nadie ganó todavía" --> A
+  E -- "Ganó un bando" --> F["6 · Fin de partida<br/><small>se revela el impostor</small>"]
+  F -- "Quedan partidas" --> A
+  F -- "Era la última" --> G["7 · Fin del juego"]
+  style G fill:#10B981,color:#fff,stroke:#047857
