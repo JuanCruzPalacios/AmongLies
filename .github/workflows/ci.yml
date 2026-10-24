@@ -45,7 +45,8 @@ jobs:
   # Partidas reales en Chromium contra el servidor y la web recién compilados
   # (sólo suites de invitados: no tocan la base de datos).
   e2e:
-    runs-on: ubuntu-latest
+    # Playwright 1.56 todavía no instala Chromium en ubuntu-latest (26.04).
+    runs-on: ubuntu-24.04
     needs: verificar
     defaults:
       run:
