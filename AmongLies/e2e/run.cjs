@@ -7,7 +7,7 @@ const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 const { hasAccounts } = require('./common.cjs');
 
-const GUEST = ['impostor', 'tiempo', 'dibujo', 'dibujo-celular', 'recarga', 'reconexion', 'servidor', 'salas-publicas', 'chat', 'carrera-al-entrar', 'sala-perdida'];
+const GUEST = ['impostor', 'tiempo', 'dibujo', 'dibujo-celular', 'recarga', 'reconexion', 'servidor', 'salas-publicas', 'chat', 'carrera-al-entrar', 'sala-perdida', 'expulsado'];
 const ACCOUNTS = ['cuenta-y-estadisticas', 'amigos', 'workshop', 'moderacion', 'ajustes'];
 
 const args = process.argv.slice(2);

@@ -110,7 +110,7 @@ verifica valores concretos (fases recorridas, puntaje, lo que guardó la base) y
 
 | Grupo | Suites | Checks |
 |---|---|---|
-| Invitados (no tocan la base; **las corre el CI**) | `impostor`, `tiempo`, `dibujo`, `dibujo-celular`, `recarga`, `reconexion`, `servidor`, `salas-publicas`, `chat`, `carrera-al-entrar`, `sala-perdida` | ≈117 |
+| Invitados (no tocan la base; **las corre el CI**) | `impostor`, `tiempo`, `dibujo`, `dibujo-celular`, `recarga`, `reconexion`, `servidor`, `salas-publicas`, `chat`, `carrera-al-entrar`, `sala-perdida`, `expulsado` | ≈120 |
 | Cuentas (crean cuentas temporales en Supabase y las borran al terminar) | `cuenta-y-estadisticas`, `amigos`, `workshop`, `moderacion`, `ajustes` | 81 |
 
 - `servidor` le manda al servidor lo que un cliente modificado podría mandar (votar dos veces,
@@ -123,7 +123,7 @@ verifica valores concretos (fases recorridas, puntaje, lo que guardó la base) y
 - Las cuentas de prueba se borran siempre (con reintentos); si una no se puede borrar, la
   suite falla. Después de cada corrida se verificó en la base que no quedaran usuarios de prueba.
 
-Las 16 suites (≈198 checks: algunos dependen de a quién le toque ser impostor) pasan contra el build de producción local; las de invitados también
+Las 17 suites (≈201 checks: algunos dependen de a quién le toque ser impostor) pasan contra el build de producción local; las de invitados también
 pasan con el servidor **sin** credenciales de Supabase, que es como corren en el CI.
 
 ## 5. Guardrails

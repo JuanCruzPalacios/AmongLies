@@ -1,0 +1,41 @@
+flowchart LR
+  subgraph PUB["Accesibles por todos"]
+    home["V-05 Inicio<br/><small>+ V-06 Unirse · V-07 Salas públicas</small>"]:::comp
+    link["V-12 Unirse por link"]:::comp
+    ws["V-37 Workshop · Explorar"]:::comp
+    aj["V-40 Ajustes"]:::comp
+    login["V-08 Iniciar sesión"]:::comp
+    reg["V-09 Crear cuenta"]:::comp
+    rec["V-10 Recuperar contraseña"]:::comp
+    np["V-11 Nueva contraseña"]:::comp
+  end
+  subgraph SALA["Dentro de una sala"]
+    lobby["V-13 / V-14 Lobby<br/><small>anfitrión / jugador</small>"]:::container
+    game["V-19 a V-34 Partida<br/><small>Impostor · Tiempo · Dibujo</small>"]:::container
+    rep["V-17 Reportar"]:::comp
+    pause["V-20 Pausa"]:::comp
+  end
+  subgraph CTA["Con cuenta"]
+    perfil["V-35 Mi perfil"]:::comp
+    amigos["V-36 Amigos"]:::comp
+    mine["V-38 Mi colección"]:::comp
+    edit["V-39 Editor de listas"]:::comp
+  end
+  subgraph ADM["Sólo administradores"]
+    adm["V-41 / V-42 Panel de admin"]:::new
+  end
+  home -- "Crear / Unirse / salas públicas" --> lobby
+  link --> lobby
+  amigos -- "Unirme / invitación" --> lobby
+  lobby -- "Iniciar juego (anfitrión)" --> game
+  game -- "Volver al lobby" --> lobby
+  game -.-> pause
+  lobby -.-> rep
+  game -.-> rep
+  home --> login --> reg
+  login --> rec -. "mail" .-> np
+  home --> ws --> mine --> edit
+  home --> aj
+  home --> perfil
+  home --> amigos
+  home --> adm

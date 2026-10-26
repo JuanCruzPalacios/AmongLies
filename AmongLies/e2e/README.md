@@ -42,6 +42,7 @@ Las capturas quedan en `e2e/output/` (no se commitean).
 | `salas-publicas` | Listado de salas públicas, unirse desde la lista y desde el celular. |
 | `chat` | Chat del lobby y del juego, mensajes largos (cortan línea) e interfaz en inglés. |
 | `carrera-al-entrar` | Un mensaje enviado justo cuando el otro entra no se pierde. |
+| `expulsado` | El anfitrión saca a un jugador: vuelve al inicio con un aviso. |
 | `sala-perdida` | El servidor se reinicia o está dormido: aviso de sala perdida y "Despertando el servidor…". |
 
 **Cuentas** (crean cuentas temporales confirmadas en Supabase y las borran al terminar):

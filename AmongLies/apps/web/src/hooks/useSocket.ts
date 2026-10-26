@@ -79,6 +79,7 @@ export function useSocket() {
 
     socket.on("room:kicked", () => {
       setRoom(null);
+      setError(t("room.kicked", usePlayerStore.getState().locale));
       disconnectSocket();
       router.push("/");
     });

@@ -236,10 +236,10 @@ en vez de scrollear de costado. e2e: 11 checks (chat en escritorio y celular, me
   token de un usuario común: no puede hacerse admin ni leer reportes. Suites anteriores en verde.
 
 ## Fase 8 — qué quedó hecho
-- **Pruebas de punta a punta en el repo** (`e2e/`, ver `e2e/README.md`): 16 suites con un runner
+- **Pruebas de punta a punta en el repo** (`e2e/`, ver `e2e/README.md`): 17 suites con un runner
   (`node e2e/run.cjs`). Las de invitados corren en el CI (job `e2e`, en `ubuntu-24.04` porque
   Playwright 1.56 todavía no soporta `ubuntu-latest`) contra el build recién compilado; las de
-  cuentas crean y borran cuentas temporales en Supabase. Todas en verde (≈198 checks).
+  cuentas crean y borran cuentas temporales en Supabase. Todas en verde (≈201 checks).
 - **Dependencias:** `npm audit` frenó el CI por avisos nuevos (Next ≤ 16.4.0 crítica, multer,
   body-parser): Next 16.4.3, `overrides` de multer 2.5.0 y `npm audit fix`. Producción en 0.
 - **Textos:** acentos y voseo que faltaban ("Ingresá tu apodo", "Código de sala", "¡Sos el
@@ -251,6 +251,15 @@ en vez de scrollear de costado. e2e: 11 checks (chat en escritorio y celular, me
   workshop, moderación, ajustes, testing), con 17 diagramas Mermaid actualizados (fuentes en
   `docs/diagramas/`) y más de 60 capturas reales tomadas jugando con 4 navegadores. Se generó
   editando el .docx original (mismo formato); 17 ADRs, índice con páginas.
+- **Documentación v3.1 (26/10):** se agregó la **Parte III — Catálogo de ventanas por tipo de
+  usuario** (43 fichas V-01…V-43: quién la ve, cómo se llega, captura real y tabla de componentes
+  con la interacción de invitado / registrado / admin / anfitrión / jugador; matriz ventanas ×
+  usuarios y mapa de navegación `d18`), las decisiones de diseño de la interfaz justificadas
+  (§8.12, DD-01…DD-16), ADR-18…ADR-23 y la trazabilidad requerimiento → código → prueba (§10.3).
+  155 páginas, 124 figuras, 92 tablas.
+- **Arreglos al sacar las capturas:** el jugador expulsado volvía al inicio sin explicación;
+  ahora ve "El anfitrión te sacó de la sala." (suite e2e `expulsado`). El `<html lang>` decía
+  `en` y ahora sigue al idioma elegido.
 - **Supabase pausó el proyecto** por inactividad (plan gratis: 7 días sin uso) y se restauró
   el 24/10. Mientras está pausado, en producción no andan las cuentas (los invitados sí).
 

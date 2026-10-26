@@ -15,6 +15,11 @@ export function LanguageSelector() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Para lectores de pantalla y el traductor del navegador: el idioma real de la página.
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   useEffect(() => {
     if (!open) return;
     const close = (e: PointerEvent) => {
