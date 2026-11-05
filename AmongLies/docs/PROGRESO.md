@@ -257,6 +257,12 @@ en vez de scrollear de costado. e2e: 11 checks (chat en escritorio y celular, me
   usuarios y mapa de navegación `d18`), las decisiones de diseño de la interfaz justificadas
   (§8.12, DD-01…DD-16), ADR-18…ADR-23 y la trazabilidad requerimiento → código → prueba (§10.3).
   155 páginas, 124 figuras, 92 tablas.
+- **Documentación dividida (05/11), según las correcciones de Juan:** dos documentos
+  independientes, cada uno con portada e índice: `docs/AmongLies_TP3_Documentacion_Arquitectura`
+  (46 págs.) y `docs/AmongLies_TP3_Manual_de_Usuario` (93 págs.), en .docx y PDF. El catálogo de
+  ventanas pasó a ser el capítulo M18 del manual; se quitaron "Cómo leer este documento", la
+  estructura arc42 + C4, el anexo con las fuentes Mermaid (siguen en `docs/diagramas/`) y todo
+  el historial de versiones y correcciones de entregas anteriores.
 - **Arreglos al sacar las capturas:** el jugador expulsado volvía al inicio sin explicación;
   ahora ve "El anfitrión te sacó de la sala." (suite e2e `expulsado`). El `<html lang>` decía
   `en` y ahora sigue al idioma elegido.
