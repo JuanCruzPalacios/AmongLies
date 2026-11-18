@@ -269,7 +269,24 @@ en vez de scrollear de costado. e2e: 11 checks (chat en escritorio y celular, me
 - **Supabase pausó el proyecto** por inactividad (plan gratis: 7 días sin uso) y se restauró
   el 24/10. Mientras está pausado, en producción no andan las cuentas (los invitados sí).
 
-## Deploy
+## Entrega final (2.° parcial, 18/11)
+Revisión contra la consigna del 2.° parcial y lo que faltaba:
+- **Manual técnico de testing y seguridad** (PDF nuevo, 11 págs.): niveles de prueba, matriz
+  TC-001…TC-015 y seguridad delegada vs. propia (auth y sesiones, autorización, secretos,
+  validación, errores).
+- **Arquitectura:** diccionario de datos por columna (§8.2.4) y contrato de API (§8.3.1–8.3.4:
+  endpoints HTTP, conexión por socket, eventos con ejemplos y códigos de error con su
+  equivalente HTTP). 52 págs.
+- **Tests de integración** (`apps/server/test/integration.e2e-spec.ts`, 13 pruebas, en el CI)
+  en lugar del spec de la plantilla de NestJS.
+- **Datos de demostración** (`supabase/seed/demo.sql`): cuentas AdminDemo, JugadorDemo y
+  AmigaDemo (contraseña `AmongLies2026`) más contenido.
+- Workflow `mantener-activo.yml`: consulta Supabase cada 3 días (el proyecto se pausó dos veces).
+- `docs/ENTREGA.md` (links, credenciales, dónde está cada punto, texto para Classroom) y
+  `docs/PRESENTACION.md` (guion de la demo).
+- Limpieza: fuera `vercel.json`, `railway.*.json`, `PLAN_MVP.md` y el README de la plantilla
+  de NestJS.
+
 - **Producción en Render** (plan gratis, Virginia, auto-deploy desde `main`):
   web https://amonglies-web.onrender.com · server https://amonglies-server.onrender.com.
   Probado con una partida completa de 4 navegadores reales contra producción.

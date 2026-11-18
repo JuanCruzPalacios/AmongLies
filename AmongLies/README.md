@@ -99,6 +99,10 @@ npm run dev:all                 # web en :3000, servidor en :3001
 Sin `SUPABASE_SECRET_KEY` el servidor funciona igual para invitados (sin cuentas, amigos,
 workshop ni estadísticas).
 
+**Datos de demostración:** `supabase/seed/demo.sql` crea cinco cuentas (contraseña
+`AmongLies2026`) con estadísticas, amigos, contenido del workshop y reportes. Se corre en el
+editor SQL de Supabase; es idempotente.
+
 | Archivo | Variables |
 |---|---|
 | `apps/web/.env.local` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (públicas por diseño) |
@@ -110,6 +114,7 @@ workshop ni estadísticas).
 
 ```bash
 npm test                 # tests unitarios del servidor (Jest)
+npm run test:integration # integración: HTTP + Socket.io contra el servidor real
 npm run lint             # ESLint en web y server, tsc en shared
 npm run check-secrets    # busca credenciales en los archivos versionados
 node e2e/run.cjs         # pruebas de punta a punta (ver e2e/README.md)
@@ -117,11 +122,13 @@ node e2e/run.cjs         # pruebas de punta a punta (ver e2e/README.md)
 
 - **Tests unitarios** de las reglas de los tres juegos, sala, validación, amigos, workshop y
   moderación, con umbral mínimo de cobertura de ramas.
+- **Tests de integración:** el servidor completo levantado en un puerto libre, usado por HTTP y
+  Socket.io como lo usa el navegador.
 - **Pruebas de punta a punta:** partidas reales en Chromium con bots, en escritorio y celular,
   más cuentas temporales para amigos, workshop, moderación y ajustes.
 - **Hook pre-commit:** secretos, lint y tests; si algo falla, el commit se aborta.
-- **CI** (GitHub Actions): secretos, lint, build, tests con cobertura, `npm audit` y las
-  pruebas de punta a punta de invitados contra el build recién compilado.
+- **CI** (GitHub Actions): secretos, lint, build, tests con cobertura, tests de integración,
+  `npm audit` y las pruebas de punta a punta de invitados contra el build recién compilado.
 
 Detalle del ciclo TDD, los casos borde y los bugs encontrados: [`docs/TESTING.md`](docs/TESTING.md).
 
@@ -149,9 +156,11 @@ unirse espera a que el servidor despierte.
 
 ## Documentación
 
+- [`docs/ENTREGA.md`](docs/ENTREGA.md): **guía de la entrega final** — link, cuentas de prueba y dónde está cada punto de la consigna.
+- [Documentación de arquitectura](docs/AmongLies_TP3_Documentacion_Arquitectura.pdf) ([.docx](docs/AmongLies_TP3_Documentacion_Arquitectura.docx)): arc42 + C4, diccionario de datos, contrato de API y decisiones.
+- [Manual de usuario](docs/AmongLies_TP3_Manual_de_Usuario.pdf) ([.docx](docs/AmongLies_TP3_Manual_de_Usuario.docx)): cómo se juega y catálogo de ventanas por tipo de usuario.
+- [Manual técnico de testing y seguridad](docs/AmongLies_TP3_Manual_Tecnico_Testing_y_Seguridad.pdf) ([.docx](docs/AmongLies_TP3_Manual_Tecnico_Testing_y_Seguridad.docx)): niveles de prueba, matriz de casos y medidas de seguridad.
+- [`docs/PRESENTACION.md`](docs/PRESENTACION.md): guion de la demo frente al cliente.
+- [`docs/TESTING.md`](docs/TESTING.md): TDD, suites, guardrails y bugs encontrados.
 - [`docs/PROGRESO.md`](docs/PROGRESO.md): fases del desarrollo y decisiones de producto.
-- [`docs/TESTING.md`](docs/TESTING.md): estrategia de testing, TDD y bugs encontrados.
-- Documentación del TP, en dos documentos (cada uno en .docx y PDF):
-  - [Documentación de arquitectura](docs/AmongLies_TP3_Documentacion_Arquitectura.pdf) ([.docx](docs/AmongLies_TP3_Documentacion_Arquitectura.docx)): arc42 + C4, decisiones y calidad.
-  - [Manual de usuario](docs/AmongLies_TP3_Manual_de_Usuario.pdf) ([.docx](docs/AmongLies_TP3_Manual_de_Usuario.docx)): cómo se juega y catálogo de ventanas por tipo de usuario.
-- [`docs/diagramas/`](docs/diagramas): fuentes Mermaid de los diagramas de la documentación.
+- [`docs/diagramas/`](docs/diagramas): fuentes Mermaid de los diagramas.
