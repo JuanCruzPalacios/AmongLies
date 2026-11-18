@@ -8,6 +8,7 @@ la prueba de mutación manual, las pruebas de punta a punta, los guardrails auto
 ```bash
 npm test                                         # todos los tests (desde AmongLies/)
 npm run test:cov --workspace @amonglies/server   # con cobertura y umbral de ramas
+npm run test:integration                         # integración: HTTP + Socket.io
 node e2e/run.cjs                                 # pruebas de punta a punta (ver e2e/README.md)
 ```
 
@@ -100,7 +101,23 @@ Cambiamos un operador a propósito y corrimos la suite: si sigue en verde, falta
 | `rules.ts` | `maxRounds > 0` → `>= 0` | 6 |
 | `rules.ts` | `(jugadores - 1) / 2` → `jugadores / 2` | 5 |
 
-## 4. Pruebas de punta a punta (`e2e/`)
+## 4. Pruebas de integración (`apps/server/test/`)
+
+`npm run test:integration` levanta el servidor completo (Nest + Socket.io) en un puerto libre y
+lo usa como el navegador: pedidos HTTP con supertest y clientes de Socket.io. Son 13 pruebas
+que corren en el CI, sin credenciales de Supabase:
+
+- `GET /health`, `GET /rooms/public` (vacío y con una sala pública) y una ruta inexistente
+  (404 sin trazas ni rutas internas).
+- Crear sala; apodo inválido (`INVALID_IDENTITY`) o con insultos (`NICKNAME_NOT_ALLOWED`);
+  código inexistente (`ROOM_NOT_FOUND`); sala llena (`ROOM_FULL`).
+- Un jugador común no puede expulsar ni cambiar la configuración; el anfitrión sí expulsa.
+- Empezar con menos de 4 jugadores (`not_enough_players`); el chat recorta y censura; un
+  invitado no puede usar el panel de admin (`not_admin`).
+
+Reemplazan el spec de la plantilla de NestJS, que probaba una ruta que no existía.
+
+## 5. Pruebas de punta a punta (`e2e/`)
 
 Los tests unitarios prueban las reglas sin red; estas pruebas juegan **partidas reales**:
 Playwright maneja Chromium como un jugador (en escritorio y en un celular táctil) y el resto
@@ -126,7 +143,7 @@ verifica valores concretos (fases recorridas, puntaje, lo que guardó la base) y
 Las 17 suites (≈201 checks: algunos dependen de a quién le toque ser impostor) pasan contra el build de producción local; las de invitados también
 pasan con el servidor **sin** credenciales de Supabase, que es como corren en el CI.
 
-## 5. Guardrails
+## 6. Guardrails
 
 ### Análisis estático
 - **ESLint** en web y server (el server incluye Prettier como regla). Al empezar había
@@ -155,12 +172,17 @@ OpenAI, URLs de Postgres con contraseña y archivos `.env` versionados. Las clav
 
 ### CI (`.github/workflows/ci.yml`)
 En cada push a `main` y en cada pull request:
-secretos → lint → type check + build → tests con umbral de ramas → `npm audit` de producción
+secretos → lint → type check + build → tests con umbral de ramas → tests de integración →
+`npm audit` de producción
 (job `verificar`), y después las **pruebas de punta a punta de invitados** contra el servidor
 y la web recién compilados (job `e2e`; si fallan, sube las capturas y los logs).
 
 > Para que el CI bloquee merges hay que activarlo en GitHub:
 > *Settings → Branches → Add rule → Require status checks to pass before merging* → `verificar` y `e2e`.
+
+Además, `.github/workflows/mantener-activo.yml` consulta Supabase cada 3 días: el plan gratis
+pausa el proyecto después de 7 días sin actividad (pasó dos veces) y, mientras está pausado,
+no andan las cuentas.
 
 **Auditoría de dependencias:** al configurar el CI, `npm audit` encontró 30 vulnerabilidades
 (2 críticas, entre ellas RCE en Next.js < 16.3.6). Se actualizó Next a 16.3.6 y se corrió
@@ -174,7 +196,7 @@ vulnerabilidad crítica en Next.js ≤ 16.4.0 (RCE) y dos altas en `multer` y `b
 (NestJS lo fija en 2.4.0) y `npm audit fix` actualizó `body-parser`; producción volvió a 0 y
 todas las suites (unitarias y de punta a punta) siguieron en verde.
 
-## 6. Bugs encontrados en nuestro código
+## 7. Bugs encontrados en nuestro código
 
 Todos estaban en el MVP; ninguno rompía la compilación del servidor.
 
