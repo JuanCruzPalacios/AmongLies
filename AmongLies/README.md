@@ -145,9 +145,6 @@ las salas (viven en memoria). Para que no pase en medio de una partida, los clie
 una sala hacen `GET /health` cada 4 minutos; si igual se pierde, la app lo avisa, y al crear o
 unirse espera a que el servidor despierte.
 
-Quedaron en el repo las configuraciones de entregas anteriores (`vercel.json`,
-`railway.*.json`); no se usan en producción.
-
 ---
 
 ## Documentación
@@ -158,4 +155,3 @@ Quedaron en el repo las configuraciones de entregas anteriores (`vercel.json`,
   - [Documentación de arquitectura](docs/AmongLies_TP3_Documentacion_Arquitectura.pdf) ([.docx](docs/AmongLies_TP3_Documentacion_Arquitectura.docx)): arc42 + C4, decisiones y calidad.
   - [Manual de usuario](docs/AmongLies_TP3_Manual_de_Usuario.pdf) ([.docx](docs/AmongLies_TP3_Manual_de_Usuario.docx)): cómo se juega y catálogo de ventanas por tipo de usuario.
 - [`docs/diagramas/`](docs/diagramas): fuentes Mermaid de los diagramas de la documentación.
-- [`PLAN_MVP.md`](PLAN_MVP.md): plan del MVP original.

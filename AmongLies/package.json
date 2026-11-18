@@ -13,6 +13,7 @@
     "dev:server": "turbo dev --filter=@amonglies/server",
     "dev:all": "turbo dev --parallel",
     "test": "npm test --workspace @amonglies/server",
+    "test:integration": "npm run test:integration --workspace @amonglies/server",
     "check-secrets": "sh scripts/check-secrets.sh",
     "prepare": "git config core.hooksPath .githooks || true"
   },

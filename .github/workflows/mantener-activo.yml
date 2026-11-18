@@ -1,0 +1,29 @@
+name: Mantener activo Supabase
+
+# El plan gratis de Supabase pausa el proyecto después de 7 días sin actividad y, mientras
+# está pausado, no andan las cuentas, los amigos, el workshop ni las estadísticas. Esta tarea
+# hace una consulta de lectura cada 3 días para que el proyecto no se pause.
+# Usa la clave publishable, que es pública por diseño (la misma que usa el navegador).
+
+on:
+  schedule:
+    - cron: '17 12 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  consulta:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: https://pyamkqingktpeexkgryb.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_XowZg_fp4JzC3aaUEbQqyQ_scBwh4y8
+    steps:
+      - name: Consulta de lectura a la base
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            "$SUPABASE_URL/rest/v1/profiles?select=id&limit=1")
+          echo "Supabase respondió $status"
+          test "$status" = 200
+
+      - name: Despertar el servidor de juego
+        run: curl -s --max-time 120 https://amonglies-server.onrender.com/health || true
