@@ -37,6 +37,9 @@ jobs:
       - name: Tests unitarios + cobertura de ramas mínima
         run: npm run test:cov --workspace @amonglies/server
 
+      - name: Tests de integración (HTTP + Socket.io)
+        run: npm run test:integration
+
       # Sólo dependencias de producción: las vulnerabilidades que quedan en
       # herramientas de desarrollo (linter) no tienen arreglo publicado.
       - name: Auditoría de dependencias
