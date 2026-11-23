@@ -50,7 +50,9 @@ function launch(options = {}) {
   const args = [...(options.args ?? [])];
   const proxy = process.env.HTTPS_PROXY?.replace(/^https?:\/\//, '');
   if (proxy) args.push(`--proxy-server=${REMOTE ? '' : 'https='}${proxy}`);
-  return chromium.launch({ ...options, args });
+  // E2E_CHROMIUM: usar un Chromium ya instalado si no coincide con la versión de Playwright.
+  const executablePath = process.env.E2E_CHROMIUM || undefined;
+  return chromium.launch({ ...options, args, executablePath });
 }
 
 async function newPage(browser, { mobile = false, locale = 'es-AR' } = {}) {

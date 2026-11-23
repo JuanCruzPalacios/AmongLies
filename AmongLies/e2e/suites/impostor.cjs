@@ -42,15 +42,17 @@ function player(name, code) {
   await sleep(500);
   await page.screenshot({ path: out('lobby.png'), fullPage: true });
 
+  // Cada fase que llega del servidor (la discusión dura un instante si todos la saltean).
+  const phases = new Set();
+  bots[0].s.on('game:state-update', (v) => phases.add(v.phase));
+
   await page.getByRole('button', { name: /Iniciar Juego/i }).click();
   check('la partida empieza', await visible(page.getByText(/palabra|impostor/i).first(), 10000));
 
-  const phases = new Set();
   let clue = 0;
   const deadline = Date.now() + 240000;
   while (Date.now() < deadline) {
     const phase = bots[0].view?.phase;
-    if (phase) phases.add(phase);
     if (phase === 'game-end') break;
     const input = page.getByPlaceholder(/Escrib[eí] una palabra/);
     if (await input.isVisible().catch(() => false) && await input.isEnabled().catch(() => false)) {
