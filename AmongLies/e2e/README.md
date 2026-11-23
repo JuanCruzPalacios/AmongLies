@@ -25,6 +25,7 @@ Las capturas quedan en `e2e/output/` (no se commitean).
 | --- | --- |
 | `E2E_WEB`, `E2E_SERVER` | Contra qué web y servidor probar (por defecto, localhost). Con las URLs de Render prueban producción. |
 | `E2E_SERVER_STOP`, `E2E_SERVER_START` | Comandos de shell para apagar y prender el servidor. Sin ellos, `sala-perdida` se saltea. |
+| `E2E_CHROMIUM` | Ruta a un Chromium ya instalado, si no coincide con la versión que espera Playwright. |
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | Sólo para las suites con cuentas. Si no están, se leen de `apps/server/.env`. |
 
 ## Suites

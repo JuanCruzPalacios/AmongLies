@@ -1,13 +1,16 @@
 name: Mantener activo Supabase
 
-# El plan gratis de Supabase pausa el proyecto después de 7 días sin actividad y, mientras
-# está pausado, no andan las cuentas, los amigos, el workshop ni las estadísticas. Esta tarea
-# hace una consulta de lectura cada 3 días para que el proyecto no se pause.
-# Usa la clave publishable, que es pública por diseño (la misma que usa el navegador).
+# El plan gratis de Supabase pausa los proyectos con poca actividad y, mientras está pausado,
+# no andan las cuentas, los amigos, el workshop ni las estadísticas. Una lectura cada 3 días
+# no alcanzó (se pausó igual), así que esta tarea corre todos los días: inicia sesión con la
+# cuenta de demostración y lee varias tablas, como lo haría un usuario real.
+# Usa la clave publishable (pública por diseño) y la cuenta demo, cuyas credenciales son
+# públicas (docs/ENTREGA.md). Si el proyecto ya está pausado, la tarea falla y GitHub avisa
+# por email: hay que restaurarlo desde el panel de Supabase.
 
 on:
   schedule:
-    - cron: '17 12 */3 * *'
+    - cron: '17 12 * * *'
   workflow_dispatch:
 
 jobs:
@@ -17,13 +20,19 @@ jobs:
       SUPABASE_URL: https://pyamkqingktpeexkgryb.supabase.co
       SUPABASE_PUBLISHABLE_KEY: sb_publishable_XowZg_fp4JzC3aaUEbQqyQ_scBwh4y8
     steps:
-      - name: Consulta de lectura a la base
+      - name: Inicio de sesión y lecturas como un usuario
         run: |
-          status=$(curl -s -o /dev/null -w '%{http_code}' \
-            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
-            "$SUPABASE_URL/rest/v1/profiles?select=id&limit=1")
-          echo "Supabase respondió $status"
-          test "$status" = 200
+          token=$(curl -sf -X POST "$SUPABASE_URL/auth/v1/token?grant_type=password" \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" -H 'Content-Type: application/json' \
+            -d '{"email":"jugador@amonglies.test","password":"AmongLies2026"}' | jq -r .access_token)
+          test -n "$token" && test "$token" != null
+          for table in profiles player_stats friendships workshop_items; do
+            status=$(curl -s -o /dev/null -w '%{http_code}' \
+              -H "apikey: $SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $token" \
+              "$SUPABASE_URL/rest/v1/$table?select=*&limit=5")
+            echo "$table: $status"
+            test "$status" = 200
+          done
 
       - name: Despertar el servidor de juego
         run: curl -s --max-time 120 https://amonglies-server.onrender.com/health || true

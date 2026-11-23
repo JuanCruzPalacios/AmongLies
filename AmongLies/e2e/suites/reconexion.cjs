@@ -2,7 +2,9 @@
 const { WEB, SERVER, OUT, launch } = require('../common.cjs');
 const { io } = require('socket.io-client');
 const { randomUUID } = require('crypto');
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+// Contra un servidor remoto (producción) los mensajes tardan más: se alargan las esperas.
+const SCALE = SERVER.includes('localhost') ? 1 : 4;
+const wait = (ms) => new Promise((r) => setTimeout(r, ms * SCALE));
 const results = [];
 const check = (name, ok) => { results.push(ok); console.log(ok ? 'OK  ' : 'FAIL', name); };
 
@@ -30,8 +32,12 @@ function client(token = randomUUID(), extraAuth = {}) {
   const code = admin.room.code;
   const p = [client(), client(), client(), client()];
   await wait(300);
-  p.forEach((c, i) => c.s.emit('room:join', { code, nickname: `Bot${i}`, avatarId: 'cat' }));
-  await wait(400);
+  // De a uno: el orden de llegada define quién decide si se cae el admin.
+  for (const [i, c] of p.entries()) {
+    c.s.emit('room:join', { code, nickname: `Bot${i}`, avatarId: 'cat' });
+    await wait(150);
+  }
+  await wait(300);
   check('los invitados quedan marcados como invitados', admin.room.players.every((pl) => pl.isGuest));
 
   admin.s.emit('game:select', { gameId: 'impostor' });
