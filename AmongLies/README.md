@@ -156,11 +156,10 @@ unirse espera a que el servidor despierte.
 
 ## Documentación
 
-- [`docs/ENTREGA.md`](docs/ENTREGA.md): **guía de la entrega final** — link, cuentas de prueba y dónde está cada punto de la consigna.
 - [Documentación de arquitectura](docs/AmongLies_TP3_Documentacion_Arquitectura.pdf) ([.docx](docs/AmongLies_TP3_Documentacion_Arquitectura.docx)): arc42 + C4, diccionario de datos, contrato de API y decisiones.
 - [Manual de usuario](docs/AmongLies_TP3_Manual_de_Usuario.pdf) ([.docx](docs/AmongLies_TP3_Manual_de_Usuario.docx)): cómo se juega y catálogo de ventanas por tipo de usuario.
 - [Manual técnico de testing y seguridad](docs/AmongLies_TP3_Manual_Tecnico_Testing_y_Seguridad.pdf) ([.docx](docs/AmongLies_TP3_Manual_Tecnico_Testing_y_Seguridad.docx)): niveles de prueba, matriz de casos y medidas de seguridad.
-- [`docs/PRESENTACION.md`](docs/PRESENTACION.md): guion de la demo frente al cliente.
+- [`docs/DEVOLUCIONES.md`](docs/DEVOLUCIONES.md): observaciones de las entregas anteriores y dónde se resolvió cada una.
 - [`docs/TESTING.md`](docs/TESTING.md): TDD, suites, guardrails y bugs encontrados.
 - [`docs/PROGRESO.md`](docs/PROGRESO.md): fases del desarrollo y decisiones de producto.
 - [`docs/diagramas/`](docs/diagramas): fuentes Mermaid de los diagramas.

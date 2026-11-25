@@ -5,7 +5,7 @@ name: Mantener activo Supabase
 # no alcanzó (se pausó igual), así que esta tarea corre todos los días: inicia sesión con la
 # cuenta de demostración y lee varias tablas, como lo haría un usuario real.
 # Usa la clave publishable (pública por diseño) y la cuenta demo, cuyas credenciales son
-# públicas (docs/ENTREGA.md). Si el proyecto ya está pausado, la tarea falla y GitHub avisa
+# públicas (son de prueba). Si el proyecto ya está pausado, la tarea falla y GitHub avisa
 # por email: hay que restaurarlo desde el panel de Supabase.
 
 on:
