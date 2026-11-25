@@ -30,6 +30,8 @@ cargados (`supabase/seed/demo.sql`).
 | **AdminDemo** (administrador) | `admin@amonglies.test` | Panel de admin: hay 2 reportes abiertos (uno con el chat como evidencia), búsqueda de usuarios, suspender, ocultar contenido. |
 | **JugadorDemo** (usuario común) | `jugador@amonglies.test` | Perfil con estadísticas de los 3 juegos, 2 amigos y 1 solicitud pendiente, una lista privada y una copia del workshop con "versión nueva". |
 | **AmigaDemo** (usuario común) | `amiga@amonglies.test` | Segunda cuenta para probar amigos e invitaciones a la sala junto con JugadorDemo. |
+| **SofiDemo** (usuario común) | `sofi@amonglies.test` | Autora de la mayoría del contenido del workshop (listas y presets publicados). |
+| **LucasDemo** (usuario común) | `lucas@amonglies.test` | Tiene un reporte abierto por insultos y una solicitud de amistad pendiente a JugadorDemo. |
 
 También se puede jugar **sin cuenta**, como invitado.
 
@@ -113,7 +115,10 @@ AmongLies — Juan Cruz Palacios, Matias Budani y Valentino Barrio
    Repositorio: https://github.com/JuanCruzPalacios/AmongLies
    Cuentas de prueba (contraseña AmongLies2026):
    - Administrador: admin@amonglies.test
-   - Usuario: jugador@amonglies.test  (segunda cuenta: amiga@amonglies.test)
+   - Usuario principal: jugador@amonglies.test (estadísticas, amigos y workshop)
+   - Usuaria: amiga@amonglies.test (amiga de jugador: para probar invitaciones a la sala)
+   - Usuaria: sofi@amonglies.test (autora de contenido del workshop)
+   - Usuario: lucas@amonglies.test (tiene un reporte abierto en el panel de admin)
    También se puede jugar como invitado. Los juegos necesitan 4 jugadores: cada pestaña del
    navegador cuenta como un jugador distinto. La primera carga puede tardar un minuto
    (plan gratis de Render).
