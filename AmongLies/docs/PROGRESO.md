@@ -282,7 +282,8 @@ Revisión contra la consigna del 2.° parcial y lo que faltaba:
 - **Datos de demostración** (`supabase/seed/demo.sql`): cuentas AdminDemo, JugadorDemo y
   AmigaDemo (contraseña `AmongLies2026`) más contenido.
 - Workflow `mantener-activo.yml`: consulta Supabase cada 3 días (el proyecto se pausó dos veces).
-- `docs/DEVOLUCIONES.md`: observaciones de las entregas anteriores y dónde se resolvieron.
+- `docs/ENTREGA.md` (cómo probar: link, cuentas y dónde está cada punto de la consigna) y
+  `docs/DEVOLUCIONES.md` (observaciones de las entregas anteriores y dónde se resolvieron).
 - Limpieza: fuera `vercel.json`, `railway.*.json`, `PLAN_MVP.md` y el README de la plantilla
   de NestJS.
 
