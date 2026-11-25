@@ -125,5 +125,8 @@ AmongLies — Juan Cruz Palacios, Matias Budani y Valentino Barrio
 3) Manual técnico de testing y seguridad: AmongLies_TP3_Manual_Tecnico_Testing_y_Seguridad.pdf
    (niveles de prueba en §2, matriz de casos en §3, medidas de seguridad en §4).
 
+Cómo se resolvió cada observación de las entregas anteriores: AmongLies/docs/ENTREGA.md en el
+repositorio.
+
 Los PDFs están adjuntos y también en la carpeta AmongLies/docs del repositorio.
 ```
