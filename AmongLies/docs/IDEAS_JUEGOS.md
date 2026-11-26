@@ -33,6 +33,32 @@ Dos cosas a resolver antes del primer juego que no sea de impostor:
 
 ---
 
+## Requisito para todos: modo aleatorio y puntaje individual
+
+La idea es poder crear una sala, elegir **modo aleatorio** y jugar **una ronda de cada juego**:
+el servidor sortea un juego, se juega una ronda corta, se suman los puntos y sale otro juego.
+Para que eso funcione, todos los juegos (los actuales y los nuevos) tienen que cumplir:
+
+1. **Puntaje individual.** Cada jugador suma sus propios puntos. Nada de juegos cooperativos
+   ni por equipos: el marcador del modo aleatorio es una tabla única de jugadores.
+2. **Una ronda corta y cerrada.** Cada juego define su "ronda" (2 a 5 minutos): empieza,
+   reparte puntos y termina, sin depender de rondas anteriores.
+3. **Mismo mínimo de jugadores** (4, como los actuales) y que funcione con muchos.
+4. **Configuración por defecto** que sirva sin tocar nada (el anfitrión puede elegir qué juegos
+   entran en el sorteo).
+
+**Cómo implementarlo**: un motor "mezcla" (`MixEngine`) que también cumple `GameEngine`.
+Por dentro crea el motor de cada juego sorteado, configurado para una ronda, espera a que
+termine, suma los puntos al marcador general, muestra una pantalla de puntajes y crea el
+siguiente (sin repetir el mismo juego dos veces seguidas). Para el resto del servidor es un
+juego más, así que salas, chat, reconexión y pausa no cambian. Cada motor tiene que exponer
+los puntos de la ronda por jugador (hoy ya lo hacen con `getPlayerStats()`).
+
+En los juegos de impostor actuales, una "ronda" del modo aleatorio sería **una partida con
+tope de 2 o 3 rondas** (los impostores se eligen al empezar y se revelan al final).
+
+---
+
 ## 1. Dos verdades y una mentira
 
 **De qué trata.** Cada jugador escribe tres frases sobre sí mismo: dos verdaderas y una falsa.
@@ -54,6 +80,9 @@ adivinó (bonus si no la adivinó nadie).
 **Configuración**: tiempo de escritura, con o sin interrogatorio, modo chat o voz, rondas
 (una o varias vueltas, con frases nuevas).
 
+**En modo aleatorio**: todos escriben sus frases, pero sólo se presentan **2 jugadores
+sorteados** (o todos sin interrogatorio, si son pocos), para que la ronda dure 3 a 4 minutos.
+
 **Implementación**
 - Fases: `writing → presenting → questioning → voting → reveal → (siguiente) → game-end`.
 - Acciones: `submit-statements { statements: [a, b, c], lieIndex }`, `vote { index }`.
@@ -66,38 +95,41 @@ adivinó (bonus si no la adivinó nadie).
 
 ---
 
-## 2. Onda (estilo *Wavelength*)
+## 2. Onda (estilo *Wavelength*, versión individual)
 
-**De qué trata.** Un juego cooperativo de "leer la mente": hay una escala entre dos extremos
-(por ejemplo, *frío ↔ caliente*) y una posición secreta en esa escala. Un jugador da una pista
-y el grupo tiene que ubicar dónde está.
+**De qué trata.** Un juego de "leer la mente": hay una escala entre dos extremos (por ejemplo,
+*frío ↔ caliente*) y una posición secreta en esa escala. Un jugador da una pista y **cada uno,
+por su cuenta**, marca dónde cree que está. El original es cooperativo; esta versión es
+individual para que encaje con el modo aleatorio.
 
 **Reglas**
-1. Cada ronda, un jugador es el **psíquico**: ve una escala (*"Aburrido ↔ Divertido"*) y un
+1. Cada turno, un jugador es el **psíquico**: ve una escala (*"Aburrido ↔ Divertido"*) y un
    objetivo secreto en ella (un número de 0 a 100).
-2. El psíquico da **una sola pista** que ubique el objetivo: si está cerca de "Divertido",
-   podría decir *"un recreo"*. No puede decir números ni la posición.
-3. El resto del grupo discute y mueve **un dial compartido** hasta acordar una posición.
-   Cualquiera puede moverlo; el último confirma.
-4. Se revela el objetivo. Puntos según la distancia: en el centro 4, cerca 3, más lejos 2.
-5. El rol de psíquico rota. El grupo juega contra un objetivo de puntos o un número de rondas.
+2. El psíquico escribe **una sola pista** (*"un recreo"*). No puede usar números ni decir la
+   posición.
+3. **Cada jugador mueve su propio dial** en secreto y confirma. Nadie ve el dial de los demás
+   hasta la revelación.
+4. Se revelan el objetivo y todos los diales a la vez. Puntos según la distancia: a menos de 5,
+   4 puntos; a menos de 10, 3; a menos de 20, 2.
+5. **El psíquico también suma**: el promedio de los puntos que hicieron los demás. Así le
+   conviene dar una pista clara (y no se puede sabotear).
+6. El rol de psíquico rota.
 
-**Variante por equipos**: dos equipos se turnan; el equipo contrario puede apostar si el
-objetivo está a la izquierda o a la derecha del dial para robar 1 punto.
+**Configuración**: cantidad de turnos, tiempo para la pista y para marcar, pista por chat o en
+voz.
 
-**Configuración**: cantidad de rondas, tiempo para dar la pista y para mover el dial, modo
-cooperativo o por equipos, pista por chat o en voz.
+**En modo aleatorio**: una ronda son **2 psíquicos** sorteados (unos 3 minutos).
 
 **Implementación**
 - Fases: `clue → guessing → reveal → (siguiente psíquico) → game-end`.
-- Acciones: `give-clue { text }`, `move-dial { value }`, `lock-dial`, y en equipos
-  `bet { side }`.
-- El dial se mueve en vivo: se reenvía la posición a la sala con un evento liviano (como los
-  trazos del dibujo, `onDraw`), con límite de frecuencia, sin mandar todo el estado.
-- Vista por jugador: el objetivo sólo lo ve el psíquico hasta la revelación.
-- Contenido: listas de escalas por idioma (`packages/shared/src/word-lists/`, ~60 pares
-  para empezar). Más adelante, escalas del workshop.
-- Pantalla: un semicírculo con el dial (SVG), táctil en el celular.
+- Acciones: `give-clue { text }`, `set-dial { value }`, `confirm`.
+- Vista por jugador: el objetivo sólo lo ve el psíquico, y los diales ajenos no se mandan hasta
+  la revelación (cada uno ve sólo el suyo).
+- Validación: pista de 1 a 40 caracteres, sin números, filtro de insultos.
+- Contenido: listas de escalas por idioma (`packages/shared/src/word-lists/`, ~60 pares para
+  empezar). Más adelante, escalas del workshop.
+- Pantalla: un semicírculo con el dial (SVG), táctil en el celular; en la revelación, todos los
+  diales con el avatar de cada jugador sobre la escala.
 
 ---
 
@@ -127,6 +159,9 @@ o un número (de 1 a 100) que ven todos menos él, y tiene que adivinarla con pr
 **Configuración**: categoría (personajes, animales, objetos, profesiones, edad), tiempo total,
 cantidad de preguntas por turno, respuestas por botones o en voz.
 
+**En modo aleatorio**: la ronda dura un tiempo fijo (por ejemplo, 4 minutos); quien no
+adivinó a tiempo no suma.
+
 **Implementación**
 - Fases: `asking → answering → (siguiente turno) → game-end`, con la acción `guess` posible en
   el turno propio.
@@ -143,82 +178,74 @@ cantidad de preguntas por turno, respuestas por botones o en voz.
 
 ---
 
-## 4. Ranking secreto (estilo *Ito*)
+## 4. Ranking secreto (estilo *Ito*, versión individual)
 
-**De qué trata.** Un juego **cooperativo**: todos ganan o pierden juntos. Cada jugador recibe un
-número secreto del 1 al 100 y hay un tema con una escala. Nadie puede decir su número: cada uno
-lo "traduce" a una respuesta sobre el tema, y entre todos tienen que **ordenarse de menor a
-mayor** sólo a partir de esas respuestas. La gracia está en la discusión: *"¿una araña da más
-miedo que un examen?"*.
+**De qué trata.** Cada jugador recibe un número secreto del 1 al 100 y hay un tema con una
+escala. Cada uno escribe una palabra que represente su número en esa escala. Después, **cada
+jugador, por su cuenta**, ordena las palabras de todos de menor a mayor. Suma más quien mejor
+ordena, y también quien escribió una palabra que los demás supieron ubicar. La gracia está en
+interpretar a los demás: *"para Sofi, ¿una araña es un 80 o un 40?"*.
 
 **Ejemplo de ronda.** Tema: *"Cosas que dan miedo"* (1 = nada de miedo, 100 = terror).
-- Sofi tiene el 92 y escribe *"un tiburón al lado tuyo"*.
 - Lucas tiene el 15 y escribe *"una mariposa"*.
-- Mica tiene el 60 y escribe *"hablar en público"*.
 - Juan tiene el 41 y escribe *"el dentista"*.
+- Mica tiene el 60 y escribe *"hablar en público"*.
+- Sofi tiene el 92 y escribe *"un tiburón"*.
 
-Discuten, ordenan *mariposa → dentista → hablar en público → tiburón*, confirman y se dan
-vuelta las cartas: 15, 41, 60, 92. Orden perfecto, pasan de nivel.
+Cada uno ve las cuatro palabras (sin saber de quién es cada una) y las ordena en su pantalla.
+Al revelar, el orden real es mariposa → dentista → hablar en público → tiburón. Quien lo armó
+igual suma el máximo; quien cambió el dentista con hablar en público suma un poco menos.
 
 **Reglas**
-1. **Reparto**: cada jugador recibe un número del 1 al 100 (sin repetidos) que sólo ve él.
-2. **Tema**: aparece un tema con sus dos extremos, por ejemplo *"Comidas: 1 = la odio todos,
-   100 = la ama todo el mundo"* o *"Superpoderes: 1 = inútil, 100 = el mejor"*.
-3. **Respuestas** (60 s): cada uno escribe algo del tema que represente su número. No se
-   pueden escribir números ni pistas directas ("casi 100"); el filtro las rechaza.
-4. **Orden** (2 minutos): se muestran todas las respuestas en una lista compartida y el grupo
-   la ordena de menor a mayor arrastrando. Se puede hablar por chat o en voz, pero **nadie
-   puede decir su número**.
-5. **Confirmación**: cuando todos tocan "Listo" (o se acaba el tiempo), el orden queda fijo.
-6. **Revelación**: las cartas se dan vuelta de a una, de la primera a la última. Cada carta
-   que está fuera de lugar cuesta **una vida**.
-7. **Niveles**: el grupo empieza con 3 vidas. Si el orden sale bien, pasan al nivel
-   siguiente, donde cada jugador recibe **una carta más** (en el nivel 2 cada uno tiene dos
-   números y escribe dos respuestas). Si se quedan sin vidas, termina el juego.
-8. **Resultado**: el puntaje del grupo es el nivel al que llegaron. En el perfil se guarda el
-   mejor nivel alcanzado.
+1. **Reparto**: cada jugador recibe un número del 1 al 100 (sin repetidos y separados por al
+   menos 5 entre sí, para que no haya empates imposibles). Sólo lo ve él.
+2. **Tema**: aparece un tema con sus dos extremos (*"Comidas: 1 = la odian todos, 100 = la ama
+   todo el mundo"*).
+3. **Palabra** (45 s): cada uno escribe una palabra o frase corta que represente su número. No
+   puede escribir números ni pistas directas ("casi 100").
+4. **Orden** (90 s): todos ven todas las palabras, **anónimas y mezcladas**, y cada uno las
+   ordena de menor a mayor en su propia pantalla, arrastrando. Su propia palabra también está
+   (le sirve de referencia, porque conoce su número).
+5. **Revelación**: se muestran los números, el orden real y cuántos puntos hizo cada uno.
 
-**Variantes**
-- **Modo rápido**: sin niveles; se juegan N temas con una carta cada uno y se cuenta cuántos
-  órdenes perfectos lograron.
-- **Modo impostor** (competitivo, para quien extrañe la deducción): un jugador no recibe número
-  y tiene que inventar una respuesta que encaje en algún lugar. Si al final el grupo lo
-  descubre por votación, gana el grupo; si no, gana el impostor.
-- **Ordenar a ciegas** (difícil): no se puede hablar; sólo se ven las respuestas escritas.
+**Puntaje** (individual)
+- **Por ordenar**: 1 punto por cada par de palabras que ordenaste bien entre sí, escalado a un
+  máximo de 10. Es más justo que contar posiciones exactas: un solo error al principio no
+  arruina todo el resto.
+- **Por comunicar**: el autor de cada palabra suma 1 punto por cada jugador que la ubicó en su
+  posición exacta. Así nadie gana escribiendo palabras ambiguas para confundir: a cada uno le
+  conviene que su palabra se entienda.
 
-**Configuración**: vidas (1 a 5), tiempo para responder y para ordenar, modo (niveles, rápido,
-impostor), chat o voz, categorías de temas.
+**Configuración**: tiempo para escribir y para ordenar, categorías de temas, palabras anónimas o
+con autor (con autor es más fácil y más social: *"Lucas siempre exagera"*).
+
+**En modo aleatorio**: una ronda es un tema (unos 3 minutos). Fuera del modo aleatorio, se
+juegan varios temas seguidos y gana quien más suma.
 
 **Por qué funciona**
-- No requiere saber nada: sólo opinar, así que pueden jugar todos.
-- Es cooperativo, un cambio de ritmo frente a los juegos de impostor.
-- Las respuestas generan risas y debate: *"¿cómo que el dentista da menos miedo?"*.
-- Escala bien con muchos jugadores (con 8 personas, ordenar es un desafío real).
+- No requiere saber nada: sólo interpretar a los demás, así que pueden jugar todos.
+- Todos juegan a la vez (no hay que esperar turnos), así que con 8 personas dura lo mismo.
+- Cada jugador tiene dos objetivos que lo hacen pensar: escribir bien y ordenar bien.
+- Las revelaciones generan debate: *"¿cómo que el dentista da menos miedo que hablar en público?"*.
 
 **Implementación**
-- Fases: `deal → answering → ordering → reveal → (nivel siguiente | game-end)`.
-- Acciones: `submit-answer { cardIndex, text }`, `move-card { cardId, toIndex }`,
-  `confirm-order`, `unconfirm`.
-- **Vista por jugador**: cada uno recibe sólo sus propios números; los de los demás no salen del
-  servidor hasta la revelación (igual que la palabra en El Impostor). Las respuestas sí las ven
-  todos.
-- **Lista compartida en vivo**: cada movimiento se reenvía a la sala con un evento liviano (como
-  los trazos del dibujo), con límite de frecuencia. Si dos personas mueven a la vez, gana el
-  último movimiento que llega al servidor, que siempre manda el orden completo.
-- **Revelación**: el servidor calcula qué cartas están fuera de lugar comparando el orden del
-  grupo con el orden real (una carta está mal si hay una mayor antes que ella). Las vuelve de a
-  una con un timer corto, para que haya suspenso en la pantalla.
-- **Validación**: respuestas de 2 a 60 caracteres, filtro de insultos y rechazo de números
-  (`/\d/`) y de palabras como "cien" o "máximo".
-- **Desconexión**: se pausa como en los demás juegos; si alguien se va, sus cartas salen del
-  orden.
-- **Contenido**: ~80 temas por idioma con sus dos extremos, en el mismo formato que las listas
-  de palabras (`packages/shared/src/word-lists/`). Más adelante, temas creados en el workshop.
-- **Estadísticas**: juegos jugados, mejor nivel alcanzado y órdenes perfectos (se guardan en la
-  columna genérica propuesta arriba).
-- **Pantalla**: tarjetas con la respuesta y el avatar de su autor, que se arrastran (táctil en el
-  celular); arriba, las vidas y el nivel. En la revelación, cada carta se da vuelta y queda
-  verde (bien) o roja (fuera de lugar).
+- Fases: `deal → writing → ordering → reveal → game-end` (o siguiente tema).
+- Acciones: `submit-word { text }`, `submit-order { cardIds: [...] }`.
+- **Vista por jugador**: cada uno recibe sólo su número. Las palabras se muestran con un id
+  aleatorio que no revela al autor ni el número; el orden de cada jugador tampoco se comparte
+  hasta la revelación.
+- **Puntaje**: el servidor compara el orden de cada jugador con el real contando pares bien
+  ordenados (una función pura, fácil de probar con tests unitarios, como `resolveVotes`).
+- **Validación**: palabra de 2 a 40 caracteres, filtro de insultos, rechazo de dígitos y de
+  palabras como "cien", "máximo" o "mínimo"; el orden enviado tiene que contener exactamente
+  todas las palabras. Si alguien no ordena a tiempo, no suma por ordenar.
+- **Desconexión**: se pausa como en los demás juegos; si alguien se va, su palabra sale de la
+  lista.
+- **Contenido**: ~80 temas por idioma con sus dos extremos, en el mismo formato que las listas de
+  palabras (`packages/shared/src/word-lists/`). Más adelante, temas creados en el workshop.
+- **Pantalla**: tarjetas con las palabras que se arrastran (táctil en el celular) y una escala de
+  fondo de 1 a 100. En la revelación, cada tarjeta muestra su número y su autor, y tu orden queda
+  al lado del real, con verde o rojo según estés bien o mal.
 
 ---
 
@@ -254,10 +281,11 @@ puntos quien coincide con la mayoría. Muy simple de implementar, rápido, y bue
 | Pregunta trampa | Bajo | `DeductionEngine` completo | Mismo estilo que los actuales; sólo cambia la ronda. |
 | Dos verdades y una mentira | Medio | Votación, timers, chat | No necesita contenido; muy social. |
 | En la frente | Medio | Vista por jugador, listas de palabras | Muestra bien el servidor autoritativo; modo edad incluido. |
-| Onda | Medio-alto | Eventos en vivo del dibujo | El dial compartido en tiempo real es lo nuevo. |
-| Ranking secreto | Medio | Vista por jugador, eventos en vivo, listas de contenido | Cooperativo; cambia el ritmo y escala bien con muchos jugadores. |
+| Onda | Medio | Votación con valor numérico, vista por jugador | Individual; cada uno marca su dial y el psíquico suma si su pista sirve. |
+| Ranking secreto | Medio | Vista por jugador, listas de contenido | Todos juegan a la vez; puntos por ordenar y por comunicar. |
 | Chamullo | Medio | Votación | Hay que armar el banco de preguntas. |
 | Mente colmena | Bajo | Timers | Rápido de hacer; ideal como juego corto. |
 
 Antes del primero que no sea de impostor conviene separar `RoundEngine` y resolver las
-estadísticas genéricas (ver "Cómo se agrega un juego").
+estadísticas genéricas (ver "Cómo se agrega un juego"). El modo aleatorio (`MixEngine`) se puede
+hacer en cualquier momento con los tres juegos actuales, y cada juego nuevo se suma al sorteo.
