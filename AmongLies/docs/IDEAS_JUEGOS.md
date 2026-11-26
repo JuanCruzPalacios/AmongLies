@@ -143,9 +143,88 @@ cantidad de preguntas por turno, respuestas por botones o en voz.
 
 ---
 
+## 4. Ranking secreto (estilo *Ito*)
+
+**De qué trata.** Un juego **cooperativo**: todos ganan o pierden juntos. Cada jugador recibe un
+número secreto del 1 al 100 y hay un tema con una escala. Nadie puede decir su número: cada uno
+lo "traduce" a una respuesta sobre el tema, y entre todos tienen que **ordenarse de menor a
+mayor** sólo a partir de esas respuestas. La gracia está en la discusión: *"¿una araña da más
+miedo que un examen?"*.
+
+**Ejemplo de ronda.** Tema: *"Cosas que dan miedo"* (1 = nada de miedo, 100 = terror).
+- Sofi tiene el 92 y escribe *"un tiburón al lado tuyo"*.
+- Lucas tiene el 15 y escribe *"una mariposa"*.
+- Mica tiene el 60 y escribe *"hablar en público"*.
+- Juan tiene el 41 y escribe *"el dentista"*.
+
+Discuten, ordenan *mariposa → dentista → hablar en público → tiburón*, confirman y se dan
+vuelta las cartas: 15, 41, 60, 92. Orden perfecto, pasan de nivel.
+
+**Reglas**
+1. **Reparto**: cada jugador recibe un número del 1 al 100 (sin repetidos) que sólo ve él.
+2. **Tema**: aparece un tema con sus dos extremos, por ejemplo *"Comidas: 1 = la odio todos,
+   100 = la ama todo el mundo"* o *"Superpoderes: 1 = inútil, 100 = el mejor"*.
+3. **Respuestas** (60 s): cada uno escribe algo del tema que represente su número. No se
+   pueden escribir números ni pistas directas ("casi 100"); el filtro las rechaza.
+4. **Orden** (2 minutos): se muestran todas las respuestas en una lista compartida y el grupo
+   la ordena de menor a mayor arrastrando. Se puede hablar por chat o en voz, pero **nadie
+   puede decir su número**.
+5. **Confirmación**: cuando todos tocan "Listo" (o se acaba el tiempo), el orden queda fijo.
+6. **Revelación**: las cartas se dan vuelta de a una, de la primera a la última. Cada carta
+   que está fuera de lugar cuesta **una vida**.
+7. **Niveles**: el grupo empieza con 3 vidas. Si el orden sale bien, pasan al nivel
+   siguiente, donde cada jugador recibe **una carta más** (en el nivel 2 cada uno tiene dos
+   números y escribe dos respuestas). Si se quedan sin vidas, termina el juego.
+8. **Resultado**: el puntaje del grupo es el nivel al que llegaron. En el perfil se guarda el
+   mejor nivel alcanzado.
+
+**Variantes**
+- **Modo rápido**: sin niveles; se juegan N temas con una carta cada uno y se cuenta cuántos
+  órdenes perfectos lograron.
+- **Modo impostor** (competitivo, para quien extrañe la deducción): un jugador no recibe número
+  y tiene que inventar una respuesta que encaje en algún lugar. Si al final el grupo lo
+  descubre por votación, gana el grupo; si no, gana el impostor.
+- **Ordenar a ciegas** (difícil): no se puede hablar; sólo se ven las respuestas escritas.
+
+**Configuración**: vidas (1 a 5), tiempo para responder y para ordenar, modo (niveles, rápido,
+impostor), chat o voz, categorías de temas.
+
+**Por qué funciona**
+- No requiere saber nada: sólo opinar, así que pueden jugar todos.
+- Es cooperativo, un cambio de ritmo frente a los juegos de impostor.
+- Las respuestas generan risas y debate: *"¿cómo que el dentista da menos miedo?"*.
+- Escala bien con muchos jugadores (con 8 personas, ordenar es un desafío real).
+
+**Implementación**
+- Fases: `deal → answering → ordering → reveal → (nivel siguiente | game-end)`.
+- Acciones: `submit-answer { cardIndex, text }`, `move-card { cardId, toIndex }`,
+  `confirm-order`, `unconfirm`.
+- **Vista por jugador**: cada uno recibe sólo sus propios números; los de los demás no salen del
+  servidor hasta la revelación (igual que la palabra en El Impostor). Las respuestas sí las ven
+  todos.
+- **Lista compartida en vivo**: cada movimiento se reenvía a la sala con un evento liviano (como
+  los trazos del dibujo), con límite de frecuencia. Si dos personas mueven a la vez, gana el
+  último movimiento que llega al servidor, que siempre manda el orden completo.
+- **Revelación**: el servidor calcula qué cartas están fuera de lugar comparando el orden del
+  grupo con el orden real (una carta está mal si hay una mayor antes que ella). Las vuelve de a
+  una con un timer corto, para que haya suspenso en la pantalla.
+- **Validación**: respuestas de 2 a 60 caracteres, filtro de insultos y rechazo de números
+  (`/\d/`) y de palabras como "cien" o "máximo".
+- **Desconexión**: se pausa como en los demás juegos; si alguien se va, sus cartas salen del
+  orden.
+- **Contenido**: ~80 temas por idioma con sus dos extremos, en el mismo formato que las listas
+  de palabras (`packages/shared/src/word-lists/`). Más adelante, temas creados en el workshop.
+- **Estadísticas**: juegos jugados, mejor nivel alcanzado y órdenes perfectos (se guardan en la
+  columna genérica propuesta arriba).
+- **Pantalla**: tarjetas con la respuesta y el avatar de su autor, que se arrastran (táctil en el
+  celular); arriba, las vidas y el nivel. En la revelación, cada carta se da vuelta y queda
+  verde (bien) o roja (fuera de lugar).
+
+---
+
 ## Otras ideas que valen la pena
 
-### 4. Pregunta trampa (la mejor candidata con impostor)
+### 5. Pregunta trampa (la mejor candidata con impostor)
 Todos reciben una pregunta, salvo el impostor, que recibe **otra parecida**. Por ejemplo, los
 inocentes ven *"¿Cuántas horas dormís por día?"* y el impostor *"¿Cuántas horas usás el
 celular por día?"*. Cada uno responde (un número o una palabra), se revelan todas las
@@ -154,19 +233,12 @@ cosa. Es muy popular en redes y **calza directo en `DeductionEngine`**: sólo ca
 actividad de la ronda (responder en lugar de dar una pista). Contenido: pares de preguntas
 por idioma.
 
-### 5. Chamullo (estilo *Fibbage*): cultura general con mentiras
+### 6. Chamullo (estilo *Fibbage*): cultura general con mentiras
 Aparece una pregunta curiosa de cultura general con un espacio en blanco (*"El primer helado
 de Argentina se vendió en el año ___"*). Cada uno inventa una respuesta falsa creíble; se
 mezclan con la verdadera y todos votan cuál es la real. Puntos por acertar y por engañar.
 Encaja con el nombre AmongLies. Necesita un banco de preguntas con su respuesta verdadera y
 detectar respuestas inventadas que coinciden con la real.
-
-### 6. Ranking secreto (estilo *Ito* / *Top Ten*)
-Cada jugador recibe en secreto un número del 1 al 100 y hay un tema (*"cosas que dan
-miedo"*). Cada uno dice algo acorde a su número (100 = muchísimo miedo) y el grupo tiene que
-**ordenar a los jugadores** de menor a mayor sin decir los números. Cooperativo y muy
-gracioso. Reutiliza la carta secreta por jugador de *En la frente* y el ordenamiento se
-resuelve arrastrando a los jugadores en una lista.
 
 ### 7. Mente colmena
 Aparece una consigna (*"Nombrá una fruta roja"*) y todos escriben una respuesta a la vez. Suma
@@ -183,7 +255,7 @@ puntos quien coincide con la mayoría. Muy simple de implementar, rápido, y bue
 | Dos verdades y una mentira | Medio | Votación, timers, chat | No necesita contenido; muy social. |
 | En la frente | Medio | Vista por jugador, listas de palabras | Muestra bien el servidor autoritativo; modo edad incluido. |
 | Onda | Medio-alto | Eventos en vivo del dibujo | El dial compartido en tiempo real es lo nuevo. |
-| Ranking secreto | Medio | Carta secreta de *En la frente* | Cooperativo; conviene hacerlo después de *En la frente*. |
+| Ranking secreto | Medio | Vista por jugador, eventos en vivo, listas de contenido | Cooperativo; cambia el ritmo y escala bien con muchos jugadores. |
 | Chamullo | Medio | Votación | Hay que armar el banco de preguntas. |
 | Mente colmena | Bajo | Timers | Rápido de hacer; ideal como juego corto. |
 
